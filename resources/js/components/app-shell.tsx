@@ -6,16 +6,25 @@ import type { AppVariant } from '@/types';
 type Props = {
     children: ReactNode;
     variant?: AppVariant;
+    className?: string; // Tambahkan properti opsional ini
 };
 
-export function AppShell({ children, variant = 'sidebar' }: Props) {
+export function AppShell({ children, variant = 'sidebar', className }: Props) {
     const isOpen = usePage().props.sidebarOpen;
 
     if (variant === 'header') {
         return (
-            <div className="flex min-h-screen w-full flex-col">{children}</div>
+            <div className={`flex min-h-screen w-full flex-col ${className || ''}`}>{children}</div>
         );
     }
 
-    return <SidebarProvider defaultOpen={isOpen}>{children}</SidebarProvider>;
+    return (
+        /* 
+          Tambahkan flex, min-h-screen, dan w-full secara tegas pada SidebarProvider 
+          bersamaan dengan properti className eksternal
+        */
+        <SidebarProvider defaultOpen={isOpen} className={`flex min-h-screen w-full ${className || ''}`}>
+            {children}
+        </SidebarProvider>
+    );
 }
