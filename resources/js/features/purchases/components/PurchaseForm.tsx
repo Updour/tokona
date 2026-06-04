@@ -1,15 +1,16 @@
 import { useForm, router } from '@inertiajs/react';
+import lodash from 'lodash';
+import { Trash2, Plus, Receipt, Save, Wand2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
-import { Trash2, Plus, Receipt, Save, Wand2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import lodash from 'lodash';
 const { find, sumBy } = lodash;
 import { getTodayDateString } from '@/lib/helpers/date';
+import { formatRupiah } from '@/lib/helpers/format';
 
 export function PurchaseForm({ branches, products, suppliers }: { branches: any[], products: any[], suppliers: any[] }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -32,8 +33,10 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
     const removeItem = (index: number) => {
         if (data.items.length === 1) {
             toast.error('Minimal harus ada 1 barang dalam pembelian.');
+
             return;
         }
+
         const newItems = [...data.items];
         newItems.splice(index, 1);
         setData('items', newItems);
@@ -51,10 +54,12 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                 newItems.splice(index, 1);
                 toast.success('Produk sudah ada di keranjang. Jumlah (Qty) otomatis ditambahkan!');
                 setData('items', newItems);
+
                 return;
             }
 
             const selectedProduct = find(products, { id: value });
+
             if (selectedProduct) {
                 newItems[index] = {
                     ...newItems[index],
@@ -74,8 +79,10 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
     const generateInvoice = () => {
         if (!data.branch_id) {
             toast.error("Pilih cabang penerima terlebih dahulu!");
+
             return;
         }
+
         const branch = branches.find(b => b.id === data.branch_id);
         const branchCode = branch?.code || branch?.name?.substring(0, 3).toUpperCase() || 'CAB';
         const dateStr = data.purchase_date.replace(/-/g, '');
@@ -99,6 +106,7 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
         
         if (!isFormValid) {
             toast.error("Formulir belum lengkap. Harap lengkapi semua data wajib (*).");
+
             return;
         }
 
@@ -292,7 +300,7 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
 
                                     <TableCell className="align-top">
                                         <div className="h-10 flex items-center px-3 bg-primary/5 rounded-md border border-primary/20 font-bold text-sm text-primary">
-                                            Rp {((Number(item.qty) * Number(item.unit_cost)) - Number(item.discount || 0)).toLocaleString('id-ID')}
+                                            {formatRupiah((Number(item.qty) * Number(item.unit_cost)) - Number(item.discount || 0))}
                                         </div>
                                     </TableCell>
 
@@ -319,7 +327,7 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                 <div className="flex flex-col items-end w-full border-b pb-6 gap-4">
                     <div className="flex items-center justify-end gap-4 w-full text-muted-foreground text-sm font-medium">
                         <span>Total Nilai Barang:</span>
-                        <span className="text-base">Rp {totalBiayaProduk.toLocaleString('id-ID')}</span>
+                        <span className="text-base">{formatRupiah(totalBiayaProduk)}</span>
                     </div>
 
                     <div className="flex items-center justify-end gap-4 w-full">
@@ -338,7 +346,7 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
 
                     <div className="flex flex-col items-end mt-4 pt-4 border-t border-dashed border-muted-foreground/30 w-full sm:w-1/2">
                         <span className="text-muted-foreground text-sm font-semibold tracking-widest uppercase mb-1">Total Tagihan Bersih</span>
-                        <span className="text-4xl font-extrabold text-primary">Rp {totalTagihan.toLocaleString('id-ID')}</span>
+                        <span className="text-4xl font-extrabold text-primary">{formatRupiah(totalTagihan)}</span>
                     </div>
                 </div>
 

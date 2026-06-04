@@ -1,10 +1,12 @@
+import { useForm } from '@inertiajs/react';
+import L from 'leaflet';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
+import { Building2, MapPin } from 'lucide-react';
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { useForm } from '@inertiajs/react';
-import { useTenantStore } from '@/pages/tenants/stores/useTenantStore';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -14,6 +16,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -21,20 +25,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Building2, MapPin } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { useTenantStore } from '@/pages/tenants/stores/useTenantStore';
 import { store as tenantsStore, update as tenantsUpdate } from '@/routes/tenants';
 // Import komponen Leaflet & GeoSearch
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
-import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
-import L from 'leaflet';
 
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-geosearch/dist/geosearch.css';
 
 // Fix ikon default Leaflet yang sering hilang di bundling React
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-let DefaultIcon = L.icon({
+const DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
@@ -96,6 +96,7 @@ function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => v
             onMapClick(e.latlng.lat, e.latlng.lng);
         },
     });
+
     return null;
 }
 
@@ -151,6 +152,7 @@ export function TenantFormDialog() {
             reset();
             setMarkerPos(null);
         }
+
         clearErrors();
     }, [selectedTenant, isFormOpen]);
 
@@ -160,6 +162,7 @@ export function TenantFormDialog() {
             const res = await fetch(`https://openstreetmap.org{lat}&lon=${lng}&addressdetails=1&accept-language=id`);
 
             const result = await res.json();
+
             if (result && result.address) {
                 const addr = result.address;
 
@@ -202,6 +205,7 @@ export function TenantFormDialog() {
 
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (selectedTenant) {
             put(tenantsUpdate(selectedTenant.id).url, { onSuccess: () => closeForm() });
         } else {

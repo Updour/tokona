@@ -1,6 +1,7 @@
 import { DataTable } from '@/components/shared/DataTable';
+import { useTenantStore  } from '@/pages/tenants/stores/useTenantStore';
+import type {Tenant} from '@/pages/tenants/stores/useTenantStore';
 import { columns } from './TenantColumn';
-import { useTenantStore, type Tenant } from '@/pages/tenants/stores/useTenantStore';
 import { TenantFormDialog } from './TenantFormDialog';
 import { TenantViewDialog } from './TenantViewDialog';
 

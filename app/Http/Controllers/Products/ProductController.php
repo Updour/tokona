@@ -26,6 +26,14 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request): RedirectResponse
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            $tenant = \App\Models\Tenants::find(auth()->user()->tenant_id);
+            $subService = new \App\Services\SubscriptionService();
+            if ($tenant && !$subService->canAddProduct($tenant)) {
+                return redirect()->back()->with('error', 'Limit jumlah produk tercapai! Silakan upgrade paket langganan Anda untuk menambah produk baru.');
+            }
+        }
+
         $product = $this->service->create($request->validated());
 
         return redirect()->route('products.index')

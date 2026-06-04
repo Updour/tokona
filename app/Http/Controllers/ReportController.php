@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ReportService;
+use App\Http\Requests\Reports\ReportFilterRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -22,7 +23,7 @@ class ReportController extends Controller
     /**
      * Merender Dashboard Laporan Terpadu (Sales, Products, & Stocks)
      */
-    public function index(Request $request): Response
+    public function index(ReportFilterRequest $request): Response
     {
         $data = $this->reportService->getReportsData($request->all());
         

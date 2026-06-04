@@ -1,10 +1,11 @@
-import { ColumnDef } from '@tanstack/react-table';
-import { Button } from '@/components/ui/button';
-import { ArrowUpDown, CheckCircle2, CircleDashed, Wallet, MoreVertical } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
 import { Link, router } from '@inertiajs/react';
+import type { ColumnDef } from '@tanstack/react-table';
+import { ArrowUpDown, CheckCircle2, CircleDashed, Wallet, MoreVertical } from 'lucide-react';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { formatDate, formatRupiah } from '@/lib/helpers/format';
 
 export const columns: ColumnDef<any>[] = [
     {
@@ -13,6 +14,7 @@ export const columns: ColumnDef<any>[] = [
         cell: ({ row }) => {
             const invoice = row.original.invoice_number;
             const id = row.original.id;
+
             if (invoice) {
                 return (
                     <Link 
@@ -23,6 +25,7 @@ export const columns: ColumnDef<any>[] = [
                     </Link>
                 );
             }
+
             return <span className="font-mono font-medium text-muted-foreground italic">Draft...</span>;
         },
     },
@@ -36,9 +39,10 @@ export const columns: ColumnDef<any>[] = [
         ),
         cell: ({ row }) => {
             const date = new Date(row.original.created_at);
+
             return (
                 <div className="flex flex-col gap-0.5">
-                    <span className="font-medium text-sm">{date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                    <span className="font-medium text-sm">{formatDate(date)}</span>
                     <span className="text-xs text-muted-foreground">{date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
             );
@@ -63,7 +67,8 @@ export const columns: ColumnDef<any>[] = [
         header: 'Total Tagihan',
         cell: ({ row }) => {
             const total = Number(row.original.total_cost || 0);
-            return <span className="font-bold text-base">Rp {total.toLocaleString('id-ID')}</span>;
+
+            return <span className="font-bold text-base">{formatRupiah(total)}</span>;
         },
     },
     {
@@ -75,12 +80,15 @@ export const columns: ColumnDef<any>[] = [
             if (status === 'draft') {
                 return <Badge variant="outline" className="text-muted-foreground"><CircleDashed className="mr-1 h-3 w-3" /> Draft</Badge>;
             }
+
             if (status === 'received') {
                 return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200"><CheckCircle2 className="mr-1 h-3 w-3" /> Diterima (Belum Lunas)</Badge>;
             }
+
             if (status === 'paid') {
                 return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200"><Wallet className="mr-1 h-3 w-3" /> Lunas</Badge>;
             }
+
             return <Badge>{status}</Badge>;
         },
     },

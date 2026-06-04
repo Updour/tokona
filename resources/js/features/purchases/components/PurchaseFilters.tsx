@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
+import { Search, SlidersHorizontal, X, Plus, Filter, CalendarDays, Building2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { Search, SlidersHorizontal, X, Plus, Filter, CalendarDays, Building2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface PurchaseFiltersProps {
     filters: Record<string, any>;
@@ -48,6 +48,7 @@ export function PurchaseFilters({ filters, branches, totalResults, onAddClick }:
                 applyFilters({ search });
             }
         }, 350);
+
         return () => clearTimeout(handler);
     }, [search]);
 
@@ -200,7 +201,9 @@ export function PurchaseFilters({ filters, branches, totalResults, onAddClick }:
                     {localFilters.status && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium">
                             Status: {localFilters.status.toUpperCase()}
-                            <button onClick={() => { updateLocal('status', ''); applyFilters({ status: undefined }); }} className="hover:text-destructive ml-0.5">
+                            <button onClick={() => {
+ updateLocal('status', ''); applyFilters({ status: undefined }); 
+}} className="hover:text-destructive ml-0.5">
                                 <X className="h-3 w-3" />
                             </button>
                         </span>
@@ -208,7 +211,9 @@ export function PurchaseFilters({ filters, branches, totalResults, onAddClick }:
                     {localFilters.branch_id && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 text-xs px-2.5 py-1 font-medium">
                             Cabang: {branches?.find((b) => b.id === localFilters.branch_id)?.name || 'Terpilih'}
-                            <button onClick={() => { updateLocal('branch_id', ''); applyFilters({ branch_id: undefined }); }} className="hover:text-destructive ml-0.5">
+                            <button onClick={() => {
+ updateLocal('branch_id', ''); applyFilters({ branch_id: undefined }); 
+}} className="hover:text-destructive ml-0.5">
                                 <X className="h-3 w-3" />
                             </button>
                         </span>

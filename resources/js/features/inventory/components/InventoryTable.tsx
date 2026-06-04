@@ -1,12 +1,14 @@
 import { usePage, router } from '@inertiajs/react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Eye, ArrowUpRight, ArrowDownRight, PackageMinus, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { columns } from './InventoryColumn';
 import { InventoryFilters } from './InventoryFilters';
-import { useState, useEffect } from 'react';
 
 interface PageProps {
     [key: string]: any;
@@ -99,21 +101,11 @@ export function InventoryTable() {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between py-2">
-                <p className="text-sm text-muted-foreground">
-                    {movements?.from && movements?.to
-                        ? `Menampilkan ${movements.from}–${movements.to} dari ${movements.total.toLocaleString('id-ID')} riwayat`
-                        : `${movements?.total ?? 0} riwayat`}
-                </p>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" disabled={!movements?.prev_page_url} onClick={() => movements?.prev_page_url && router.get(movements.prev_page_url)}>
-                        Sebelumnya
-                    </Button>
-                    <Button variant="outline" size="sm" disabled={!movements?.next_page_url} onClick={() => movements?.next_page_url && router.get(movements.next_page_url)}>
-                        Berikutnya
-                    </Button>
-                </div>
-            </div>
+            <DataTablePagination 
+                data={movements as any} 
+                itemName="riwayat" 
+                filters={filters} 
+            />
         </div>
     );
 }

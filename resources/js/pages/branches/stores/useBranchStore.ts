@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { type Branch } from '../types';
+import type {Branch} from '../types';
 
 interface BranchState {
     isFormOpen: boolean;

@@ -1,16 +1,16 @@
-import { useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Users, Award, Shield, Search, X, Edit2, Sparkles, Star, Gem, Crown } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Users, Award, Shield, Search, X, Edit2, Sparkles, Star, Gem, Crown } from 'lucide-react';
-import { toast } from 'sonner';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Membership({ members, stats, filters }: any) {
     const [search, setSearch] = useState(filters.search || '');
@@ -43,6 +43,7 @@ export default function Membership({ members, stats, filters }: any) {
         const handler = setTimeout(() => {
             applyFilters(val, tierFilter);
         }, 350);
+
         return () => clearTimeout(handler);
     };
 
@@ -81,6 +82,7 @@ export default function Membership({ members, stats, filters }: any) {
                 setIsEditOpen(false);
                 setProcessing(false);
                 toast.success('Keanggotaan pelanggan berhasil disesuaikan!');
+
                 // Update kartu jika anggota yang diedit sedang aktif di visualisasi
                 if (activeMember.id === editingMember.id) {
                     setActiveMember({
@@ -316,6 +318,7 @@ export default function Membership({ members, stats, filters }: any) {
                                 {members?.data?.length ? (
                                     members.data.map((m: any) => {
                                         const isCurrent = activeMember.id === m.id;
+
                                         return (
                                             <TableRow 
                                                 key={m.id} 

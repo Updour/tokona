@@ -1,9 +1,10 @@
+import { usePage, router } from '@inertiajs/react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { Button } from '@/components/ui/button';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getCustomerColumns } from './CustomerColumn';
 import { CustomerFilters } from './CustomerFilters';
-import { usePage, router } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
 
 export function CustomerTable({ customers, onEdit, onAddClick }: any) {
     const { props } = usePage<any>();
@@ -16,7 +17,10 @@ export function CustomerTable({ customers, onEdit, onAddClick }: any) {
     });
 
     const handleExport = () => {
-        if (!customers?.data?.length) return;
+        if (!customers?.data?.length) {
+return;
+}
+
         const rows = customers.data.map((c: any) => ({
             Nama: c.name,
             Kontak: `${c.phone} | ${c.email}`,
@@ -84,29 +88,11 @@ export function CustomerTable({ customers, onEdit, onAddClick }: any) {
                 </Table>
             </div>
             
-            <div className="flex items-center justify-between py-2">
-                <p className="text-sm text-muted-foreground">
-                    {customers?.from && customers?.to
-                        ? `Menampilkan ${customers.from}–${customers.to} dari ${customers.total.toLocaleString('id-ID')} pelanggan`
-                        : `${customers?.total ?? 0} pelanggan`}
-                </p>
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline" size="sm"
-                        disabled={!customers?.prev_page_url}
-                        onClick={() => customers?.prev_page_url && router.get(customers.prev_page_url)}
-                    >
-                        Sebelumnya
-                    </Button>
-                    <Button
-                        variant="outline" size="sm"
-                        disabled={!customers?.next_page_url}
-                        onClick={() => customers?.next_page_url && router.get(customers.next_page_url)}
-                    >
-                        Berikutnya
-                    </Button>
-                </div>
-            </div>
+            <DataTablePagination 
+                data={customers as any} 
+                itemName="pelanggan" 
+                filters={filters} 
+            />
         </div>
     );
 }

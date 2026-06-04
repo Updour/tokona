@@ -1,9 +1,7 @@
 import { useForm } from '@inertiajs/react';
+import { Tag } from 'lucide-react';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
     Dialog,
     DialogContent,
@@ -12,7 +10,9 @@ import {
     DialogTitle,
     DialogDescription,
 } from '@/components/ui/dialog';
-import { Tag } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface ProductCategory {
     id: string;
@@ -46,12 +46,14 @@ export function CategoryFormDialog({
             } else {
                 reset();
             }
+
             clearErrors();
         }
     }, [open, category]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (category) {
             put(`/product-categories/${category.id}`, {
                 onSuccess: () => {

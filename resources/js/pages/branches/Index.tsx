@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { BranchTable } from '@/features/branches/components/BranchTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function BranchesIndex({ branches, filters }: any) {
     return (

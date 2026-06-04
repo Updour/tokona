@@ -1,10 +1,10 @@
 import { Head } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { SupplierTable } from '@/features/suppliers/components/SupplierTable';
-import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { SupplierFormDialog } from '@/features/suppliers/components/SupplierFormDialog';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { SupplierFormDialog } from '@/features/suppliers/components/SupplierFormDialog';
+import { SupplierTable } from '@/features/suppliers/components/SupplierTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Index() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);

@@ -65,6 +65,10 @@ class CashBook extends Model
             if ($category !== 'ALL') {
                 $q->where('category', $category);
             }
+        })->when($filters['start_date'] ?? null, function ($q, $startDate) {
+            $q->whereDate('created_at', '>=', $startDate);
+        })->when($filters['end_date'] ?? null, function ($q, $endDate) {
+            $q->whereDate('created_at', '<=', $endDate);
         });
     }
 }

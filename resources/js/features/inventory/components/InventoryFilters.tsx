@@ -1,8 +1,15 @@
-import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
+import { Search, SlidersHorizontal, X, Building2, Layers, Calendar, Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -10,14 +17,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Search, SlidersHorizontal, X, Building2, Layers } from 'lucide-react';
 
 interface InventoryFiltersProps {
     filters: Record<string, any>;
@@ -35,11 +34,15 @@ export function InventoryFilters({
     const [localFilters, setLocalFilters] = useState({
         type: safeFilters.type || '',
         branch_id: safeFilters.branch_id || '',
+        start_date: safeFilters.start_date || '',
+        end_date: safeFilters.end_date || '',
     });
 
     const activeFilterCount = [
         localFilters.type,
         localFilters.branch_id,
+        localFilters.start_date,
+        localFilters.end_date,
     ].filter(Boolean).length;
 
     useEffect(() => {
@@ -48,6 +51,7 @@ export function InventoryFilters({
                 applyFilters({ search });
             }
         }, 350);
+
         return () => clearTimeout(handler);
     }, [search]);
 
@@ -56,6 +60,8 @@ export function InventoryFilters({
             search: search || undefined,
             type: localFilters.type || undefined,
             branch_id: localFilters.branch_id || undefined,
+            start_date: localFilters.start_date || undefined,
+            end_date: localFilters.end_date || undefined,
             ...overrides,
         };
         Object.keys(params).forEach((k) => params[k] === undefined && delete params[k]);
@@ -64,12 +70,23 @@ export function InventoryFilters({
 
     const resetFilters = () => {
         setSearch('');
-        setLocalFilters({ type: '', branch_id: '' });
+        setLocalFilters({ type: '', branch_id: '', start_date: '', end_date: '' });
         router.get('/inventory', {}, { preserveState: false, replace: true });
     };
 
     const updateLocal = (key: string, value: any) => {
         setLocalFilters((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const handleExport = () => {
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        if (localFilters.type) params.append('type', localFilters.type);
+        if (localFilters.branch_id) params.append('branch_id', localFilters.branch_id);
+        if (localFilters.start_date) params.append('start_date', localFilters.start_date);
+        if (localFilters.end_date) params.append('end_date', localFilters.end_date);
+        
+        window.open(`/export/inventory?${params.toString()}`, '_blank');
     };
 
     return (
@@ -146,6 +163,32 @@ export function InventoryFilters({
                                     </Select>
                                 </div>
                             )}
+
+                            {/* Date Filters */}
+                            <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[11px] font-semibold uppercase text-muted-foreground flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" /> Dari
+                                    </Label>
+                                    <Input
+                                        type="date"
+                                        value={localFilters.start_date}
+                                        onChange={(e) => updateLocal('start_date', e.target.value)}
+                                        className="h-8 text-xs font-semibold"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-[11px] font-semibold uppercase text-muted-foreground flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" /> Sampai
+                                    </Label>
+                                    <Input
+                                        type="date"
+                                        value={localFilters.end_date}
+                                        onChange={(e) => updateLocal('end_date', e.target.value)}
+                                        className="h-8 text-xs font-semibold"
+                                    />
+                                </div>
+                            </div>
                         </div>
                         <div className="px-4 py-3 border-t">
                             <Button className="w-full" size="sm" onClick={() => applyFilters()}>
@@ -162,6 +205,17 @@ export function InventoryFilters({
                 )}
 
                 <div className="flex-1" />
+
+                {/* Excel Export Button */}
+                <Button 
+                    onClick={handleExport} 
+                    variant="outline" 
+                    className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 h-9 text-xs font-bold shadow-sm"
+                >
+                    <Download className="h-3.5 w-3.5" />
+                    Ekspor Excel
+                </Button>
+
                 <span className="text-sm text-muted-foreground hidden sm:block">
                     {totalResults.toLocaleString('id-ID')} riwayat
                 </span>
@@ -172,13 +226,37 @@ export function InventoryFilters({
                     {localFilters.type && (
                         <FilterChip
                             label={`Tipe: ${localFilters.type === 'IN' ? 'Stok Masuk' : localFilters.type === 'OUT' ? 'Stok Keluar' : localFilters.type === 'RETURN' ? 'Retur' : 'Opname (Adjust)'}`}
-                            onRemove={() => { updateLocal('type', ''); applyFilters({ type: undefined }); }}
+                            onRemove={() => {
+                                updateLocal('type', '');
+                                applyFilters({ type: undefined }); 
+                            }}
                         />
                     )}
                     {localFilters.branch_id && branches && (
                         <FilterChip
                             label={`Cabang: ${branches.find((b) => b.id == localFilters.branch_id)?.name ?? '...'}`}
-                            onRemove={() => { updateLocal('branch_id', ''); applyFilters({ branch_id: undefined }); }}
+                            onRemove={() => {
+                                updateLocal('branch_id', '');
+                                applyFilters({ branch_id: undefined }); 
+                            }}
+                        />
+                    )}
+                    {localFilters.start_date && (
+                        <FilterChip
+                            label={`Dari: ${localFilters.start_date}`}
+                            onRemove={() => {
+                                updateLocal('start_date', '');
+                                applyFilters({ start_date: undefined }); 
+                            }}
+                        />
+                    )}
+                    {localFilters.end_date && (
+                        <FilterChip
+                            label={`Sampai: ${localFilters.end_date}`}
+                            onRemove={() => {
+                                updateLocal('end_date', '');
+                                applyFilters({ end_date: undefined }); 
+                            }}
                         />
                     )}
                 </div>

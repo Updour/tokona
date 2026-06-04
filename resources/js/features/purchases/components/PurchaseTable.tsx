@@ -1,9 +1,10 @@
 import { usePage, router } from '@inertiajs/react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { columns } from './PurchaseColumn';
 import { PurchaseFilters } from './PurchaseFilters';
 
@@ -78,21 +79,11 @@ export function PurchaseTable({ onAddClick }: { onAddClick: () => void }) {
                 </Table>
             </div>
 
-            <div className="flex items-center justify-between py-2">
-                <p className="text-sm text-muted-foreground">
-                    {purchases?.from && purchases?.to
-                        ? `Menampilkan ${purchases.from}–${purchases.to} dari ${purchases.total.toLocaleString('id-ID')} tagihan`
-                        : `${purchases?.total ?? 0} tagihan`}
-                </p>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" disabled={!purchases?.prev_page_url} onClick={() => purchases?.prev_page_url && router.get(purchases.prev_page_url)}>
-                        Sebelumnya
-                    </Button>
-                    <Button variant="outline" size="sm" disabled={!purchases?.next_page_url} onClick={() => purchases?.next_page_url && router.get(purchases.next_page_url)}>
-                        Berikutnya
-                    </Button>
-                </div>
-            </div>
+            <DataTablePagination 
+                data={purchases as any} 
+                itemName="tagihan" 
+                filters={filters} 
+            />
         </div>
     );
 }

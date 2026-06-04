@@ -1,4 +1,12 @@
+import { divIcon } from 'leaflet';
+import {
+    Building2, Phone, MapPin, Calendar, Clock, X, Map, Settings, CheckCircle2, XCircle, Navigation, Box
+} from 'lucide-react';
 import * as React from 'react';
+import { renderToString } from 'react-dom/server';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
     Dialog,
     DialogContent,
@@ -7,24 +15,18 @@ import {
     DialogTitle,
     DialogClose
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useBranchStore } from '@/pages/branches/stores/useBranchStore';
-import {
-    Building2, Phone, MapPin, Calendar, Clock, X, Map
-} from 'lucide-react';
-
 import { formatDateTime, formatTimeAgo } from '@/lib/helpers/date';
+import { useBranchStore } from '@/pages/branches/stores/useBranchStore';
+
 // IMPOR UNTUK LEAFLET MAP
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import { divIcon } from 'leaflet';
-import { renderToString } from 'react-dom/server';
 import 'leaflet/dist/leaflet.css';
 
 export function BranchViewDialog() {
     const { isViewOpen, selectedBranch, closeView } = useBranchStore();
 
-    if (!selectedBranch) return null;
+    if (!selectedBranch) {
+return null;
+}
 
     const lat = selectedBranch.latitude ? parseFloat(selectedBranch.latitude) : null;
     const lon = selectedBranch.longitude ? parseFloat(selectedBranch.longitude) : null;
@@ -82,6 +84,9 @@ export function BranchViewDialog() {
                         <div className="grid gap-3.5">
                             <DetailRow icon={<Phone className="h-4 w-4" />} label="Phone Number" value={selectedBranch.phone ?? "-"} />
                             <DetailRow icon={<MapPin className="h-4 w-4" />} label="Address" value={selectedBranch.address ?? "-"} />
+                            {selectedBranch.tenant && (
+                                <DetailRow icon={<Building2 className="h-4 w-4" />} label="Tenant (Toko)" value={selectedBranch.tenant.name} />
+                            )}
 
                             {/* CONTAINER MAPS LEAFLET */}
                             {hasCoordinates && (
@@ -111,6 +116,79 @@ export function BranchViewDialog() {
                             )}
                         </div>
                     </div>
+                    {/* Pengaturan Modul & POS */}
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/80 border-b pb-1.5 flex items-center gap-2">
+                            <Settings className="h-4 w-4 text-indigo-500" /> Pengaturan POS & Modul
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Konfigurasi Pajak & Fitur POS */}
+                            <div className="space-y-3 bg-muted/20 p-4 rounded-xl border border-dashed text-sm">
+                                <h4 className="font-bold text-slate-800 text-xs uppercase mb-2">Konfigurasi Kasir</h4>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground font-medium">Wajib Buka Shift</span>
+                                    {selectedBranch.pos_settings?.require_shift !== false ? (
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                    ) : (
+                                        <XCircle className="h-4 w-4 text-slate-300" />
+                                    )}
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground font-medium">Pajak (PPN)</span>
+                                    {selectedBranch.pos_settings?.taxEnabled ? (
+                                        <Badge variant="default" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 shadow-none border-0 text-[10px]">{selectedBranch.pos_settings.taxRate}%</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-muted-foreground text-[10px]">Non-Aktif</Badge>
+                                    )}
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground font-medium">Metode Pembulatan</span>
+                                    <span className="text-[11px] font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded uppercase">
+                                        {selectedBranch.pos_settings?.roundingMethod === 'round' ? 'Terdekat' : 
+                                         selectedBranch.pos_settings?.roundingMethod === 'ceil' ? 'Ke Atas' : 'Ke Bawah'}
+                                    </span>
+                                </div>
+                                <div className="flex flex-col gap-1.5 pt-2 border-t border-dashed">
+                                    <span className="text-muted-foreground font-medium text-[11px]">Metode Pembayaran:</span>
+                                    <div className="flex gap-1 flex-wrap">
+                                        {selectedBranch.pos_settings?.activeMethods?.cash && <Badge variant="secondary" className="text-[10px]">Tunai</Badge>}
+                                        {selectedBranch.pos_settings?.activeMethods?.transfer && <Badge variant="secondary" className="text-[10px]">Transfer/QR</Badge>}
+                                        {selectedBranch.pos_settings?.activeMethods?.debt && <Badge variant="secondary" className="text-[10px]">Piutang</Badge>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Modul Ekstra */}
+                            <div className="space-y-3 bg-muted/20 p-4 rounded-xl border border-dashed text-sm">
+                                <h4 className="font-bold text-slate-800 text-xs uppercase mb-2">Modul Ekstra Cabang</h4>
+                                <div className="flex justify-between items-center">
+                                    <span className="flex items-center gap-1.5 text-muted-foreground font-medium text-xs"><Navigation className="h-3.5 w-3.5" /> Canvas Sales</span>
+                                    {selectedBranch.pos_settings?.enable_canvas ? (
+                                        <Badge variant="default" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 shadow-none border-0 text-[10px]">Aktif</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-muted-foreground text-[10px]">Mati</Badge>
+                                    )}
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="flex items-center gap-1.5 text-muted-foreground font-medium text-xs"><Box className="h-3.5 w-3.5" /> Konsinyasi</span>
+                                    {selectedBranch.pos_settings?.enable_consignment ? (
+                                        <Badge variant="default" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 shadow-none border-0 text-[10px]">Aktif</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-muted-foreground text-[10px]">Mati</Badge>
+                                    )}
+                                </div>
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="flex items-center gap-1.5 text-muted-foreground font-medium text-xs"><Calendar className="h-3.5 w-3.5" /> Absensi Harian</span>
+                                    {selectedBranch.pos_settings?.enable_attendance ? (
+                                        <Badge variant="default" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 shadow-none border-0 text-[10px]">Aktif</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-muted-foreground text-[10px]">Mati</Badge>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Metadata Sistem */}
                     <div className="space-y-4">
                         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/80 border-b pb-1.5">

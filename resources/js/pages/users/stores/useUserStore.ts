@@ -1,7 +1,7 @@
 // @/features/users/store/useUserStore.ts
 
 import { create } from 'zustand';
-import { type User } from '../types'; // Impor tipe data dari file terpisah
+import type {User} from '../types'; // Impor tipe data dari file terpisah
 
 // State murni untuk data
 interface UserState {

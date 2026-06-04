@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { InventoryTable } from '@/features/inventory/components/InventoryTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Index() {
     return (

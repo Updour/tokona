@@ -31,6 +31,7 @@ class Products extends Model
         'min_sell_price',
         'track_stock',
         'allow_negative_stock',
+        'min_stock',
         'source',
         'is_active',
     ];
@@ -135,11 +136,11 @@ class Products extends Model
         return $query->where('products.is_active', true);
     }
 
-    /** Filter produk dengan stok menipis (≤ threshold, default 5). */
-    public function scopeLowStock(Builder $query, int $threshold = 5): Builder
+    /** Filter produk dengan stok menipis — stok saat ini <= min_stock per produk. */
+    public function scopeLowStock(Builder $query): Builder
     {
         return $query
-            ->having(DB::raw('COALESCE(sm.current_stock, 0)'), '<=', $threshold)
+            ->whereRaw('COALESCE(sm.current_stock, 0) <= products.min_stock')
             ->where('products.track_stock', true);
     }
 
@@ -199,6 +200,28 @@ class Products extends Model
             'unit_cost'   => $this->base_cost,
             'source_type' => 'manual',
         ], $extra));
+    }
+
+    /**
+     * Memperbarui Harga Modal (base_cost) menggunakan metode Weighted Average Cost (WAC).
+     * Harus dipanggil pada instance model yang dimuat dengan `withCurrentStock()`.
+     */
+    public function updateBaseCostWAC(float $newUnitCost, int $addedQty): void
+    {
+        if ($addedQty <= 0) {
+            return;
+        }
+
+        // Ambil stok saat ini. Jika produk tidak di-load dengan withCurrentStock(), anggap stok 0.
+        // Abaikan stok negatif (anggap 0) untuk perhitungan WAC agar harga tidak hancur.
+        $currentStock = max(0, (int) ($this->current_stock ?? 0));
+        
+        $totalQty = $currentStock + $addedQty;
+        
+        if ($totalQty > 0) {
+            $newBaseCost = (($currentStock * (float) $this->base_cost) + ($addedQty * $newUnitCost)) / $totalQty;
+            $this->update(['base_cost' => $newBaseCost]);
+        }
     }
 
     // =========================================================================

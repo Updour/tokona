@@ -1,23 +1,36 @@
-import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { TrendingUp, Plus, Search, X, Trash2, Landmark, PiggyBank, ArrowUpRight, Info, SlidersHorizontal, Building2, Tag, Calendar } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { TrendingUp, Plus, Search, X, Trash2, Landmark, PiggyBank, ArrowUpRight, Info } from 'lucide-react';
-import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import MainLayout from '@/layouts/app/app-main-layout';
 import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
 
 export default function Incomes({ incomes, branches, stats, filters }: any) {
     const [search, setSearch] = useState(filters.search || '');
     const [branchFilter, setBranchFilter] = useState(filters.branch_id || 'ALL');
     const [categoryFilter, setCategoryFilter] = useState(filters.category || 'ALL');
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    const activeFilterCount = [
+        branchFilter !== 'ALL' && branchFilter !== '',
+        categoryFilter !== 'ALL' && categoryFilter !== '',
+        startDate !== '',
+        endDate !== ''
+    ].filter(Boolean).length;
 
     // Dialog state
     const [isOpen, setIsOpen] = useState(false);
@@ -37,6 +50,7 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
 
     const getCategoryBadge = (catVal: string) => {
         const cat = categories.find(c => c.value === catVal);
+
         return cat ? (
             <Badge variant="outline" className={`${cat.color} text-[10px] uppercase font-bold tracking-wider py-0.5`}>
                 {cat.label.split(' ')[0]}
@@ -48,19 +62,23 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
         );
     };
 
-    const applyFilters = (s = search, br = branchFilter, cat = categoryFilter) => {
+    const applyFilters = (s = search, br = branchFilter, cat = categoryFilter, start = startDate, end = endDate) => {
+        setIsFilterOpen(false);
         router.get('/incomes', {
             search: s || undefined,
             branch_id: br !== 'ALL' ? br : undefined,
-            category: cat !== 'ALL' ? cat : undefined
+            category: cat !== 'ALL' ? cat : undefined,
+            start_date: start || undefined,
+            end_date: end || undefined
         }, { preserveState: true, replace: true });
     };
 
     const handleSearchChange = (val: string) => {
         setSearch(val);
         const handler = setTimeout(() => {
-            applyFilters(val, branchFilter, categoryFilter);
+            applyFilters(val, branchFilter, categoryFilter, startDate, endDate);
         }, 350);
+
         return () => clearTimeout(handler);
     };
 
@@ -68,6 +86,9 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
         setSearch('');
         setBranchFilter('ALL');
         setCategoryFilter('ALL');
+        setStartDate('');
+        setEndDate('');
+        setIsFilterOpen(false);
         router.get('/incomes', {}, { replace: true });
     };
 
@@ -92,8 +113,10 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (!formData.amount || !formData.note || !formData.branch_id) {
             toast.error('Harap isi semua kolom wajib!');
+
             return;
         }
 
@@ -155,50 +178,123 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
                 </div>
 
                 {/* Saringan Filter Pencarian */}
-                <div className="flex gap-2 items-center flex-wrap bg-white p-3 rounded-lg border shadow-sm">
-                    <div className="relative flex-1 min-w-[200px] max-w-xs">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Cari keterangan pemasukan..."
-                            value={search}
-                            onChange={(e) => handleSearchChange(e.target.value)}
-                            className="pl-8 h-9 text-sm"
-                        />
-                        {search && (
-                            <button onClick={() => handleSearchChange('')} className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground">
-                                <X className="h-4 w-4" />
-                            </button>
+                <div className="space-y-3">
+                    <div className="flex gap-2 items-center flex-wrap bg-white p-3 rounded-lg border shadow-sm">
+                        <div className="relative flex-1 min-w-[200px] max-w-sm">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Cari keterangan pemasukan..."
+                                value={search}
+                                onChange={(e) => handleSearchChange(e.target.value)}
+                                className="pl-8 h-9 text-sm"
+                            />
+                            {search && (
+                                <button onClick={() => handleSearchChange('')} className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground">
+                                    <X className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
+
+                        <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="gap-2 h-9">
+                                    <SlidersHorizontal className="h-4 w-4" />
+                                    Filter
+                                    {activeFilterCount > 0 && (
+                                        <Badge className="h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+                                            {activeFilterCount}
+                                        </Badge>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[340px] p-0" align="start">
+                                <div className="px-4 py-3 border-b flex items-center justify-between">
+                                    <p className="text-sm font-semibold">Filter Pemasukan</p>
+                                    {activeFilterCount > 0 && (
+                                        <button onClick={handleReset} className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1">
+                                            <X className="h-3 w-3" /> Reset
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="p-4 space-y-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5">
+                                            <Building2 className="h-3 w-3" /> Cabang
+                                        </Label>
+                                        <Select value={branchFilter || 'ALL'} onValueChange={(v) => setBranchFilter(v)}>
+                                            <SelectTrigger className="h-9 text-sm w-full"><SelectValue placeholder="Semua Cabang" /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="ALL">Semua Cabang</SelectItem>
+                                                {branches?.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5">
+                                            <Tag className="h-3 w-3" /> Kategori
+                                        </Label>
+                                        <Select value={categoryFilter || 'ALL'} onValueChange={(v) => setCategoryFilter(v)}>
+                                            <SelectTrigger className="h-9 text-sm w-full"><SelectValue placeholder="Semua Kategori" /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="ALL">Semua Kategori</SelectItem>
+                                                {categories.map((c) => <SelectItem key={c.value} value={c.value}>{c.label.split(' ')[0]}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5">
+                                            <Calendar className="h-3 w-3" /> Rentang Tanggal
+                                        </Label>
+                                        <div className="flex items-center gap-1.5">
+                                            <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="h-9 text-xs flex-1" />
+                                            <span className="text-xs text-muted-foreground">s/d</span>
+                                            <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="h-9 text-xs flex-1" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="px-4 py-3 border-t">
+                                    <Button className="w-full" size="sm" onClick={() => applyFilters()}>
+                                        Terapkan Filter
+                                    </Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+
+                        {(search || activeFilterCount > 0) && (
+                            <Button variant="ghost" size="sm" onClick={handleReset} className="h-9 gap-1 text-muted-foreground">
+                                <X className="h-3.5 w-3.5" /> Reset
+                            </Button>
                         )}
                     </div>
-
-                    <Select value={branchFilter} onValueChange={(v) => { setBranchFilter(v); applyFilters(search, v, categoryFilter); }}>
-                        <SelectTrigger className="w-[150px] h-9 text-sm">
-                            <SelectValue placeholder="Cabang" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ALL">Semua Cabang</SelectItem>
-                            {branches?.map((b: any) => (
-                                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); applyFilters(search, branchFilter, v); }}>
-                        <SelectTrigger className="w-[150px] h-9 text-sm">
-                            <SelectValue placeholder="Kategori" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ALL">Semua Kategori</SelectItem>
-                            {categories.map((c) => (
-                                <SelectItem key={c.value} value={c.value}>{c.label.split(' ')[0]}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    {(search || branchFilter !== 'ALL' || categoryFilter !== 'ALL') && (
-                        <Button variant="ghost" size="sm" onClick={handleReset} className="h-9 gap-1 text-muted-foreground">
-                            <X className="h-3.5 w-3.5" /> Reset
-                        </Button>
+                    
+                    {/* Active filter chips */}
+                    {activeFilterCount > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                            {(branchFilter !== 'ALL' && branchFilter !== '') && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium">
+                                    Cabang: {branches?.find((b: any) => b.id === branchFilter)?.name ?? '...'}
+                                    <button onClick={() => { setBranchFilter('ALL'); applyFilters(search, 'ALL', categoryFilter, startDate, endDate); }} className="hover:text-destructive ml-0.5">
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </span>
+                            )}
+                            {(categoryFilter !== 'ALL' && categoryFilter !== '') && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium">
+                                    Kategori: {categories.find((c) => c.value === categoryFilter)?.label.split(' ')[0] ?? '...'}
+                                    <button onClick={() => { setCategoryFilter('ALL'); applyFilters(search, branchFilter, 'ALL', startDate, endDate); }} className="hover:text-destructive ml-0.5">
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </span>
+                            )}
+                            {(startDate || endDate) && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium">
+                                    Tanggal: {startDate || '...'} - {endDate || '...'}
+                                    <button onClick={() => { setStartDate(''); setEndDate(''); applyFilters(search, branchFilter, categoryFilter, '', ''); }} className="hover:text-destructive ml-0.5">
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </span>
+                            )}
+                        </div>
                     )}
                 </div>
 
@@ -235,9 +331,9 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 {i.category !== 'penjualan' ? (
-                                                    <Button 
-                                                        size="sm" 
-                                                        variant="ghost" 
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
                                                         className="h-8 w-8 p-0 text-slate-600 hover:text-red-600"
                                                         onClick={() => handleDelete(i)}
                                                     >
@@ -262,17 +358,9 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
                 </Card>
 
                 {/* Paginasi */}
-                {incomes?.total > incomes?.per_page && (
-                    <div className="flex justify-between items-center py-2">
-                        <p className="text-sm text-muted-foreground">
-                            Menampilkan {incomes.from} hingga {incomes.to} dari {incomes.total} catatan
-                        </p>
-                        <div className="flex gap-2">
-                            <Button variant="outline" size="sm" disabled={!incomes?.prev_page_url} onClick={() => router.get(incomes.prev_page_url)}>Sebelumnya</Button>
-                            <Button variant="outline" size="sm" disabled={!incomes?.next_page_url} onClick={() => router.get(incomes.next_page_url)}>Berikutnya</Button>
-                        </div>
-                    </div>
-                )}
+                <div className="pt-2">
+                    <DataTablePagination data={incomes} itemName="pemasukan" filters={filters} />
+                </div>
             </div>
 
             {/* Dialog Form Tambah Pemasukan */}
@@ -280,7 +368,7 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
                 <DialogContent className="sm:max-w-[420px]">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <Landmark className="h-5 w-5 text-emerald-600" /> Catat Pemasukan Manual
+                            <Landmark className="h-5 w-5 text-primaty-600" /> Catat Pemasukan Manual
                         </DialogTitle>
                         <DialogDescription>
                             Gunakan ini untuk mencatat kas masuk non-penjualan seperti suntikan modal pemegang saham atau pelunasan hutang pihak ketiga.
@@ -290,8 +378,8 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
                     <form onSubmit={handleSubmit} className="space-y-4 py-2">
                         <div className="space-y-1.5">
                             <Label htmlFor="branch_id">Cabang Penerima <span className="text-red-500">*</span></Label>
-                            <Select 
-                                value={formData.branch_id} 
+                            <Select
+                                value={formData.branch_id}
                                 onValueChange={(val) => setFormData({ ...formData, branch_id: val })}
                             >
                                 <SelectTrigger className="w-full">
@@ -307,8 +395,8 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
 
                         <div className="space-y-1.5">
                             <Label htmlFor="category">Kategori Pemasukan <span className="text-red-500">*</span></Label>
-                            <Select 
-                                value={formData.category} 
+                            <Select
+                                value={formData.category}
                                 onValueChange={(val) => setFormData({ ...formData, category: val })}
                             >
                                 <SelectTrigger className="w-full">

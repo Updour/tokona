@@ -1,15 +1,12 @@
 import { Head } from '@inertiajs/react';
+import { Users } from 'lucide-react';
 import MainLayout from '@/layouts/app/app-main-layout';
 import { UserTable } from '@/features/users/components/UserTable';
 import { UserFormDialog } from '@/features/users/components/UserFormDialog';
 import { type User, type Role } from './types';
 
 interface IndexProps {
-    users: {
-        data: User[];
-        links: any[];
-        meta: any;
-    };
+    users: any;
     filters: any;
     branches: any[];
     roles: Role[];
@@ -21,11 +18,16 @@ export default function Index({ users, filters, branches, roles, tenants = [] }:
         <MainLayout>
             <Head title="Manajemen Karyawan" />
 
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">Manajemen Karyawan</h1>
-                <p className="text-muted-foreground">
-                    Kelola data staf toko, kasir, admin, dan akuntan serta atur penugasan cabang dan hak akses mereka.
-                </p>
+            <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
+                        <Users className="h-8 w-8 text-indigo-600" />
+                        Manajemen Karyawan
+                    </h1>
+                    <p className="text-muted-foreground mt-1 text-sm">
+                        Kelola data staf toko, kasir, admin, dan akuntan serta atur penugasan cabang dan hak akses mereka.
+                    </p>
+                </div>
             </div>
 
             <div className="flex-1 bg-background rounded-lg border shadow-sm p-4 w-full mt-4">

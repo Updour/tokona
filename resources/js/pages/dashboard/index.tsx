@@ -1,36 +1,46 @@
 import { Head } from '@inertiajs/react';
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
-import { dashboard } from '@/routes';
+import { useState } from 'react';
+import { DashboardHeader } from '@/features/dashboard/components/DashboardHeader';
+import { DashboardPaymentMethods } from '@/features/dashboard/components/DashboardPaymentMethods';
+import { DashboardSalesChart } from '@/features/dashboard/components/DashboardSalesChart';
+import { DashboardStats } from '@/features/dashboard/components/DashboardStats';
+import { DashboardStockAlerts } from '@/features/dashboard/components/DashboardStockAlerts';
+import { DashboardTopProducts } from '@/features/dashboard/components/DashboardTopProducts';
+import { DashboardSalesLeaderboard } from '@/features/dashboard/components/DashboardSalesLeaderboard';
+import { DashboardAttendanceSummary } from '@/features/dashboard/components/DashboardAttendanceSummary';
+import MainLayout from '@/layouts/app/app-main-layout';
 
-export default function Dashboard() {
+export default function Dashboard({ branches, filters, salesSummary, productPerformance, stockReport, salesFieldReport, attendanceReport }: any) {
+    const [branchId, setBranchId] = useState(filters.branch_id || 'ALL');
+    const [period, setPeriod] = useState('this_month');
+
     return (
-        <>
+        <MainLayout>
             <Head title="Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+            <div className="space-y-6">
+                <DashboardHeader 
+                    branches={branches} branchId={branchId} setBranchId={setBranchId} 
+                    period={period} setPeriod={setPeriod} 
+                />
+                
+                <DashboardStats salesSummary={salesSummary} stockReport={stockReport} />
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <DashboardSalesChart dailySales={salesSummary.all_daily_sales} />
+                    <div className="space-y-6">
+                        {attendanceReport && (
+                            <DashboardAttendanceSummary attendanceReport={attendanceReport} />
+                        )}
+                        <DashboardPaymentMethods paymentMethods={salesSummary.payment_methods} totalSales={salesSummary.total_sales} />
+                        <DashboardStockAlerts lowStockItems={stockReport.low_stock_items} />
                     </div>
                 </div>
-                <div className="relative flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                    <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <DashboardTopProducts topProducts={productPerformance.top_products} />
+                    <DashboardSalesLeaderboard leaderboard={salesFieldReport?.leaderboard || []} />
                 </div>
             </div>
-        </>
+        </MainLayout>
     );
 }
-
-Dashboard.layout = {
-    breadcrumbs: [
-        {
-            title: 'Dashboard',
-            href: dashboard(),
-        },
-    ],
-};

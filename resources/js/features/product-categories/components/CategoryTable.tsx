@@ -1,14 +1,16 @@
 import { usePage, router } from '@inertiajs/react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { Edit, Trash, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash, Tag } from 'lucide-react';
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { usePermission } from '@/hooks/use-permission';
 import { CategoryFilters } from './CategoryFilters';
 
 interface ProductCategory {
@@ -38,6 +40,7 @@ export function CategoryTable({
     onEdit: (category: ProductCategory) => void;
     onAddClick: () => void;
 }) {
+    const { hasPermission } = usePermission();
     const { props } = usePage<PageProps>();
     const { categories, filters } = props;
 
@@ -57,12 +60,12 @@ export function CategoryTable({
 
             <div className="rounded-md border bg-white">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/40">
                         <TableRow>
                             <TableHead className="font-bold text-slate-700">Nama Kategori</TableHead>
                             <TableHead className="font-bold text-slate-700">Deskripsi</TableHead>
                             <TableHead className="text-center font-bold text-slate-700">Jumlah Produk</TableHead>
-                            <TableHead className="w-12" />
+                            <TableHead className="text-right font-bold text-slate-700 pr-4">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -77,33 +80,51 @@ export function CategoryTable({
                             </TableRow>
                         ) : (
                             categories.data.map((cat) => (
-                                <TableRow key={cat.id} className="hover:bg-slate-50/40 text-xs">
+                                <TableRow key={cat.id} className="hover:bg-slate-50/50 text-xs">
                                     <TableCell className="font-bold text-slate-800">{cat.name}</TableCell>
                                     <TableCell className="text-slate-500">
-                                        {cat.description || <span className="italic">—</span>}
+                                        {cat.description || <span className="italic text-slate-400">—</span>}
                                     </TableCell>
                                     <TableCell className="text-center">
-                                        <Badge variant="secondary" className="font-bold">{cat.products_count ?? 0}</Badge>
+                                        <Badge className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold border-0 text-[10px]">
+                                            {cat.products_count ?? 0} Produk
+                                        </Badge>
                                     </TableCell>
-                                    <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <MoreHorizontal className="h-4 w-4 text-slate-500" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => onEdit(cat)} className="text-xs">
-                                                    <Edit className="mr-2 h-4 w-4" /> Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    onClick={() => handleDelete(cat)}
-                                                    className="text-destructive focus:text-destructive text-xs"
-                                                >
-                                                    <Trash className="mr-2 h-4 w-4" /> Hapus
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                    <TableCell className="text-right pr-2">
+                                        <TooltipProvider>
+                                            <div className="flex items-center justify-end gap-1">
+                                                {hasPermission('products.update') && (
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                                                onClick={() => onEdit(cat)}
+                                                            >
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>Edit Kategori</TooltipContent>
+                                                    </Tooltip>
+                                                )}
+                                                {hasPermission('products.delete') && (
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                                onClick={() => handleDelete(cat)}
+                                                            >
+                                                                <Trash className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>Hapus Kategori</TooltipContent>
+                                                    </Tooltip>
+                                                )}
+                                            </div>
+                                        </TooltipProvider>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -112,30 +133,12 @@ export function CategoryTable({
                 </Table>
             </div>
 
-            <div className="flex items-center justify-between py-2 text-xs text-muted-foreground">
-                <span>
-                    {categories?.from && categories?.to
-                        ? `Menampilkan ${categories.from}–${categories.to} dari ${categories.total.toLocaleString('id-ID')} kategori`
-                        : `${categories?.total || 0} data`}
-                </span>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline" size="sm"
-                        disabled={!categories?.prev_page_url}
-                        onClick={() => categories?.prev_page_url && router.get(categories.prev_page_url)}
-                        className="h-8 text-xs"
-                    >
-                        Sebelumnya
-                    </Button>
-                    <Button
-                        variant="outline" size="sm"
-                        disabled={!categories?.next_page_url}
-                        onClick={() => categories?.next_page_url && router.get(categories.next_page_url)}
-                        className="h-8 text-xs"
-                    >
-                        Berikutnya
-                    </Button>
-                </div>
+            <div className="mt-4">
+                <DataTablePagination 
+                    data={categories as any} 
+                    itemName="kategori" 
+                    filters={filters} 
+                />
             </div>
         </div>
     );

@@ -163,11 +163,11 @@ export function TenantViewDialog() {
                                     <p className="font-bold uppercase tracking-wider text-[10px] text-muted-foreground flex items-center gap-1.5">
                                         Masa Aktif / Subscription Expiry
                                         {selectedTenant.expires_at && new Date(selectedTenant.expires_at) < new Date() && (
-                                            <Badge variant="destructive" className="h-4 py-0 text-[8px] font-bold">⚠️ EXPIRED</Badge>
+                                            <Badge variant="destructive" className="h-4 py-0 text-[8px] font-bold"> EXPIRED</Badge>
                                         )}
                                     </p>
                                     <p className="font-semibold text-foreground mt-0.5">
-                                        {selectedTenant.expires_at 
+                                        {selectedTenant.expires_at
                                             ? new Date(selectedTenant.expires_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                                             : 'Selamanya'
                                         }

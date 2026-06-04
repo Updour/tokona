@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-import { LayoutGrid, ShoppingCart, Package, Receipt, Users, FolderGit2, BookOpen, Store, PieChart, Megaphone, UserCircle, Building2, Link as LinkIcon, Settings, ShieldAlert } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import * as Icons from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -12,179 +12,60 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
-
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-        items: [
-            { title: 'Overview', href: dashboard() },
-            { title: 'Grafik penjualan', href: '#' },
-            { title: 'Top produk', href: '#' },
-            { title: 'Aktivitas terbaru', href: '#' },
-        ],
-    },
-    {
-        title: 'Penjualan (POS)',
-        href: '/pos',
-        icon: ShoppingCart,
-        items: [
-            { title: 'Kasir', href: '/pos' },
-            { title: 'Daftar transaksi', href: '/pos?tab=transactions' },
-            { title: 'Retur penjualan', href: '/pos?tab=returns' },
-            { title: 'Draft / pending order', href: '/pos?tab=drafts' },
-        ],
-    },
-    {
-        title: 'Produk',
-        href: '/products',
-        icon: Package,
-        items: [
-            { title: 'Semua Produk', href: '/products' },
-            { title: 'Kategori Produk', href: '/product-categories' },
-            { title: 'Tipe Produk', href: '/product-types' },
-            { title: 'Stok & Inventori', href: '/inventory' },
-            { title: 'Harga & Diskon', href: '/products/pricing' },
-        ],
-    },
-    {
-        title: 'Pelanggan (CRM)',
-        href: '/customers',
-        icon: Users,
-        items: [
-            { title: 'Daftar Pelanggan', href: '/customers' },
-            { title: 'Tier & Membership', href: '/membership' },
-        ],
-    },
-    {
-        title: 'Marketing',
-        href: '/promos',
-        icon: Megaphone,
-        items: [
-            { title: 'Diskon & Promo', href: '/promos' },
-            { title: 'Voucher Pelanggan', href: '/vouchers' },
-        ],
-    },
-    {
-        title: 'Pembelian',
-        href: '/purchases',
-        icon: Store,
-        items: [
-            { title: 'Semua Pembelian', href: '/purchases' },
-            { title: 'Data Supplier', href: '/suppliers' },
-            { title: 'Retur Pembelian', href: '/purchase-returns' },
-            { title: 'Hutang Pemasok', href: '/purchases?status=received' },
-        ],
-    },
-    {
-        title: 'Keuangan',
-        href: '#',
-        icon: Receipt,
-        items: [
-            { title: 'Pemasukan', href: '/incomes' },
-            { title: 'Pengeluaran', href: '/expenses' },
-            { title: 'Laporan laba rugi', href: '/profit-loss' },
-            { title: 'Laporan akuntansi', href: '/accounting/reports' },
-            { title: 'Kas & saldo', href: '/cash-books' },
-            { title: 'Hutang & piutang', href: '/debts-receivables' },
-        ],
-    },
-    {
-        title: 'Laporan',
-        href: '/business/reports',
-        icon: PieChart,
-        items: [
-            { title: 'Laporan penjualan', href: '/business/reports?tab=sales' },
-            { title: 'Laporan produk', href: '/business/reports?tab=products' },
-            { title: 'Laporan stok', href: '/business/reports?tab=stock' },
-            { title: 'Laporan keuangan', href: '/accounting/reports' },
-        ],
-    },
-    {
-        title: 'Karyawan',
-        href: '#',
-        icon: UserCircle,
-        items: [
-            { title: 'Daftar karyawan', href: '#' },
-            { title: 'Role & permission', href: '#' },
-            { title: 'Shift kerja', href: '#' },
-        ],
-    },
-    {
-        title: 'Toko',
-        href: '#',
-        icon: Building2,
-        items: [
-            { title: 'Data toko', href: '/tenants' },
-            { title: 'Cabang', href: '/branches' },
-            { title: 'Manajemen gudang', href: '#' },
-        ],
-    },
-    {
-        title: 'Integrasi',
-        href: '#',
-        icon: LinkIcon,
-        items: [
-            { title: 'Shopee / Tokopedia', href: '#' },
-            { title: 'Payment gateway', href: '#' },
-            { title: 'Printer / device kasir', href: '#' },
-        ],
-    },
-    {
-        title: 'Pengaturan',
-        href: '#',
-        icon: Settings,
-        items: [
-            { title: 'Profil bisnis', href: '#' },
-            { title: 'Pengaturan pajak', href: '#' },
-            { title: 'Metode pembayaran', href: '#' },
-            { title: 'Template struk', href: '#' },
-            { title: 'API key / webhook', href: '#' },
-        ],
-    },
-    {
-        title: 'Super Admin',
-        href: '#',
-        icon: ShieldAlert,
-        items: [
-            { title: 'Manajemen user', href: '/users' },
-            { title: 'Subscription / paket', href: '/tenants' },
-            { title: 'Billing', href: '/tenants' },
-            { title: 'Monitoring toko', href: '/tenants' },
-        ],
-    },
-];
+// Map icon strings from DB to Lucide React components
+const iconMap: Record<string, React.ComponentType<any>> = {
+    LayoutGrid: Icons.LayoutGrid,
+    ShoppingCart: Icons.ShoppingCart,
+    Package: Icons.Package,
+    Receipt: Icons.Receipt,
+    Users: Icons.Users,
+    Megaphone: Icons.Megaphone,
+    Store: Icons.Store,
+    PieChart: Icons.PieChart,
+    UserCircle: Icons.UserCircle,
+    Building2: Icons.Building2,
+    LinkIcon: Icons.Link,
+    Settings: Icons.Settings,
+    ShieldAlert: Icons.ShieldAlert,
+};
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
+        title: 'Platform Guide',
+        href: '#',
+        icon: Icons.BookOpen,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
+        title: 'Settings',
+        href: '#',
+        icon: Icons.Settings,
     },
 ];
 
-import { usePage } from '@inertiajs/react';
-
 export function AppSidebar() {
     const { props } = usePage<any>();
-    const isSuperAdmin = props.auth?.user?.is_super_admin;
+    const dbMenus = props.menus || [];
 
-    const filteredNavItems = mainNavItems.filter((item) => {
-        if (item.title === 'Super Admin') {
-            return isSuperAdmin;
-        }
-        return true;
+    // Map DB menu strings to Lucide Icon components
+    const dynamicNavItems = dbMenus.map((menu: any) => {
+        const IconComponent = menu.icon ? iconMap[menu.icon] : null;
+
+        return {
+            title: menu.title,
+            href: menu.href,
+            icon: IconComponent,
+            items: menu.items || [],
+        };
     });
+
+    const { state } = useSidebar();
+    const isCollapsed = state === 'collapsed';
+    const subscription = props.subscription;
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -201,10 +82,33 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={filteredNavItems} />
+                <NavMain items={dynamicNavItems} />
             </SidebarContent>
 
             <SidebarFooter>
+                {!isCollapsed && subscription && (
+                    <div className="px-3.5 py-3 mx-2 mb-2 rounded-lg bg-indigo-950/40 border border-indigo-800/40 text-slate-200">
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">
+                                Paket {subscription.plan}
+                            </span>
+                            <span className="text-[9px] text-slate-400">
+                                {subscription.usage.branches}/{subscription.limits.branches} Cabang
+                            </span>
+                        </div>
+                        <div className="w-full bg-slate-800 rounded-full h-1 overflow-hidden">
+                            <div
+                                className="bg-indigo-500 h-1 rounded-full transition-all duration-300"
+                                style={{
+                                    width: `${Math.min(
+                                        100,
+                                        (subscription.usage.branches / subscription.limits.branches) * 100
+                                    )}%`,
+                                }}
+                            />
+                        </div>
+                    </div>
+                )}
                 <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>

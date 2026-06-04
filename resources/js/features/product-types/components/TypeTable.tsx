@@ -1,14 +1,15 @@
 import { usePage, router } from '@inertiajs/react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { Edit, Trash, Layers } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash, Layers } from 'lucide-react';
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TypeFilters } from './TypeFilters';
 
 interface ProductType {
@@ -57,12 +58,12 @@ export function TypeTable({
 
             <div className="rounded-md border bg-white">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/40">
                         <TableRow>
                             <TableHead className="font-bold text-slate-700">Nama Tipe</TableHead>
                             <TableHead className="font-bold text-slate-700">Deskripsi</TableHead>
                             <TableHead className="text-center font-bold text-slate-700">Jumlah Produk</TableHead>
-                            <TableHead className="w-12" />
+                            <TableHead className="text-right font-bold text-slate-700 pr-4">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -77,33 +78,47 @@ export function TypeTable({
                             </TableRow>
                         ) : (
                             types.data.map((type) => (
-                                <TableRow key={type.id} className="hover:bg-slate-50/40 text-xs">
+                                <TableRow key={type.id} className="hover:bg-slate-50/50 text-xs">
                                     <TableCell className="font-bold text-slate-800">{type.name}</TableCell>
                                     <TableCell className="text-slate-500">
-                                        {type.description || <span className="italic">—</span>}
+                                        {type.description || <span className="italic text-slate-400">—</span>}
                                     </TableCell>
                                     <TableCell className="text-center">
-                                        <Badge variant="secondary" className="font-bold">{type.products_count ?? 0}</Badge>
+                                        <Badge className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold border-0 text-[10px]">
+                                            {type.products_count ?? 0} Produk
+                                        </Badge>
                                     </TableCell>
-                                    <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <MoreHorizontal className="h-4 w-4 text-slate-500" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => onEdit(type)} className="text-xs">
-                                                    <Edit className="mr-2 h-4 w-4" /> Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    onClick={() => handleDelete(type)}
-                                                    className="text-destructive focus:text-destructive text-xs"
-                                                >
-                                                    <Trash className="mr-2 h-4 w-4" /> Hapus
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                    <TableCell className="text-right pr-2">
+                                        <TooltipProvider>
+                                            <div className="flex items-center justify-end gap-1">
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                                            onClick={() => onEdit(type)}
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Edit Tipe</TooltipContent>
+                                                </Tooltip>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-red-650 hover:text-red-700 hover:bg-red-50"
+                                                            onClick={() => handleDelete(type)}
+                                                        >
+                                                            <Trash className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Hapus Tipe</TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                        </TooltipProvider>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -112,31 +127,11 @@ export function TypeTable({
                 </Table>
             </div>
 
-            <div className="flex items-center justify-between py-2 text-xs text-muted-foreground">
-                <span>
-                    {types?.from && types?.to
-                        ? `Menampilkan ${types.from}–${types.to} dari ${types.total.toLocaleString('id-ID')} tipe`
-                        : `${types?.total || 0} data`}
-                </span>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline" size="sm"
-                        disabled={!types?.prev_page_url}
-                        onClick={() => types?.prev_page_url && router.get(types.prev_page_url)}
-                        className="h-8 text-xs"
-                    >
-                        Sebelumnya
-                    </Button>
-                    <Button
-                        variant="outline" size="sm"
-                        disabled={!types?.next_page_url}
-                        onClick={() => types?.next_page_url && router.get(types.next_page_url)}
-                        className="h-8 text-xs"
-                    >
-                        Berikutnya
-                    </Button>
-                </div>
-            </div>
+            <DataTablePagination 
+                data={types as any} 
+                itemName="tipe" 
+                filters={filters} 
+            />
         </div>
     );
 }

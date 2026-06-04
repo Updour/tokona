@@ -1,11 +1,9 @@
-import * as React from 'react';
-import { ColumnDef } from '@tanstack/react-table';
-import { Button } from '@/components/ui/button';
-import { ArrowUpDown, Eye, Edit, Trash, Check, X } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { useBranchStore, type Branch } from '@/pages/branches/stores/useBranchStore';
 import { router } from '@inertiajs/react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { ColumnDef } from '@tanstack/react-table';
+import { ArrowUpDown, Eye, Edit, Trash, Check, X } from 'lucide-react';
+import * as React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -16,6 +14,9 @@ import {
     DialogTrigger,
     DialogClose,
 } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useBranchStore  } from '@/pages/branches/stores/useBranchStore';
+import type {Branch} from '@/pages/branches/stores/useBranchStore';
 import { destroy as branchesDestroy } from '@/routes/branches';
 
 export const columns: ColumnDef<Branch>[] = [
@@ -62,6 +63,7 @@ export const columns: ColumnDef<Branch>[] = [
         header: 'Tipe',
         cell: ({ row }) => {
             const isMain = row.getValue('is_main') as boolean;
+
             return (
                 <Badge variant={isMain ? 'default' : 'secondary'} className="capitalize">
                     {isMain ? 'Cabang Utama' : 'Cabang Pembantu'}
@@ -97,7 +99,7 @@ export const columns: ColumnDef<Branch>[] = [
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                    className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
                                     onClick={() => openView(branch)}
                                 >
                                     <Eye className="h-4 w-4" />

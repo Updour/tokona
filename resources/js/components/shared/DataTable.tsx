@@ -1,11 +1,18 @@
+import { router } from '@inertiajs/react';
 import {
     flexRender,
     getCoreRowModel,
     getSortedRowModel,
-    SortingState,
-    useReactTable,
-    type ColumnDef,
+    useReactTable
+    
 } from '@tanstack/react-table';
+import type {
+    SortingState} from '@tanstack/react-table';
+import type {ColumnDef} from '@tanstack/react-table';
+import { Search, Plus, Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Table,
     TableBody,
@@ -14,11 +21,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useState, useEffect } from 'react';
-import { router } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, Plus, Download } from 'lucide-react';
 
 interface DataTableProps<T> {
     data: {
@@ -85,11 +87,14 @@ export function DataTable<T>({
                 );
             }
         }, 300);
+
         return () => clearTimeout(handler);
     }, [search, sorting, baseUrl, filters, extraParams]);
 
     const handleExport = () => {
-        if (!data?.data?.length) return;
+        if (!data?.data?.length) {
+return;
+}
 
         const headers = Object.keys(data.data[0] as object);
         const csvContent = [
@@ -97,6 +102,7 @@ export function DataTable<T>({
             ...data.data.map((row: any) =>
                 headers.map(header => {
                     const value = row[header] ?? '';
+
                     return `"${String(value).replace(/"/g, '""')}"`;
                 }).join(',')
             )

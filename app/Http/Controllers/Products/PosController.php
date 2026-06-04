@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Products;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Products\CheckoutPOSRequest;
+use App\Http\Requests\Products\PayDebtRequest;
+use App\Http\Requests\Products\ReturnPOSRequest;
+use App\Http\Requests\Products\SavePOSSettingsRequest;
 use App\Services\PosService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -41,38 +44,29 @@ class PosController extends Controller
     /**
      * Retur Transaksi Penjualan POS
      */
-    public function return(Request $request): RedirectResponse
+    public function return(ReturnPOSRequest $request): RedirectResponse
     {
-        $request->validate([
-            'transaction_id' => 'required|uuid|exists:transactions,id',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|uuid|exists:products,id',
-            'items.*.qty' => 'required|integer|min:1',
-            'items.*.price' => 'required|numeric',
-        ]);
-
-        $this->posService->processReturn($request->all());
+        $this->posService->processReturn($request->validated());
 
         return redirect()->back()->with('success', 'Transaksi penjualan berhasil diretur dan stok barang telah dikembalikan!');
     }
 
     /**
+     * Pelunasan Piutang Transaksi
+     */
+    public function payDebt(PayDebtRequest $request, string $id): RedirectResponse
+    {
+        $this->posService->processPayDebt($id, $request->validated());
+
+        return redirect()->back()->with('success', 'Pelunasan piutang berhasil dicatat!');
+    }
+
+    /**
      * Simpan Pengaturan POS Kasir Terminal ke Database Cabang
      */
-    public function saveSettings(Request $request): RedirectResponse
+    public function saveSettings(SavePOSSettingsRequest $request): RedirectResponse
     {
-        $request->validate([
-            'taxEnabled' => 'required|boolean',
-            'taxRate' => 'required|integer|min:0|max:100',
-            'activeMethods' => 'required|array',
-            'activeMethods.cash' => 'required|boolean',
-            'activeMethods.transfer' => 'required|boolean',
-            'activeMethods.debt' => 'required|boolean',
-            'roundingNearest' => 'nullable|integer|in:1,100,500,1000',
-            'roundingMethod' => 'nullable|string|in:round,floor,ceil',
-        ]);
-
-        $this->posService->savePosSettings($request->all());
+        $this->posService->savePosSettings($request->validated());
 
         return redirect()->back()->with('success', 'Pengaturan kasir berhasil disimpan ke database!');
     }

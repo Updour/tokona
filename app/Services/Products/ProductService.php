@@ -9,6 +9,7 @@ use App\Models\ProductType;
 use App\Models\Tenants;
 use App\Queries\ProductQuery;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * ProductService
@@ -134,6 +135,44 @@ class ProductService
             'notes'       => 'Stok awal saat produk dibuat',
         ]);
     }
+
+    // =========================================================================
+    // Low Stock — data untuk halaman stok kritis
+    // =========================================================================
+
+    public function getLowStockCount(): int
+    {
+        return Products::withCurrentStock()
+            ->lowStock()
+            ->active()
+            ->count();
+    }
+
+    public function getLowStockData(array $filters): array
+    {
+        $query = Products::withCurrentStock()
+            ->withListRelations()
+            ->lowStock()
+            ->active();
+
+        if (!empty($filters['search'])) {
+            $query->search($filters['search']);
+        }
+
+        $products = $query
+            ->orderBy(DB::raw('COALESCE(sm.current_stock, 0)'), 'asc')
+            ->paginate($filters['per_page'] ?? 15)
+            ->withQueryString();
+
+        return [
+            'products' => $products,
+            'filters'  => collect($filters)->only(['search', 'per_page'])->toArray(),
+        ];
+    }
+
+    // =========================================================================
+    // Private Helpers
+    // =========================================================================
 
     private function branchesForForm()
     {

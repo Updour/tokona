@@ -15,6 +15,7 @@ class Transaction extends Model
     protected $fillable = [
         'tenant_id',
         'branch_id',
+        'shift_id',
         'invoice_number',
         'customer_id',
         'subtotal',
@@ -22,6 +23,8 @@ class Transaction extends Model
         'tax',
         'rounding_diff',
         'total',
+        'cash_amount',
+        'transfer_amount',
         'paid_amount',
         'change_amount',
         'payment_method',
@@ -56,6 +59,11 @@ class Transaction extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class, 'branch_id');
+    }
+
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(CashRegisterShift::class, 'shift_id');
     }
 
     public function customer(): BelongsTo

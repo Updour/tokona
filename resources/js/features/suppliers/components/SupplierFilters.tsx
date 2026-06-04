@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
+import { Search, SlidersHorizontal, X, Plus, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { Search, SlidersHorizontal, X, Plus, Filter } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SupplierFiltersProps {
     filters: Record<string, any>;
@@ -37,6 +37,7 @@ export function SupplierFilters({ filters, totalResults, onAddClick }: SupplierF
                 applyFilters({ search });
             }
         }, 350);
+
         return () => clearTimeout(handler);
     }, [search]);
 
@@ -148,7 +149,9 @@ export function SupplierFilters({ filters, totalResults, onAddClick }: SupplierF
                     {localFilters.status && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium">
                             Status: {localFilters.status === 'active' ? 'AKTIF' : 'NON-AKTIF'}
-                            <button onClick={() => { updateLocal('status', ''); applyFilters({ status: undefined }); }} className="hover:text-destructive ml-0.5">
+                            <button onClick={() => {
+ updateLocal('status', ''); applyFilters({ status: undefined }); 
+}} className="hover:text-destructive ml-0.5">
                                 <X className="h-3 w-3" />
                             </button>
                         </span>

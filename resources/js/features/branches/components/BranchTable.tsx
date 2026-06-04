@@ -1,6 +1,7 @@
 import { DataTable } from '@/components/shared/DataTable';
+import { useBranchStore  } from '@/pages/branches/stores/useBranchStore';
+import type {Branch} from '@/pages/branches/stores/useBranchStore';
 import { columns } from './BranchColumn';
-import { useBranchStore, type Branch } from '@/pages/branches/stores/useBranchStore';
 import { BranchFormDialog } from './BranchFormDialog';
 import { BranchViewDialog } from './BranchViewDialog';
 

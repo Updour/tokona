@@ -1,11 +1,8 @@
-import { useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
-import { useProductStore } from '@/pages/products/stores/useProductStore';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { PackagePlus, TrendingUp, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -14,6 +11,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -21,7 +20,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { PackagePlus, TrendingUp, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { useProductStore } from '@/pages/products/stores/useProductStore';
 
 const MOVEMENT_TYPES = [
     {
@@ -67,7 +67,10 @@ export function ProductRestockDialog() {
 
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedProduct) return;
+
+        if (!selectedProduct) {
+return;
+}
 
         post(`/products/${selectedProduct.id}/restock`, {
             preserveScroll: true,

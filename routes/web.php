@@ -1,61 +1,125 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UserController;
+
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CanvasSalesController;
+use App\Http\Controllers\OpnameController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TenantsController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\BranchController;
-use App\Http\Controllers\Products\ProductController;
-use App\Http\Controllers\Products\ProductImageController;
-use App\Http\Controllers\Products\ProductCategoryController;
-use App\Http\Controllers\Products\ProductTypeController;
-use App\Http\Controllers\Products\ProductRestockController;
+use App\Http\Controllers\CustomerController;
+
 use App\Http\Controllers\Products\PosController;
+use App\Http\Controllers\Products\ProductController;
+use App\Http\Controllers\Products\ProductCategoryController;
+use App\Http\Controllers\Products\ProductImageController;
+use App\Http\Controllers\Products\ProductRestockController;
+use App\Http\Controllers\Products\ProductTypeController;
+
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PurchaseController;
-use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\PurchaseReturnController;
-use App\Http\Controllers\ExpenseController;
-use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\ConsignmentController;
 
-Route::inertia('/', 'welcome')->name('home');
+use App\Http\Controllers\PromoController;
+
+use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ReportController;
+
+use App\Http\Controllers\SuperAdminController;
+use App\Http\Controllers\SuperAdmin\MenuController;
+use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\ExportController;
+use App\Http\Controllers\SalesController;
+
+Route::redirect('/', '/login');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard/index')->name('dashboard');
+    // ── Sales Lapangan ───────────────────────────────────────────────────────
+    Route::controller(SalesController::class)->prefix('sales')->name('sales.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/visits', 'visits')->name('visits');
+        Route::get('/map', 'map')->name('map');
+        Route::post('/store', 'store')->name('store');
+        Route::put('/update/{id}', 'update')->name('update');
+        Route::delete('/destroy/{id}', 'destroy')->name('destroy');
+        Route::post('/load-stock', 'loadStock')->name('load-stock');
+        Route::post('/unload-stock', 'unloadStock')->name('unload-stock');
+        Route::post('/record-order', 'recordOrder')->name('record-order');
+    });
+    // ── Ekspor Laporan & Data ────────────────────────────────────────────────
+    Route::controller(ExportController::class)->prefix('export')->name('export.')->group(function () {
+        Route::get('/transactions', 'transactions')->name('transactions');
+        Route::get('/sales-report', 'salesReport')->name('sales-report');
+        Route::get('/invoice/{transaction}', 'invoice')->name('invoice');
+        Route::get('/inventory', 'inventory')->name('inventory');
+    });
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('dashboard/sales', [DashboardController::class, 'sales'])->name('dashboard.sales');
     Route::inertia('subscription-expired', 'SubscriptionExpired')->name('subscription.expired');
-
-    // ── POS Kasir ──────────────────────────────────────────────────────────
-    Route::get('pos', [PosController::class, 'index'])->name('pos.index');
-    Route::post('pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
-    Route::post('pos/return', [PosController::class, 'return'])->name('pos.return');
-    Route::post('pos/settings', [PosController::class, 'saveSettings'])->name('pos.save-settings');
-
-    // ── Users ──────────────────────────────────────────────────────────────
-    Route::resource('users', UserController::class);
-
-    // ── Produk ─────────────────────────────────────────────────────────────
-    Route::get('products/pricing', [ProductController::class, 'pricing'])->name('products.pricing');
-    Route::post('products/bulk-markup', [ProductController::class, 'bulkMarkup'])->name('products.bulk-markup');
-    Route::resource('products', ProductController::class)
-        ->except(['create', 'edit', 'show']);
-
-    // Gambar produk
-    Route::prefix('products/{product}/images')->name('product-images.')->group(function () {
-        Route::post('/', [ProductImageController::class, 'store'])->name('store');
-        Route::patch('/{image}/set-primary', [ProductImageController::class, 'setPrimary'])->name('set-primary');
-        Route::patch('/reorder', [ProductImageController::class, 'reorder'])->name('reorder');
-        Route::delete('/{image}', [ProductImageController::class, 'destroy'])->name('destroy');
+    // ── Canvas Mobile Sales ────────────────────────────────────────────────
+    Route::controller(CanvasSalesController::class)->prefix('canvas')->name('canvas.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/pos', 'pos')->name('pos');
+        Route::post('/check-in', 'checkIn')->name('checkin');
+        Route::post('/checkout', 'checkout')->name('checkout');
     });
 
-    // Restock / tambah stok manual
-    Route::post('products/{product}/restock', [ProductRestockController::class, 'store'])
-        ->name('products.restock');
+    // ── POS Kasir ──────────────────────────────────────────────────────────
+    Route::prefix('pos')->name('pos.')->controller(PosController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/checkout', 'checkout')->name('checkout');
+        Route::post('/return', 'return')->name('return');
+        Route::post('/{id}/pay-debt', 'payDebt')->name('pay-debt');
+        Route::post('/settings', 'saveSettings')->name('save-settings');
+    });
 
-    // ── Master data produk ─────────────────────────────────────────────────
-    Route::resource('product-categories', ProductCategoryController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
+    // ── Shift Kasir ────────────────────────────────────────────────────────
+    Route::controller(ShiftController::class)->prefix('shifts')->name('shifts.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/open', 'open')->name('open');
+        Route::put('/{shift}/close', 'close')->name('close');
+        Route::get('/{shift}', 'show')->name('show');
+    });
 
-    Route::resource('product-types', ProductTypeController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
+    // ── Users & Roles ───────────────────────────────────────────────────────
+    Route::resource('users', UserController::class);
+    Route::resource('roles', RoleController::class)->except(['create', 'edit', 'show']);
+
+    // ── Produk ─────────────────────────────────────────────────────────────
+    Route::controller(ProductController::class)->prefix('products')->name('products.')->group(function () {
+        Route::get('pricing', 'pricing')->name('pricing');
+        Route::post('bulk-markup', 'bulkMarkup')->name('bulk-markup');
+    });
+    Route::resource('products', ProductController::class)->except(['create', 'edit', 'show']);
+
+    Route::prefix('products/{product}/images')->name('product-images.')->controller(ProductImageController::class)->group(function () {
+        Route::post('/', 'store')->name('store');
+        Route::patch('/{image}/set-primary', 'setPrimary')->name('set-primary');
+        Route::patch('/reorder', 'reorder')->name('reorder');
+        Route::delete('/{image}', 'destroy')->name('destroy');
+    });
+
+    Route::post('products/{product}/restock', [ProductRestockController::class, 'store'])->name('products.restock');
+
+    // ── Master Data Produk ─────────────────────────────────────────────────
+    Route::controller(ProductCategoryController::class)->prefix('product-categories')->name('product-categories.')->group(function () {
+        Route::get('/', 'index')->name('index')->middleware('permission:categories.index');
+        Route::post('/', 'store')->name('store')->middleware('permission:products.create');
+        Route::put('/{product_category}', 'update')->name('update')->middleware('permission:products.update');
+        Route::delete('/{product_category}', 'destroy')->name('destroy')->middleware('permission:products.delete');
+    });
+
+    Route::controller(ProductTypeController::class)->prefix('product-types')->name('product-types.')->group(function () {
+        Route::get('/', 'index')->name('index')->middleware('permission:types.index');
+        Route::post('/', 'store')->name('store')->middleware('permission:products.create');
+        Route::put('/{product_type}', 'update')->name('update')->middleware('permission:products.update');
+        Route::delete('/{product_type}', 'destroy')->name('destroy')->middleware('permission:products.delete');
+    });
 
     // ── Toko ───────────────────────────────────────────────────────────────
     Route::resource('tenants', TenantsController::class);
@@ -63,6 +127,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ── Inventory / Stok ───────────────────────────────────────────────────
     Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::get('inventory/low-stock', [InventoryController::class, 'lowStock'])->name('inventory.low-stock');
+
+    // ── Stock Opname ───────────────────────────────────────────────────────
+    Route::controller(OpnameController::class)->prefix('inventory/opname')->name('opname.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+    });
 
     // ── Pembelian / Purchases ──────────────────────────────────────────────
     Route::put('purchases/{purchase}/status', [PurchaseController::class, 'updateStatus'])->name('purchases.status');
@@ -70,22 +141,54 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('suppliers', SupplierController::class);
     Route::resource('purchase-returns', PurchaseReturnController::class)->except(['edit', 'update', 'destroy', 'show']);
 
-    // ── CRM & Marketing ──────────────────────────────────────────────────
-    Route::get('membership', [App\Http\Controllers\CustomerController::class, 'membership'])->name('customers.membership');
-    Route::get('vouchers', [App\Http\Controllers\PromoController::class, 'vouchers'])->name('promos.vouchers');
-    Route::resource('customers', App\Http\Controllers\CustomerController::class);
-    Route::resource('promos', App\Http\Controllers\PromoController::class);
+    // ── Barang Titipan (Konsinyasi) ─────────────────────────────────────────
+    Route::controller(ConsignmentController::class)->prefix('consignments')->name('consignments.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::put('/{id}', 'update')->name('update');
+        Route::post('/{id}/settle', 'settle')->name('settle');
+        Route::get('/{id}/pdf', 'exportPdf')->name('pdf');
+    });
 
-    // ── Keuangan ───────────────────────────────────────────────────────────
-    Route::get('incomes', [FinanceController::class, 'incomes'])->name('finance.incomes');
-    Route::post('incomes', [FinanceController::class, 'storeIncome'])->name('finance.incomes.store');
-    Route::get('cash-books', [FinanceController::class, 'cashBooks'])->name('finance.cash-books');
-    Route::get('profit-loss', [FinanceController::class, 'profitLoss'])->name('finance.profit-loss');
-    Route::get('debts-receivables', [FinanceController::class, 'debtsReceivables'])->name('finance.debts-receivables');
-    Route::get('accounting/reports', [FinanceController::class, 'accountingReports'])->name('finance.accounting-reports');
-    Route::get('business/reports', [\App\Http\Controllers\ReportController::class, 'index'])->name('business.reports');
-    Route::delete('cash-books/{cashBook}', [FinanceController::class, 'destroyCashBook'])->name('finance.cash-books.destroy');
+    // ── Absensi Pegawai (Attendances) ──────────────────────────────────────
+    Route::controller(\App\Http\Controllers\AttendanceController::class)->prefix('attendances')->name('attendances.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/export', 'export')->name('export');
+        Route::post('/clock-in', 'clockIn')->name('clockIn');
+        Route::post('/clock-out', 'clockOut')->name('clockOut');
+    });
+
+
+    // ── CRM & Marketing ──────────────────────────────────────────────────
+    Route::get('membership', [CustomerController::class, 'membership'])->name('customers.membership');
+    Route::resource('customers', CustomerController::class);
+
+    Route::get('vouchers', [PromoController::class, 'vouchers'])->name('promos.vouchers');
+    Route::resource('promos', PromoController::class);
+
+    // ── Keuangan & Laporan ─────────────────────────────────────────────────
+    Route::controller(FinanceController::class)->group(function () {
+        Route::get('incomes', 'incomes')->name('finance.incomes');
+        Route::post('incomes', 'storeIncome')->name('finance.incomes.store');
+        Route::get('cash-books', 'cashBooks')->name('finance.cash-books');
+        Route::get('profit-loss', 'profitLoss')->name('finance.profit-loss');
+        Route::get('debts-receivables', 'debtsReceivables')->name('finance.debts-receivables');
+        Route::get('accounting/reports', 'accountingReports')->name('finance.accounting-reports');
+        Route::delete('cash-books/{cashBook}', 'destroyCashBook')->name('finance.cash-books.destroy');
+    });
+
+    Route::get('business/reports', [ReportController::class, 'index'])->name('business.reports');
     Route::resource('expenses', ExpenseController::class);
+
+    // ── Super Admin Dedicated Hrefs ──────────────────────────────────────────
+    Route::prefix('superadmin')->name('superadmin.')->group(function () {
+        Route::controller(SuperAdminController::class)->group(function () {
+            Route::get('plans', 'plans')->name('plans');
+            Route::get('billing', 'billing')->name('billing');
+            Route::get('monitoring', 'monitoring')->name('monitoring');
+        });
+        Route::resource('menus', MenuController::class)->except(['create', 'edit', 'show']);
+    });
 });
 
 require __DIR__ . '/settings.php';

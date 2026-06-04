@@ -1,11 +1,12 @@
-import React from 'react';
-import { ColumnDef } from '@tanstack/react-table';
-import { Button } from '@/components/ui/button';
-import { Edit, Trash2, AlertTriangle } from 'lucide-react';
-import { formatDateTime, formatTimeAgo } from '@/lib/helpers/date';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { router } from '@inertiajs/react';
+import type { ColumnDef } from '@tanstack/react-table';
+import { Edit, Trash2, AlertTriangle } from 'lucide-react';
+import React from 'react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { formatDateTime, formatTimeAgo } from '@/lib/helpers/date';
+import { formatRupiah } from '@/lib/helpers/format';
 
 const ActionCell = ({ row, onEdit }: { row: any, onEdit: any }) => {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -81,6 +82,7 @@ export const getCustomerColumns = (onEdit: (c: any) => void): ColumnDef<any>[] =
         header: 'Level (Tier)',
         cell: ({ row }) => {
             const tier = row.original.tier;
+
             return (
                 <span className={`px-2 py-1 rounded-full text-xs font-semibold ${tier === 'distributor' ? 'bg-purple-100 text-purple-700' :
                     tier === 'wholesale' ? 'bg-blue-100 text-blue-700' :
@@ -97,7 +99,7 @@ export const getCustomerColumns = (onEdit: (c: any) => void): ColumnDef<any>[] =
         header: 'Piutang',
         cell: ({ row }) => (
             <span className="text-red-600 font-semibold">
-                Rp {Number(row.original.debt_balance).toLocaleString('id-ID')}
+                {formatRupiah(row.original.debt_balance)}
             </span>
         ),
     },

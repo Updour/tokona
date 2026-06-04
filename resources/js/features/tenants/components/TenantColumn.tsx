@@ -1,14 +1,12 @@
 // @/features/tenants/components/TenantColumn.tsx
 
-import * as React from 'react';
-import { ColumnDef } from '@tanstack/react-table';
-import { Button } from '@/components/ui/button';
-import { ArrowUpDown, Eye, Edit, Trash } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useTenantStore, type Tenant } from '@/pages/tenants/stores/useTenantStore';
 import { router } from '@inertiajs/react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { ColumnDef } from '@tanstack/react-table';
+import { ArrowUpDown, Eye, Edit, Trash } from 'lucide-react';
+import * as React from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -19,6 +17,9 @@ import {
     DialogTrigger,
     DialogClose,
 } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTenantStore  } from '@/pages/tenants/stores/useTenantStore';
+import type {Tenant} from '@/pages/tenants/stores/useTenantStore';
 import { destroy as tenantsDestroy } from '@/routes/tenants';
 
 const getStatusVariant = (status: string) => {
@@ -82,6 +83,7 @@ export const columns: ColumnDef<Tenant>[] = [
         header: 'Plan',
         cell: ({ row }) => {
             const plan = row.getValue('plan') as string;
+
             return (
                 <Badge variant={getPlanVariant(plan)} className="capitalize">
                     {plan}
@@ -94,6 +96,7 @@ export const columns: ColumnDef<Tenant>[] = [
         header: 'Status',
         cell: ({ row }) => {
             const status = row.getValue('status') as string;
+
             return (
                 <Badge variant={getStatusVariant(status)} className="capitalize">
                     {status}
@@ -106,7 +109,10 @@ export const columns: ColumnDef<Tenant>[] = [
         header: 'Masa Aktif',
         cell: ({ row }) => {
             const expiresAt = row.original.expires_at;
-            if (!expiresAt) return <span className="text-muted-foreground">—</span>;
+
+            if (!expiresAt) {
+return <span className="text-muted-foreground">—</span>;
+}
 
             const expiryDate = new Date(expiresAt);
             const isExpired = expiryDate < new Date();
@@ -117,7 +123,7 @@ export const columns: ColumnDef<Tenant>[] = [
                         {expiryDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </span>
                     {isExpired ? (
-                        <span className="text-[10px] text-destructive font-medium flex items-center gap-1">⚠️ Kedaluwarsa</span>
+                        <span className="text-[10px] text-destructive font-medium flex items-center gap-1"> Kedaluwarsa</span>
                     ) : (
                         <span className="text-[10px] text-muted-foreground">
                             s.d. {expiryDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
@@ -149,19 +155,19 @@ export const columns: ColumnDef<Tenant>[] = [
             return (
                 <TooltipProvider>
                     <div className="flex items-center gap-1">
-                        {/* View / Edit button */}
+                        {/* View button */}
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                    className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
                                     onClick={() => openView(tenant)}
                                 >
                                     <Eye className="h-4 w-4" />
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent>View</TooltipContent>
+                            <TooltipContent>Lihat Detail Tenant</TooltipContent>
                         </Tooltip>
 
                         {/* Edit button */}

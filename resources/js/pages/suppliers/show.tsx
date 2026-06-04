@@ -1,10 +1,10 @@
 import { Head, Link } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, Building2, MapPin, Phone, Mail, FileText, Wallet, AlertCircle, CheckCircle2, CircleDashed } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 interface Props {
     supplier: any;
@@ -17,9 +17,18 @@ interface Props {
 
 export default function Show({ supplier, stats }: Props) {
     const renderStatusBadge = (status: string) => {
-        if (status === 'draft') return <Badge variant="outline" className="text-muted-foreground"><CircleDashed className="mr-1 h-3 w-3" /> Draft</Badge>;
-        if (status === 'received') return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200"><AlertCircle className="mr-1 h-3 w-3" /> Belum Lunas (Hutang)</Badge>;
-        if (status === 'paid') return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200"><CheckCircle2 className="mr-1 h-3 w-3" /> Lunas</Badge>;
+        if (status === 'draft') {
+return <Badge variant="outline" className="text-muted-foreground"><CircleDashed className="mr-1 h-3 w-3" /> Draft</Badge>;
+}
+
+        if (status === 'received') {
+return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200"><AlertCircle className="mr-1 h-3 w-3" /> Belum Lunas (Hutang)</Badge>;
+}
+
+        if (status === 'paid') {
+return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200"><CheckCircle2 className="mr-1 h-3 w-3" /> Lunas</Badge>;
+}
+
         return <Badge>{status}</Badge>;
     };
 

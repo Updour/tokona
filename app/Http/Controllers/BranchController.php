@@ -30,7 +30,7 @@ class BranchController extends Controller
         $sortDirection = $request->input('direction', 'desc');
 
         // Global Tenant Scope secara otomatis menyaring cabang untuk non-superadmin!
-        $branches = Branch::filter($request->all())
+        $branches = Branch::with('tenant:id,name')->filter($request->all())
             ->orderBy($sortField, $sortDirection)
             ->paginate(10)
             ->withQueryString();
@@ -49,6 +49,14 @@ class BranchController extends Controller
      */
     public function store(StoreBranchRequest $request): RedirectResponse
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            $tenant = Tenants::find(auth()->user()->tenant_id);
+            $subService = new \App\Services\SubscriptionService();
+            if ($tenant && !$subService->canAddBranch($tenant)) {
+                return back()->with('error', 'Limit jumlah cabang tercapai! Silakan upgrade paket langganan Anda untuk menambah cabang baru.');
+            }
+        }
+
         $this->branchService->storeBranch($request->validated());
 
         return back()->with('success', 'Branch created successfully.');

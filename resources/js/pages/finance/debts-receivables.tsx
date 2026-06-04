@@ -1,10 +1,10 @@
 import { Head } from '@inertiajs/react';
+import { ArrowRightLeft, ArrowDownRight, ArrowUpRight, Scale, Users, Store, Phone, Calendar } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import MainLayout from '@/layouts/app/app-main-layout';
 import { formatRupiah, formatDate } from '@/lib/helpers/format';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowRightLeft, ArrowDownRight, ArrowUpRight, Scale, Users, Store, Phone, Calendar } from 'lucide-react';
 
 export default function DebtsReceivables({ stats }: any) {
     const netObligation = stats.total_receivables - stats.total_debts;

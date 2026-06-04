@@ -1,7 +1,8 @@
+import { usePage } from '@inertiajs/react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getPromoColumns } from './PromoColumn';
-import { usePage } from '@inertiajs/react';
 import { PromoFilters } from './PromoFilters';
 
 export function PromoTable({ promos, onEdit, onAddClick }: any) {
@@ -58,13 +59,11 @@ export function PromoTable({ promos, onEdit, onAddClick }: any) {
                 </Table>
             </div>
             
-            <div className="flex items-center justify-between py-2">
-                <p className="text-sm text-muted-foreground">
-                    {promos?.from && promos?.to
-                        ? `Menampilkan ${promos.from}–${promos.to} dari ${promos.total.toLocaleString('id-ID')} promo`
-                        : `${promos?.total ?? 0} promo`}
-                </p>
-            </div>
+            <DataTablePagination 
+                data={promos as any} 
+                itemName="promo" 
+                filters={filters} 
+            />
         </div>
     );
 }

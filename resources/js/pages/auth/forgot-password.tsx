@@ -25,7 +25,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label htmlFor="email" className="text-slate-300">Alamat Email</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -33,6 +33,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     autoComplete="off"
                                     autoFocus
                                     placeholder="email@example.com"
+                                    className="dark:bg-slate-900/50 dark:border-slate-700/50 dark:text-slate-100 dark:placeholder:text-slate-500 focus-visible:ring-indigo-500"
                                 />
 
                                 <InputError message={errors.email} />
@@ -40,23 +41,23 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
                             <div className="my-6 flex items-center justify-start">
                                 <Button
-                                    className="w-full"
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/25 transition-all duration-300"
                                     disabled={processing}
                                     data-test="email-password-reset-link-button"
                                 >
                                     {processing && (
-                                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
                                     )}
-                                    Email password reset link
+                                    Kirim Link Reset Sandi
                                 </Button>
                             </div>
                         </>
                     )}
                 </Form>
 
-                <div className="space-x-1 text-center text-sm text-muted-foreground">
-                    <span>Or, return to</span>
-                    <TextLink href={login()}>log in</TextLink>
+                <div className="space-x-1 text-center text-sm text-slate-400">
+                    <span>Atau, kembali ke halaman</span>
+                    <TextLink href={login()} className="text-indigo-400 hover:text-indigo-300">Login</TextLink>
                 </div>
             </div>
         </>
@@ -64,6 +65,6 @@ export default function ForgotPassword({ status }: { status?: string }) {
 }
 
 ForgotPassword.layout = {
-    title: 'Forgot password',
-    description: 'Enter your email to receive a password reset link',
+    title: 'Lupa Kata Sandi?',
+    description: 'Masukkan email Anda dan kami akan mengirimkan tautan untuk mengatur ulang kata sandi.',
 };

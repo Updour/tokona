@@ -1,0 +1,219 @@
+import React, { useState, useEffect } from 'react';
+import { router } from '@inertiajs/react';
+import { Search, SlidersHorizontal, X, Clock, CalendarDays, Download } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AttendanceFilters as IFilters } from '../types';
+
+interface FiltersProps {
+    branches: Array<{ id: string; name: string }>;
+    filters: IFilters;
+    totalResults: number;
+    onExport?: () => void;
+}
+
+export function AttendanceFilters({ branches, filters, totalResults, onExport }: FiltersProps) {
+    const [search, setSearch] = useState(filters.search || '');
+    const [localFilters, setLocalFilters] = useState({
+        branch_id: filters.branch_id || '',
+        status: filters.status || '',
+        start_date: filters.start_date || '',
+        end_date: filters.end_date || '',
+    });
+
+    const activeFilterCount = [
+        localFilters.branch_id,
+        localFilters.status,
+        localFilters.start_date,
+        localFilters.end_date,
+    ].filter(Boolean).length;
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            if (search !== (filters.search || '')) {
+                applyFilters({ search });
+            }
+        }, 350);
+        return () => clearTimeout(handler);
+    }, [search]);
+
+    const applyFilters = (overrides: Record<string, any> = {}) => {
+        const params: Record<string, any> = {
+            search: search || undefined,
+            branch_id: localFilters.branch_id || undefined,
+            status: localFilters.status || undefined,
+            start_date: localFilters.start_date || undefined,
+            end_date: localFilters.end_date || undefined,
+            ...overrides,
+        };
+
+        Object.keys(params).forEach((k) => params[k] === undefined && delete params[k]);
+        router.get('/attendances', params, { preserveState: true, replace: true });
+    };
+
+    const handleReset = () => {
+        setSearch('');
+        setLocalFilters({ branch_id: '', status: '', start_date: '', end_date: '' });
+        router.get('/attendances', {}, { replace: true });
+    };
+
+    const updateLocal = (key: string, value: any) => {
+        setLocalFilters((prev) => ({ ...prev, [key]: value }));
+    };
+
+    return (
+        <div className="space-y-3">
+            <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative flex-1 min-w-[200px] max-w-sm">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Cari nama pegawai..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-8 h-9"
+                    />
+                    {search && (
+                        <button onClick={() => setSearch('')} className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground">
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
+
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="gap-2 h-9">
+                            <SlidersHorizontal className="h-4 w-4" />
+                            Filter
+                            {activeFilterCount > 0 && (
+                                <Badge className="h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+                                    {activeFilterCount}
+                                </Badge>
+                            )}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[340px] p-0" align="start">
+                        <div className="px-4 py-3 border-b flex items-center justify-between">
+                            <p className="text-sm font-semibold">Filter Absensi</p>
+                            {activeFilterCount > 0 && (
+                                <button onClick={handleReset} className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1">
+                                    <X className="h-3 w-3" /> Reset semua
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="p-4 space-y-4 max-h-[480px] overflow-y-auto">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase text-muted-foreground">Cabang Toko</Label>
+                                <Select value={localFilters.branch_id || '__all__'} onValueChange={(v) => updateLocal('branch_id', v === '__all__' ? '' : v)}>
+                                    <SelectTrigger className="h-8 text-sm w-full"><SelectValue placeholder="Semua cabang" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="__all__">Semua cabang</SelectItem>
+                                        {branches?.map((b) => (
+                                            <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase text-muted-foreground">Status Kehadiran</Label>
+                                <Select value={localFilters.status || '__all__'} onValueChange={(v) => updateLocal('status', v === '__all__' ? '' : v)}>
+                                    <SelectTrigger className="h-8 text-sm w-full"><SelectValue placeholder="Semua status" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="__all__">Semua status</SelectItem>
+                                        <SelectItem value="present">Hadir</SelectItem>
+                                        <SelectItem value="late">Terlambat</SelectItem>
+                                        <SelectItem value="sick">Sakit</SelectItem>
+                                        <SelectItem value="leave">Cuti / Izin</SelectItem>
+                                        <SelectItem value="absent">Alpha / Mangkir</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5">
+                                    <CalendarDays className="h-3 w-3" /> Tanggal Absensi
+                                </Label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <p className="text-[10px] text-muted-foreground mb-1">Dari</p>
+                                        <Input type="date" className="h-8 text-sm" value={localFilters.start_date} onChange={(e) => updateLocal('start_date', e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-muted-foreground mb-1">Sampai</p>
+                                        <Input type="date" className="h-8 text-sm" value={localFilters.end_date} onChange={(e) => updateLocal('end_date', e.target.value)} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="px-4 py-3 border-t">
+                            <Button className="w-full" size="sm" onClick={() => applyFilters()}>
+                                Terapkan Filter
+                            </Button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+
+                {(activeFilterCount > 0 || search) && (
+                    <Button variant="ghost" size="sm" onClick={handleReset} className="text-muted-foreground gap-1.5 h-9">
+                        <X className="h-3.5 w-3.5" /> Reset
+                    </Button>
+                )}
+
+                <div className="flex-1" />
+
+                <span className="text-sm text-muted-foreground hidden sm:block">
+                    {totalResults.toLocaleString('id-ID')} absensi
+                </span>
+
+                {onExport && (
+                    <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5 h-9">
+                        <Download className="h-4 w-4" /> Export
+                    </Button>
+                )}
+            </div>
+
+            {activeFilterCount > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                    {localFilters.status && (
+                        <FilterChip
+                            label={`Status: ${localFilters.status}`}
+                            onRemove={() => { updateLocal('status', ''); applyFilters({ status: undefined }); }}
+                        />
+                    )}
+                    {localFilters.branch_id && (
+                        <FilterChip
+                            label={`Cabang: ${branches.find((b) => b.id == localFilters.branch_id)?.name ?? '...'}`}
+                            onRemove={() => { updateLocal('branch_id', ''); applyFilters({ branch_id: undefined }); }}
+                        />
+                    )}
+                    {(localFilters.start_date || localFilters.end_date) && (
+                        <FilterChip
+                            label={`Tanggal: ${localFilters.start_date || '...'} → ${localFilters.end_date || '...'}`}
+                            onRemove={() => {
+                                updateLocal('start_date', ''); updateLocal('end_date', ''); 
+                                applyFilters({ start_date: undefined, end_date: undefined }); 
+                            }}
+                        />
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+    return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium">
+            {label}
+            <button onClick={onRemove} className="hover:text-destructive ml-0.5">
+                <X className="h-3 w-3" />
+            </button>
+        </span>
+    );
+}

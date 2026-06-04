@@ -1,9 +1,7 @@
 import { useForm } from '@inertiajs/react';
+import { Layers } from 'lucide-react';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
     Dialog,
     DialogContent,
@@ -12,7 +10,9 @@ import {
     DialogTitle,
     DialogDescription,
 } from '@/components/ui/dialog';
-import { Layers } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface ProductType {
     id: string;
@@ -46,12 +46,14 @@ export function TypeFormDialog({
             } else {
                 reset();
             }
+
             clearErrors();
         }
     }, [open, type]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (type) {
             put(`/product-types/${type.id}`, {
                 onSuccess: () => {

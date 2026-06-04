@@ -58,6 +58,12 @@ class CreateNewUser implements CreatesNewUsers
                 'description' => 'Staff Kasir Toko',
             ]);
 
+            Role::create([
+                'tenant_id' => $tenant->id,
+                'name' => 'sales',
+                'description' => 'Sales Lapangan / Canvas',
+            ]);
+
             // 3. Buat Cabang Utama Baru
             $branchName = !empty($input['branch_name']) ? $input['branch_name'] : 'Pusat';
             

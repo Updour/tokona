@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { PurchaseForm } from '@/features/purchases/components/PurchaseForm';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 interface Props {
     branches: any[];

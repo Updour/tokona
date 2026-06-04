@@ -1,10 +1,10 @@
 import { Head, Link } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, Printer, CheckCircle2, CircleDashed, Wallet, Building2, CalendarDays } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 interface Props {
     purchase: any;
@@ -12,9 +12,18 @@ interface Props {
 
 export default function Show({ purchase }: Props) {
     const renderStatusBadge = (status: string) => {
-        if (status === 'draft') return <Badge variant="outline" className="text-muted-foreground"><CircleDashed className="mr-1 h-3 w-3" /> Draft (Direncanakan)</Badge>;
-        if (status === 'received') return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200"><CheckCircle2 className="mr-1 h-3 w-3" /> Diterima (Belum Lunas)</Badge>;
-        if (status === 'paid') return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200"><Wallet className="mr-1 h-3 w-3" /> Lunas</Badge>;
+        if (status === 'draft') {
+return <Badge variant="outline" className="text-muted-foreground"><CircleDashed className="mr-1 h-3 w-3" /> Draft (Direncanakan)</Badge>;
+}
+
+        if (status === 'received') {
+return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200"><CheckCircle2 className="mr-1 h-3 w-3" /> Diterima (Belum Lunas)</Badge>;
+}
+
+        if (status === 'paid') {
+return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200"><Wallet className="mr-1 h-3 w-3" /> Lunas</Badge>;
+}
+
         return <Badge>{status}</Badge>;
     };
 

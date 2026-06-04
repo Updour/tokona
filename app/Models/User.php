@@ -62,6 +62,22 @@ class User extends Authenticatable
     {
         return $this->roles()->where('name', 'super-admin')->exists();
     }
+
+    /**
+     * Check if user has a specific permission key.
+     */
+    public function hasPermission(string $permissionKey): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        return $this->roles()
+            ->whereHas('permissions', function ($query) use ($permissionKey) {
+                $query->where('key', $permissionKey);
+            })
+            ->exists();
+    }
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenants::class, 'tenant_id');

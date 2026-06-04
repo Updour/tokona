@@ -7,6 +7,9 @@ use App\Models\Expense;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Purchase;
+use App\Models\Transaction;
+use App\Models\ConsignmentItem;
+use App\Models\Products;
 use Carbon\Carbon;
 
 class FinanceService
@@ -43,7 +46,7 @@ class FinanceService
                 'total' => $totalIncome,
                 'this_month' => $thisMonthIncome,
             ],
-            'filters' => array_intersect_key($filters, array_flip(['search', 'branch_id', 'category'])),
+            'filters' => array_intersect_key($filters, array_flip(['search', 'branch_id', 'category', 'start_date', 'end_date'])),
         ];
     }
 
@@ -104,7 +107,7 @@ class FinanceService
                 'cash_out' => $totalCashOut + $totalExpenses,
                 'balance' => $netBalance,
             ],
-            'filters' => array_intersect_key($filters, array_flip(['search', 'branch_id'])),
+            'filters' => array_intersect_key($filters, array_flip(['search', 'branch_id', 'start_date', 'end_date'])),
         ];
     }
 
@@ -116,19 +119,19 @@ class FinanceService
         $year = intval($filters['year'] ?? Carbon::now()->year);
         $branchId = $filters['branch_id'] ?? 'ALL';
 
-        // Revenue: Sum of cash inflows
-        $revenueQuery = CashBook::where('type', 'in')->whereYear('created_at', $year);
+        // Revenue: Hanya dari CashBook IN category 'penjualan'
+        $revenueQuery = CashBook::where('type', 'in')->where('category', 'penjualan')->whereYear('created_at', $year);
         if ($branchId !== 'ALL') {
             $revenueQuery->where('branch_id', $branchId);
         }
         $revenue = (clone $revenueQuery)->sum('amount');
 
-        // HPP / COGS: From paid supplier purchases
-        $cogsQuery = Purchase::whereIn('status', ['received', 'paid'])->whereYear('purchase_date', $year);
+        // HPP / COGS: Dari total_cogs di transaksi penjualan yang sukses (paid, partial, debt)
+        $cogsQuery = Transaction::whereIn('status', ['paid', 'partial', 'debt'])->whereYear('created_at', $year);
         if ($branchId !== 'ALL') {
             $cogsQuery->where('branch_id', $branchId);
         }
-        $cogs = (clone $cogsQuery)->sum('total_cost');
+        $cogs = (clone $cogsQuery)->sum('total_cogs');
         
         // Operational Expenses: From expenses table
         $expensesQuery = Expense::whereYear('expense_date', $year);
@@ -143,7 +146,7 @@ class FinanceService
             $monthName = Carbon::create($year, $m, 1)->locale('id')->isoFormat('MMM');
             
             $mRev = (clone $revenueQuery)->whereMonth('created_at', $m)->sum('amount');
-            $mCogs = (clone $cogsQuery)->whereMonth('purchase_date', $m)->sum('total_cost');
+            $mCogs = (clone $cogsQuery)->whereMonth('created_at', $m)->sum('total_cogs');
             $mExp = (clone $expensesQuery)->whereMonth('expense_date', $m)->sum('amount');
             $mNet = $mRev - ($mCogs + $mExp);
 
@@ -188,11 +191,20 @@ class FinanceService
         $totalDebts = $debtsQuery->sum('total_cost');
         $debtsList = $debtsQuery->orderBy('total_cost', 'desc')->take(10)->get();
 
+        // Hutang Konsinyasi (Titipan belum dibayar)
+        // Diambil dari Sesi Titipan yang Selesai tapi belum Lunas, atau sesi Aktif (opsional).
+        // Karena sistem kini langsung memotong kas saat Selesai, sisa yang belum disetor dianggap hutang potensial.
+        $consignmentDebts = ConsignmentItem::whereHas('consignment', function($q) {
+            $q->where('status', 'active');
+        })->get()->sum(function($item) {
+            return ($item->qty_received - $item->qty_unsold) * $item->base_cost;
+        });
+
         return [
             'stats' => [
                 'total_receivables' => $totalReceivables,
-                'total_debts' => $totalDebts,
-                'net_balance' => $totalReceivables - $totalDebts,
+                'total_debts' => $totalDebts + $consignmentDebts,
+                'net_balance' => $totalReceivables - ($totalDebts + $consignmentDebts),
                 'receivables' => $receivablesList,
                 'debts' => $debtsList,
             ]
@@ -304,7 +316,7 @@ class FinanceService
         $totalReceivables = $receivablesQuery->sum('debt_balance');
 
         // Nilai Persediaan Aktif
-        $inventoryQuery = \App\Models\Products::withCurrentStock();
+        $inventoryQuery = Products::withCurrentStock();
         if ($branchId !== 'ALL') {
             $inventoryQuery->where('branch_id', $branchId);
         }
@@ -319,13 +331,17 @@ class FinanceService
         }
         $totalDebts = $debtsQuery->sum('total_cost');
 
-        // Laba Ditahan = Pendapatan - HPP - Biaya
-        $revenue = $cashIn->sum('amount');
-        $cogs = Purchase::whereIn('status', ['received', 'paid']);
+        // Laba Ditahan = Pendapatan Penjualan - HPP Penjualan - Biaya
+        $revenueQuery = CashBook::where('type', 'in')->where('category', 'penjualan');
+        $cogsQuery = Transaction::whereIn('status', ['paid', 'partial', 'debt']);
+        
         if ($branchId !== 'ALL') {
-            $cogs->where('branch_id', $branchId);
+            $revenueQuery->where('branch_id', $branchId);
+            $cogsQuery->where('branch_id', $branchId);
         }
-        $totalCogs = $cogs->sum('total_cost');
+        
+        $revenue = $revenueQuery->sum('amount');
+        $totalCogs = $cogsQuery->sum('total_cogs');
         $retainedEarnings = $revenue - ($totalCogs + $totalExp->sum('amount'));
 
         // Modal Pemilik

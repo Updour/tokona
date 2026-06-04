@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { TenantTable } from '@/features/tenants/components/TenantTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 interface IndexProps {
     tenants: any;

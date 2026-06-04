@@ -24,7 +24,7 @@ class InventoryQuery
         return [
             'movements' => $movements,
             'branches'  => $branchesQuery->orderBy('name')->get(),
-            'filters'   => $this->request->only(['search', 'type', 'branch_id']),
+            'filters'   => $this->request->only(['search', 'type', 'branch_id', 'start_date', 'end_date']),
         ];
     }
 
@@ -36,6 +36,7 @@ class InventoryQuery
         $this->applySearch($query);
         $this->applyTypeFilter($query);
         $this->applyBranchFilter($query);
+        $this->applyDateFilter($query);
         $this->applySort($query);
 
         return $query;
@@ -70,6 +71,16 @@ class InventoryQuery
     {
         if ($this->request->filled('branch_id') && $this->request->input('branch_id') !== 'ALL') {
             $query->where('branch_id', $this->request->input('branch_id'));
+        }
+    }
+
+    private function applyDateFilter($query): void
+    {
+        if ($this->request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $this->request->input('start_date'));
+        }
+        if ($this->request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $this->request->input('end_date'));
         }
     }
 

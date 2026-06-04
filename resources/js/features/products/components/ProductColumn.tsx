@@ -1,21 +1,9 @@
-import { ColumnDef } from '@tanstack/react-table';
-import { Button } from '@/components/ui/button';
+import { router } from '@inertiajs/react';
+import type { ColumnDef } from '@tanstack/react-table';
 import { MoreHorizontal, ArrowUpDown, Edit, Trash, ImageOff, PackagePlus, Eye, Barcode, Tags, Layers, MapPin, Building2, AlignLeft } from 'lucide-react';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -27,6 +15,15 @@ import {
     DialogClose,
 } from '@/components/ui/dialog';
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Separator } from '@/components/ui/separator';
+import {
     Sheet,
     SheetContent,
     SheetDescription,
@@ -34,16 +31,17 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { Separator } from '@/components/ui/separator';
-import * as React from 'react';
-import { useProductStore, type Product } from '@/pages/products/stores/useProductStore';
-import { router } from '@inertiajs/react';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { formatRupiah } from '@/lib/helpers/format';
+import { useProductStore  } from '@/pages/products/stores/useProductStore';
+import type {Product} from '@/pages/products/stores/useProductStore';
 import { destroy as productsDestroy } from '@/routes/products';
 
-const formatIDR = (value: number) =>
-    new Intl.NumberFormat('id-ID', {
-        maximumFractionDigits: 0,
-    }).format(value);
 
 const ActionsCell = ({ product }: { product: Product }) => {
     const openForm = useProductStore((state) => state.openForm);
@@ -143,11 +141,11 @@ const ActionsCell = ({ product }: { product: Product }) => {
                                 <div className="grid grid-cols-2 gap-4 text-sm bg-muted/40 p-4 rounded-lg border">
                                     <div className="space-y-1">
                                         <span className="text-muted-foreground text-xs">Harga Jual</span>
-                                        <p className="font-bold text-base text-primary">{formatIDR(Number(product.sell_price))}</p>
+                                        <p className="font-bold text-base text-primary">{formatRupiah(Number(product.sell_price))}</p>
                                     </div>
                                     <div className="space-y-1">
                                         <span className="text-muted-foreground text-xs">HPP (Modal)</span>
-                                        <p className="font-medium">{formatIDR(Number(product.base_cost))}</p>
+                                        <p className="font-medium">{formatRupiah(Number(product.base_cost))}</p>
                                     </div>
                                     <div className="space-y-1">
                                         <span className="text-muted-foreground text-xs">Sisa Stok</span>
@@ -311,6 +309,7 @@ export const columns: ColumnDef<Product>[] = [
         header: 'Category',
         cell: ({ row }) => {
             const cat = row.original.category;
+
             return cat ? (
                 <Badge variant="outline" className="text-xs font-normal">
                     {cat.name}
@@ -327,6 +326,7 @@ export const columns: ColumnDef<Product>[] = [
         header: 'Type',
         cell: ({ row }) => {
             const type = row.original.type;
+
             return type ? (
                 <Badge variant="secondary" className="text-xs font-normal">
                     {type.name}
@@ -352,12 +352,13 @@ export const columns: ColumnDef<Product>[] = [
         ),
         cell: ({ row }) => {
             const product = row.original;
+
             return (
                 <div className="flex flex-col gap-0.5">
-                    <span className="font-semibold text-sm">{formatIDR(Number(product.sell_price))}</span>
+                    <span className="font-semibold text-sm">{formatRupiah(Number(product.sell_price))}</span>
                     {product.base_cost > 0 && (
                         <span className="text-xs text-muted-foreground">
-                            Cost: {formatIDR(Number(product.base_cost))}
+                            Cost: {formatRupiah(Number(product.base_cost))}
                         </span>
                     )}
                 </div>
@@ -419,6 +420,7 @@ export const columns: ColumnDef<Product>[] = [
         header: 'Branch',
         cell: ({ row }) => {
             const branch = row.original.branch;
+
             return branch ? (
                 <span className="text-xs text-muted-foreground">
                     {branch.name}
@@ -436,6 +438,7 @@ export const columns: ColumnDef<Product>[] = [
         header: 'Status',
         cell: ({ row }) => {
             const isActive = row.getValue('is_active') as boolean;
+
             return (
                 <Badge variant={isActive ? 'default' : 'secondary'} className="text-xs">
                     {isActive ? 'Active' : 'Inactive'}

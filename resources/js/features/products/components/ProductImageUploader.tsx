@@ -1,9 +1,9 @@
-import { useRef, useState } from 'react';
 import { router } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ImageOff, Upload, Star, Trash2, GripVertical } from 'lucide-react';
-import { type ProductImage } from '@/pages/products/types';
+import { useRef, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import type {ProductImage} from '@/pages/products/types';
 
 interface Props {
     productId: string;
@@ -18,7 +18,10 @@ export function ProductImageUploader({ productId, images }: Props) {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
-        if (!files || files.length === 0) return;
+
+        if (!files || files.length === 0) {
+return;
+}
 
         const formData = new FormData();
         Array.from(files).forEach((file) => formData.append('images[]', file));
@@ -29,7 +32,10 @@ export function ProductImageUploader({ productId, images }: Props) {
             preserveScroll: true,
             onFinish: () => {
                 setUploading(false);
-                if (inputRef.current) inputRef.current.value = '';
+
+                if (inputRef.current) {
+inputRef.current.value = '';
+}
             },
         });
     };
@@ -41,7 +47,10 @@ export function ProductImageUploader({ productId, images }: Props) {
     };
 
     const handleDelete = (imageId: string) => {
-        if (!confirm('Hapus gambar ini?')) return;
+        if (!confirm('Hapus gambar ini?')) {
+return;
+}
+
         router.delete(`/products/${productId}/images/${imageId}`, {
             preserveScroll: true,
         });
@@ -55,9 +64,11 @@ export function ProductImageUploader({ productId, images }: Props) {
     };
     const handleDrop = (e: React.DragEvent, targetId: string) => {
         e.preventDefault();
+
         if (!draggingId || draggingId === targetId) {
             setDraggingId(null);
             setDragOverId(null);
+
             return;
         }
 
@@ -91,7 +102,9 @@ export function ProductImageUploader({ productId, images }: Props) {
                             onDragStart={() => handleDragStart(img.id)}
                             onDragOver={(e) => handleDragOver(e, img.id)}
                             onDrop={(e) => handleDrop(e, img.id)}
-                            onDragEnd={() => { setDraggingId(null); setDragOverId(null); }}
+                            onDragEnd={() => {
+ setDraggingId(null); setDragOverId(null); 
+}}
                             className={`
                                 relative group rounded-lg border overflow-hidden bg-muted aspect-square cursor-grab
                                 transition-all duration-150

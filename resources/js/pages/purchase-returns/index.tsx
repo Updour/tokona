@@ -1,12 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { Button } from '@/components/ui/button';
-import { Plus, Search, RotateCcw } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { useState } from 'react';
 import { router } from '@inertiajs/react';
+import { Plus, Search, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Index({ returns, filters }: any) {
     const [search, setSearch] = useState(filters?.search || '');

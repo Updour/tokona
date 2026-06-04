@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { PurchaseTable } from '@/features/purchases/components/PurchaseTable';
 import { router } from '@inertiajs/react';
+import { PurchaseTable } from '@/features/purchases/components/PurchaseTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Index() {
     return (

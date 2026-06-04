@@ -1,16 +1,11 @@
+import { useForm, usePage } from '@inertiajs/react';
+import { Package, DollarSign, Warehouse, Info, ChevronRight, Images, Wand2, X } from 'lucide-react';
 import * as React from 'react';
 import { useEffect } from 'react';
-import { useForm, usePage } from '@inertiajs/react';
-import { useProductStore } from '@/pages/products/stores/useProductStore';
-import { type ProductCategory, type ProductType, type ProductBranch, type ProductTenant } from '@/pages/products/types';
 
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
 import {
     Dialog,
     DialogContent,
@@ -19,6 +14,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -26,8 +23,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 
-import { Package, DollarSign, Warehouse, Info, ChevronRight, Images, Wand2, X } from 'lucide-react';
+import { formatRupiah } from '@/lib/helpers/format';
+import { useProductStore } from '@/pages/products/stores/useProductStore';
+import type {ProductCategory, ProductType, ProductBranch, ProductTenant} from '@/pages/products/types';
 import { store as productsStore, update as productsUpdate } from '@/routes/products';
 import { ProductImageUploader } from './ProductImageUploader';
 
@@ -110,20 +111,21 @@ export function ProductFormDialog() {
     });
 
     const generateSKU = (data: { category_id: string; name: string }) => {
-        let skuParts = [];
+        const skuParts = [];
 
         // 1. Singkatan Kategori (Opsional)
         if (data.category_id) {
             const cat = categories.find(c => c.id === data.category_id);
+
             if (cat && cat.name) {
                 // 1. Bersihkan karakter non-alphanumeric dan ubah ke huruf besar
-                let cleanName = cat.name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                const cleanName = cat.name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
                 // 2. Hapus semua huruf vokal (A, E, I, O, U)
-                let consonantOnly = cleanName.replace(/[AEIOU]/g, '');
+                const consonantOnly = cleanName.replace(/[AEIOU]/g, '');
 
                 // 3. Jika setelah dihapus vokalnya karakternya kurang dari 3 (misal kategori pendek), gunakan nama asli
-                let baseString = consonantOnly.length >= 3 ? consonantOnly : cleanName;
+                const baseString = consonantOnly.length >= 3 ? consonantOnly : cleanName;
 
                 // 4. Ambil 3 huruf pertama
                 skuParts.push(baseString.substring(0, 3));
@@ -133,10 +135,12 @@ export function ProductFormDialog() {
         // 2. Singkatan Nama Produk
         if (data.name) {
             const words = data.name.trim().split(/\s+/).filter(w => w.length > 0);
+
             if (words.length > 0) {
                 // Kata pertama: ambil maks 3 huruf (e.g. Mie -> MIE)
                 skuParts.push(words[0].substring(0, 3).toUpperCase());
             }
+
             if (words.length > 1) {
                 // Kata kedua: ambil konsonan maks 3 huruf (e.g. Sedaap -> SDP)
                 const consonants = words[1].replace(/[AEIOUaeiou]/ig, '');
@@ -190,16 +194,19 @@ export function ProductFormDialog() {
             });
         } else {
             reset();
+
             if (!isSuperAdmin) {
                 setData('tenant_id', auth?.user?.tenant_id ?? '');
                 setData('branch_id', auth?.user?.branch_id ?? '');
             }
         }
+
         clearErrors();
     }, [selectedProduct, isFormOpen]);
 
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (isEdit) {
             put(productsUpdate(selectedProduct.id).url, { onSuccess: () => closeForm() });
         } else {
@@ -409,7 +416,7 @@ export function ProductFormDialog() {
                                     <span className={`font-semibold ${Number(margin) >= 0 ? 'text-green-600' : 'text-destructive'}`}>{margin}%</span>
                                     <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                                     <span className="text-muted-foreground">Keuntungan per unit:</span>
-                                    <span className="font-semibold">Rp {(Number(data.sell_price) - Number(data.base_cost)).toLocaleString('id-ID')}</span>
+                                    <span className="font-semibold">{formatRupiah(Number(data.sell_price) - Number(data.base_cost))}</span>
                                 </div>
                             )}
                         </div>

@@ -40,7 +40,7 @@ class ProductCategory extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('tenant', function ($query) {
-            if (auth()->check() && !auth()->user()->is_super_admin) {
+            if (auth()->check() && !auth()->user()->isSuperAdmin()) {
                 $query->where('product_categories.tenant_id', auth()->user()->tenant_id);
             }
         });

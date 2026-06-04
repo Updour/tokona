@@ -1,6 +1,8 @@
-import { ColumnDef } from '@tanstack/react-table';
-import { Button } from '@/components/ui/button';
+import { router } from '@inertiajs/react';
+import type { ColumnDef } from '@tanstack/react-table';
 import { MoreHorizontal, ArrowUpDown, Edit, Trash, Store, Shield } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -9,10 +11,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { useUserStore } from '@/pages/users/stores/useUserStore';
-import { type User } from '@/pages/users/types';
-import { router } from '@inertiajs/react';
+import type {User} from '@/pages/users/types';
 import { destroy as usersDestroy } from '@/routes/users';
 
 export const columns: ColumnDef<User>[] = [
@@ -32,6 +32,7 @@ export const columns: ColumnDef<User>[] = [
         },
         cell: ({ row }) => {
             const user = row.original;
+
             return (
                 <div className="flex flex-col">
                     <span className="font-semibold text-foreground">{user.name}</span>
@@ -85,6 +86,7 @@ export const columns: ColumnDef<User>[] = [
         cell: ({ row }) => {
             const branch = row.original.branch;
             const tenant = row.original.tenant;
+
             return (
                 <div className="flex flex-col gap-0.5">
                     {tenant && (
@@ -106,10 +108,23 @@ export const columns: ColumnDef<User>[] = [
         }
     },
     {
+        accessorKey: 'created_at',
+        header: 'Tanggal Daftar',
+        cell: ({ row }) => {
+            const dateStr = row.getValue('created_at') as string;
+            return (
+                <span className="text-muted-foreground text-sm">
+                    {dateStr ? new Date(dateStr).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}
+                </span>
+            );
+        }
+    },
+    {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => {
             const status = row.getValue('status') as string;
+
             return (
                 <Badge 
                     variant={status === 'active' ? 'default' : 'secondary'}

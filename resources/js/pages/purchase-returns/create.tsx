@@ -1,15 +1,15 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { Card, CardContent } from '@/components/ui/card';
+import lodash from 'lodash';
+import { Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
-import lodash from 'lodash';
+import { Textarea } from '@/components/ui/textarea';
+import MainLayout from '@/layouts/app/app-main-layout';
 const { cloneDeep, sumBy, findIndex, find } = lodash;
 
 export default function Create({ branches, suppliers, products }: any) {
@@ -43,14 +43,17 @@ export default function Create({ branches, suppliers, products }: any) {
                 newItems.splice(index, 1);
                 toast.success('Produk sudah ada, jumlah diretur ditambahkan!');
                 setData('items', newItems);
+
                 return;
             }
 
             const product = find(products, { id: value });
+
             if (product) {
                 newItems[index] = { ...newItems[index], product_id: value, unit_cost: Number(product.base_cost) || 0 };
             }
         }
+
         setData('items', newItems);
     };
 
@@ -68,6 +71,7 @@ export default function Create({ branches, suppliers, products }: any) {
         
         if (!isFormValid) {
             toast.error("Formulir belum lengkap. Harap lengkapi semua data wajib (*).");
+
             return;
         }
 

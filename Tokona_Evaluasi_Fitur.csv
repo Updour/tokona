@@ -1,0 +1,15 @@
+Kategori,Fitur / Modul,Status Saat Ini,Prioritas,Keterangan
+Operasional,Transfer Stok Antar Cabang,Belum Ada,Tinggi,Penting jika tenant memiliki lebih dari satu cabang/gudang.
+Operasional,Sistem Komisi & Performa Sales,Belum Ada,Sedang,Otomatisasi perhitungan bonus kasir/sales berdasarkan target.
+Operasional,Barang Titipan (Konsinyasi),Direncanakan,Sedang,Pemisahan stok dan pencatatan omzet yang harus dibayarkan ke supplier.
+POS & CRM,Mode Offline (PWA),Belum Ada,Tinggi,Agar kasir tetap bisa transaksi saat internet putus.
+POS & CRM,Poin Loyalitas & Tier Member,Belum Ada,Rendah,Meningkatkan retensi pelanggan (Silver/Gold/Platinum).
+Teknis,Real-time Notifikasi (WebSockets),Belum Ada,Sedang,Untuk notifikasi stok menipis dan update harga instan.
+Teknis,Public API Terbuka,Belum Ada,Rendah,Agar tenant bisa integrasi ke website e-commerce milik mereka sendiri.
+Integrasi,Payment Gateway (QRIS/VA Dinamis),Belum Ada,Tinggi,Untuk pembayaran otomatis di kasir maupun langganan SaaS.
+Pengaturan Tenant,Modul Shift Kasir Opsional,Direncanakan,Tinggi,Bisa dinonaktifkan untuk toko kecil agar langsung transaksi.
+Pengaturan Tenant,Modul Sales Lapangan Opsional,Direncanakan,Tinggi,Bisa disembunyikan jika tenant tidak punya tim canvaser.
+Spesifik Apotek,Manajemen Tanggal Kadaluarsa (Expired Date),Belum Ada,Tinggi (Untuk Apotek),Wajib untuk melacak obat yang akan kadaluarsa.
+Spesifik Apotek,Nomor Batch Obat,Belum Ada,Tinggi (Untuk Apotek),Wajib untuk regulasi BPOM jika ada penarikan obat.
+Spesifik Apotek,Konversi Multi-Satuan (Box -> Strip -> Pcs),Mungkin Perlu Ditingkatkan,Tinggi (Untuk Apotek),Obat sering dibeli dalam Box tapi dijual dalam Pcs/Strip.
+Spesifik Apotek,Label Obat Bebas / Resep,Belum Ada,Sedang (Untuk Apotek),Penandaan khusus untuk obat keras yang butuh resep.

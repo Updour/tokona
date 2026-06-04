@@ -1,3 +1,6 @@
+import { useForm, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -6,13 +9,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUserStore } from '@/pages/users/stores/useUserStore';
-import { useForm, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
 import { store as usersStore, update as usersUpdate } from '@/routes/users';
 
 interface UserFormDialogProps {
@@ -59,6 +59,7 @@ export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialog
             reset();
             setSelectedTenantId('');
         }
+
         clearErrors();
     }, [selectedUser, isFormOpen]);
 
@@ -155,11 +156,11 @@ export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialog
                             </div>
                             <div className="grid gap-1.5">
                                 <Label htmlFor="status" className="text-sm font-semibold">Status Keaktifan</Label>
-                                <Select 
-                                    value={data.status} 
+                                <Select
+                                    value={data.status}
                                     onValueChange={(val) => setData('status', val)}
                                 >
-                                    <SelectTrigger id="status" className={errors.status ? 'border-red-500' : ''}>
+                                    <SelectTrigger id="status" className={errors.status ? 'border-red-500 w-full' : 'w-full'}>
                                         <SelectValue placeholder="Pilih Status" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -193,11 +194,11 @@ export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialog
                                 <Label htmlFor="tenant_id" className="text-sm font-bold text-amber-600 dark:text-amber-400">
                                     [Super Admin] Pilih Perusahaan / Tenant
                                 </Label>
-                                <Select 
-                                    value={selectedTenantId} 
+                                <Select
+                                    value={selectedTenantId}
                                     onValueChange={handleTenantChange}
                                 >
-                                    <SelectTrigger id="tenant_id" className={errors.tenant_id ? 'border-red-500' : ''}>
+                                    <SelectTrigger id="tenant_id" className={errors.tenant_id ? 'border-red-500 w-full' : 'w-full'}>
                                         <SelectValue placeholder="Pilih Perusahaan / Tenant" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -218,12 +219,12 @@ export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialog
                                 <Label htmlFor="branch_id" className="text-sm font-semibold">
                                     Cabang Penugasan
                                 </Label>
-                                <Select 
-                                    value={data.branch_id} 
+                                <Select
+                                    value={data.branch_id}
                                     onValueChange={(val) => setData('branch_id', val)}
                                     disabled={isSuperAdmin && !selectedTenantId}
                                 >
-                                    <SelectTrigger id="branch_id" className={errors.branch_id ? 'border-red-500' : ''}>
+                                    <SelectTrigger id="branch_id" className={errors.branch_id ? 'border-red-500 w-full' : 'w-full'}>
                                         <SelectValue placeholder={isSuperAdmin && !selectedTenantId ? "Pilih Tenant dulu" : "Pilih Cabang"} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -241,11 +242,11 @@ export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialog
                                 <Label htmlFor="role_id" className="text-sm font-semibold">
                                     Hak Akses (Peran)
                                 </Label>
-                                <Select 
-                                    value={data.role_id} 
+                                <Select
+                                    value={data.role_id}
                                     onValueChange={(val) => setData('role_id', val)}
                                 >
-                                    <SelectTrigger id="role_id" className={errors.role_id ? 'border-red-500' : ''}>
+                                    <SelectTrigger id="role_id" className={errors.role_id ? 'border-red-500 w-full' : 'w-full'}>
                                         <SelectValue placeholder="Pilih Peran" />
                                     </SelectTrigger>
                                     <SelectContent>

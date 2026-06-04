@@ -6,6 +6,8 @@ use App\Queries\PurchaseQuery;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\CashBook;
+use Illuminate\Support\Facades\Auth;
 
 class PurchaseController extends Controller
 {
@@ -69,13 +71,18 @@ class PurchaseController extends Controller
         // LOGIKA AKUNTANSI: Jika dari Draft -> Masuk Gudang (Received/Paid)
         if ($oldStatus === 'draft' && in_array($newStatus, ['received', 'paid'])) {
             foreach ($purchase->items as $item) {
-                $product = \App\Models\Products::find($item->product_id);
+                $product = \App\Models\Products::withCurrentStock()->find($item->product_id);
                 if ($product && $product->track_stock) {
+                    $effectiveUnitCost = $item->qty > 0 ? (($item->qty * $item->unit_cost) - $item->discount) / $item->qty : $item->unit_cost;
+                    
+                    // UPDATE BASE COST (WAC)
+                    $product->updateBaseCostWAC((float) $effectiveUnitCost, (int) $item->qty);
+
                     $product->recordStockMovement('IN', $item->qty, [
                         'branch_id'   => $purchase->branch_id,
                         'source_type' => 'purchase',
                         'notes'       => 'Penerimaan PO: ' . ($purchase->invoice_number ?: 'Draft'),
-                        'unit_cost'   => $item->unit_cost,
+                        'unit_cost'   => $effectiveUnitCost,
                     ]);
                 }
             }
@@ -94,6 +101,30 @@ class PurchaseController extends Controller
                     ]);
                 }
             }
+        }
+
+        // AKUNTANSI KEUANGAN: Jika Lunas, otomatis potong saldo kas
+        if ($newStatus === 'paid' && $oldStatus !== 'paid') {
+            CashBook::create([
+                'tenant_id'      => $purchase->tenant_id,
+                'branch_id'      => $purchase->branch_id,
+                'type'           => 'out',
+                'category'       => 'pembelian',
+                'amount'         => $purchase->total_cost,
+                'reference_type' => 'purchase',
+                'reference_id'   => $purchase->id,
+                'note'           => 'Pembayaran PO ke Supplier: ' . ($purchase->invoice_number ?: 'Tanpa No. INV'),
+                'created_by'     => auth()->id() ?? $purchase->tenant_id,
+            ]);
+        }
+
+        // AKUNTANSI KEUANGAN: Jika di-Revert dari Paid, kembalikan uang (hapus kas keluar)
+        if ($oldStatus === 'paid' && $newStatus !== 'paid') {
+            CashBook::where('reference_type', 'purchase')
+                ->where('reference_id', $purchase->id)
+                ->where('type', 'out')
+                ->where('category', 'pembelian')
+                ->delete();
         }
 
         return back()->with('success', "Status PO berhasil diubah menjadi {$newStatus}!");
@@ -142,9 +173,13 @@ class PurchaseController extends Controller
 
                 // ─── SINKRONISASI OTOMATIS: Tambah stok jika diterima/lunas ───
                 if (in_array($purchase->status, ['received', 'paid'])) {
-                    $product = \App\Models\Products::find($item['product_id']);
+                    $product = \App\Models\Products::withCurrentStock()->find($item['product_id']);
                     if ($product && $product->track_stock) {
                         $effectiveUnitCost = $item['qty'] > 0 ? (($item['qty'] * $item['unit_cost']) - $discount) / $item['qty'] : $item['unit_cost'];
+                        
+                        // UPDATE BASE COST (WAC)
+                        $product->updateBaseCostWAC((float) $effectiveUnitCost, (int) $item['qty']);
+
                         $product->recordStockMovement('IN', $item['qty'], [
                             'branch_id'   => $validated['branch_id'],
                             'source_type' => 'purchase',
@@ -153,6 +188,21 @@ class PurchaseController extends Controller
                         ]);
                     }
                 }
+            }
+
+            // AKUNTANSI KEUANGAN: Jika dibuat langsung Lunas, otomatis potong saldo kas
+            if ($purchase->status === 'paid') {
+                CashBook::create([
+                    'tenant_id'      => $purchase->tenant_id,
+                    'branch_id'      => $purchase->branch_id,
+                    'type'           => 'out',
+                    'category'       => 'pembelian',
+                    'amount'         => $purchase->total_cost,
+                    'reference_type' => 'purchase',
+                    'reference_id'   => $purchase->id,
+                    'note'           => 'Pembayaran PO ke Supplier: ' . ($purchase->invoice_number ?: 'Tanpa No. INV'),
+                    'created_by'     => auth()->id() ?? $purchase->tenant_id,
+                ]);
             }
 
             \Illuminate\Support\Facades\DB::commit();

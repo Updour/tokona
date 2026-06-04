@@ -1,8 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { TypeTable } from '@/features/product-types/components/TypeTable';
 import { TypeFormDialog } from '@/features/product-types/components/TypeFormDialog';
+import { TypeTable } from '@/features/product-types/components/TypeTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 interface ProductType {
     id: string;

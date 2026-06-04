@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { BookOpen, Landmark, ArrowRightLeft, FileText, Calendar, Filter, Sparkles } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BookOpen, Landmark, ArrowRightLeft, FileText, Calendar, Filter, Sparkles } from 'lucide-react';
+import MainLayout from '@/layouts/app/app-main-layout';
 import { formatRupiah } from '@/lib/helpers/format';
 
 export default function AccountingReports({ ledger, balanceSheet, cashFlow, branches, filters }: any) {
@@ -82,6 +82,7 @@ export default function AccountingReports({ ledger, balanceSheet, cashFlow, bran
                 if (typeof val === 'string') {
                     return `"${val.replace(/"/g, '""')}"`;
                 }
+
                 return val;
             }).join(';'))
         ].join('\n');
@@ -117,22 +118,28 @@ export default function AccountingReports({ ledger, balanceSheet, cashFlow, bran
                     <div className="flex items-center gap-2 flex-wrap w-full lg:w-auto">
                         <div className="flex items-center gap-1 bg-white border rounded-md px-2 py-1 shadow-sm shrink-0">
                             <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                            <input 
-                                type="date" 
+                            <input
+                                type="date"
                                 className="border-0 p-0.5 text-xs focus:ring-0 focus:outline-none w-[115px]"
                                 value={startDate}
-                                onChange={(e) => { setStartDate(e.target.value); handleApply(e.target.value, endDate, branchId); }}
+                                onChange={(e) => {
+                                    setStartDate(e.target.value); handleApply(e.target.value, endDate, branchId);
+                                }}
                             />
                             <span className="text-[10px] text-slate-400 font-bold px-1">s/d</span>
-                            <input 
-                                type="date" 
+                            <input
+                                type="date"
                                 className="border-0 p-0.5 text-xs focus:ring-0 focus:outline-none w-[115px]"
                                 value={endDate}
-                                onChange={(e) => { setEndDate(e.target.value); handleApply(startDate, e.target.value, branchId); }}
+                                onChange={(e) => {
+                                    setEndDate(e.target.value); handleApply(startDate, e.target.value, branchId);
+                                }}
                             />
                         </div>
 
-                        <Select value={branchId} onValueChange={(val) => { setBranchId(val); handleApply(startDate, endDate, val); }}>
+                        <Select value={branchId} onValueChange={(val) => {
+                            setBranchId(val); handleApply(startDate, endDate, val);
+                        }}>
                             <SelectTrigger className="w-[150px] h-9 text-xs shadow-sm bg-white">
                                 <SelectValue placeholder="Semua Cabang" />
                             </SelectTrigger>
@@ -144,7 +151,7 @@ export default function AccountingReports({ ledger, balanceSheet, cashFlow, bran
                             </SelectContent>
                         </Select>
 
-                        <Button 
+                        <Button
                             onClick={handleExportExcel}
                             size="sm"
                             className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5 h-9"
@@ -158,31 +165,28 @@ export default function AccountingReports({ ledger, balanceSheet, cashFlow, bran
                 <div className="flex border-b border-slate-200">
                     <button
                         onClick={() => setActiveTab('ledger')}
-                        className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 ${
-                            activeTab === 'ledger' 
-                                ? 'border-indigo-600 text-indigo-600 bg-indigo-50/10' 
+                        className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 ${activeTab === 'ledger'
+                                ? 'border-indigo-600 text-indigo-600 bg-indigo-50/10'
                                 : 'border-transparent text-slate-500 hover:text-slate-800'
-                        }`}
+                            }`}
                     >
                         <ArrowRightLeft className="h-3.5 w-3.5" /> Buku Besar Mutasi (General Ledger)
                     </button>
                     <button
                         onClick={() => setActiveTab('balance_sheet')}
-                        className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 ${
-                            activeTab === 'balance_sheet' 
-                                ? 'border-indigo-600 text-indigo-600 bg-indigo-50/10' 
+                        className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 ${activeTab === 'balance_sheet'
+                                ? 'border-indigo-600 text-indigo-600 bg-indigo-50/10'
                                 : 'border-transparent text-slate-500 hover:text-slate-800'
-                        }`}
+                            }`}
                     >
                         <Landmark className="h-3.5 w-3.5" /> Neraca Keseimbangan (Balance Sheet)
                     </button>
                     <button
                         onClick={() => setActiveTab('cash_flow')}
-                        className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 ${
-                            activeTab === 'cash_flow' 
-                                ? 'border-indigo-600 text-indigo-600 bg-indigo-50/10' 
+                        className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 ${activeTab === 'cash_flow'
+                                ? 'border-indigo-600 text-indigo-600 bg-indigo-50/10'
                                 : 'border-transparent text-slate-500 hover:text-slate-800'
-                        }`}
+                            }`}
                     >
                         <FileText className="h-3.5 w-3.5" /> Laporan Arus Kas (Cash Flow)
                     </button>
@@ -229,10 +233,9 @@ export default function AccountingReports({ ledger, balanceSheet, cashFlow, bran
                                                     })}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                                                        item.type === 'Buku Kas' ? 'bg-indigo-50 text-indigo-700' :
-                                                        item.type === 'Biaya' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
-                                                    }`}>
+                                                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${item.type === 'Buku Kas' ? 'bg-indigo-50 text-indigo-700' :
+                                                            item.type === 'Biaya' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
+                                                        }`}>
                                                         {item.type}
                                                     </span>
                                                 </TableCell>
@@ -321,7 +324,7 @@ export default function AccountingReports({ ledger, balanceSheet, cashFlow, bran
                                                 {formatRupiah(balanceSheet.liabilities.payables)}
                                             </TableCell>
                                         </TableRow>
-                                        
+
                                         <TableRow className="border-t">
                                             <TableCell className="font-bold text-slate-700 pl-4">B. EKUITAS (EQUITY)</TableCell>
                                             <TableCell className="text-right font-mono font-bold text-slate-800"></TableCell>
@@ -338,7 +341,7 @@ export default function AccountingReports({ ledger, balanceSheet, cashFlow, bran
                                                 {formatRupiah(balanceSheet.equity.owner_equity)}
                                             </TableCell>
                                         </TableRow>
-                                        
+
                                         <TableRow className="bg-indigo-50 border-t font-black text-sm">
                                             <TableCell className="text-indigo-800 pl-4 uppercase">TOTAL PASIVA (LIABILITAS + EKUITAS)</TableCell>
                                             <TableCell className="text-right font-mono text-indigo-700 pr-4">
@@ -354,7 +357,7 @@ export default function AccountingReports({ ledger, balanceSheet, cashFlow, bran
 
                 {/* TAB 3: LAPORAN ARUS KAS */}
                 {activeTab === 'cash_flow' && (
-                    <Card className="shadow-sm border max-w-2xl mx-auto">
+                    <Card className="shadow-sm border max-w-full mx-auto">
                         <CardHeader className="bg-slate-50/50 p-4 border-b">
                             <CardTitle className="text-sm font-bold text-slate-800">Laporan Arus Kas Terintegrasi (Cash Flow Statement)</CardTitle>
                             <CardDescription className="text-xs">Pencatatan arus dana masuk dan keluar terperinci berdasarkan klasifikasi aktivitas operasional perusahaan.</CardDescription>

@@ -21,6 +21,12 @@ class UserController extends Controller
     {
         $query = User::with(['roles', 'branch:id,name', 'tenant:id,name']);
 
+        if (!auth()->user()->isSuperAdmin()) {
+            $query->whereDoesntHave('roles', function ($q) {
+                $q->where('name', 'super-admin');
+            });
+        }
+
         // Search logic
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -67,6 +73,8 @@ class UserController extends Controller
         if (!auth()->user()->isSuperAdmin()) {
             $rolesQuery->where('tenant_id', auth()->user()->tenant_id)
                 ->where('name', '!=', 'super-admin');
+        } else {
+            $rolesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
         $roles = $rolesQuery->get();
 
@@ -96,6 +104,13 @@ class UserController extends Controller
         // Determine tenant_id
         if (!auth()->user()->isSuperAdmin()) {
             $validated['tenant_id'] = auth()->user()->tenant_id;
+            
+            // Check subscription limit for employees
+            $tenant = Tenants::find(auth()->user()->tenant_id);
+            $subService = new \App\Services\SubscriptionService();
+            if ($tenant && !$subService->canAddUser($tenant)) {
+                return redirect()->back()->with('error', 'Limit jumlah karyawan tercapai! Silakan upgrade paket langganan Anda untuk menambah karyawan baru.');
+            }
         } else {
             // Super Admin infers the tenant from the selected branch
             $branch = Branch::findOrFail($validated['branch_id']);
@@ -105,8 +120,22 @@ class UserController extends Controller
         // Create the user
         $user = User::create($validated);
 
+        // Adjust role_id to target tenant if Super Admin
+        $roleId = $validated['role_id'];
+        if (auth()->user()->isSuperAdmin()) {
+            $selectedRole = Role::find($roleId);
+            if ($selectedRole && $selectedRole->tenant_id !== $validated['tenant_id']) {
+                $targetRole = Role::where('name', $selectedRole->name)
+                    ->where('tenant_id', $validated['tenant_id'])
+                    ->first();
+                if ($targetRole) {
+                    $roleId = $targetRole->id;
+                }
+            }
+        }
+
         // Sync the role
-        $user->roles()->sync([$validated['role_id']]);
+        $user->roles()->sync([$roleId]);
 
         return redirect()->route('users.index')->with('success', 'Karyawan berhasil ditambahkan.');
     }
@@ -127,8 +156,23 @@ class UserController extends Controller
         // Update the user
         $user->update($validated);
 
+        // Adjust role_id to target tenant if Super Admin
+        $roleId = $validated['role_id'];
+        if (auth()->user()->isSuperAdmin() && isset($validated['tenant_id'])) {
+            $selectedRole = Role::find($roleId);
+            $targetTenantId = $validated['tenant_id'] ?? $user->tenant_id;
+            if ($selectedRole && $selectedRole->tenant_id !== $targetTenantId) {
+                $targetRole = Role::where('name', $selectedRole->name)
+                    ->where('tenant_id', $targetTenantId)
+                    ->first();
+                if ($targetRole) {
+                    $roleId = $targetRole->id;
+                }
+            }
+        }
+
         // Sync the role
-        $user->roles()->sync([$validated['role_id']]);
+        $user->roles()->sync([$roleId]);
 
         return redirect()->route('users.index')->with('success', 'Data karyawan berhasil diperbarui.');
     }

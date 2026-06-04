@@ -1,13 +1,35 @@
-import { DataTable } from '@/components/shared/DataTable';
-import { columns } from './UserColumns';
-import { useUserStore } from '@/pages/users/stores/useUserStore';
-import { type User } from '@/pages/users/types';
+import {
+    flexRender,
+    getCoreRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
+import type { SortingState } from '@tanstack/react-table';
 import { useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { useUserStore } from '@/pages/users/stores/useUserStore';
+import type { User } from '@/pages/users/types';
+import { columns } from './UserColumns';
+import { UserFilters } from './UserFilters';
 
 interface UserTableProps {
-    data: any;
+    data: {
+        data: User[];
+        from: number | null;
+        to: number | null;
+        total: number;
+        per_page: number;
+        prev_page_url: string | null;
+        next_page_url: string | null;
+    };
     filters: any;
     branches: any[];
     tenants?: any[];
@@ -15,85 +37,96 @@ interface UserTableProps {
 
 export function UserTable({ data, filters, branches, tenants = [] }: UserTableProps) {
     const openForm = useUserStore((state) => state.openForm);
-    const [selectedTenant, setSelectedTenant] = useState(filters?.tenant_id || 'ALL');
-    const [selectedBranch, setSelectedBranch] = useState(filters?.branch_id || 'ALL');
-    const [selectedStatus, setSelectedStatus] = useState(filters?.status || 'ALL');
+    const [sorting, setSorting] = useState<SortingState>([]);
+
+    const table = useReactTable({
+        data: data?.data || [],
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        onSortingChange: setSorting,
+        getSortedRowModel: getSortedRowModel(),
+        state: { sorting },
+    });
+
+    const handleExport = () => {
+        if (!data?.data?.length) {
+return;
+}
+
+        const rows = data.data.map((u) => ({
+            Nama: u.name,
+            Email: u.email,
+            Telepon: u.phone ?? '-',
+            Cabang: u.branch?.name ?? '-',
+            Toko: u.tenant?.name ?? '-',
+            Status: u.status === 'active' ? 'Aktif' : 'Nonaktif',
+        }));
+        
+        const headers = Object.keys(rows[0]);
+        const csv = [
+            headers.join(','),
+            ...rows.map((r) => headers.map((h) => `"${String((r as any)[h]).replace(/"/g, '""')}"`).join(',')),
+        ].join('\n');
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'tokona_karyawan_export.csv';
+        link.click();
+    };
 
     return (
-        <div className="space-y-4">
-            {/* Saringan Karyawan */}
-            <div className="flex flex-wrap items-center gap-4 bg-muted/30 p-4 rounded-lg border border-border">
-                {tenants.length > 0 && (
-                    <div className="flex flex-col gap-1.5 w-full sm:w-[220px]">
-                        <Label htmlFor="filter-tenant" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            Toko / Tenant
-                        </Label>
-                        <Select value={selectedTenant} onValueChange={(val) => setSelectedTenant(val)}>
-                            <SelectTrigger id="filter-tenant" className="w-full bg-background">
-                                <SelectValue placeholder="Pilih Toko/Tenant" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="ALL">Semua Toko</SelectItem>
-                                {tenants.map((tenant: any) => (
-                                    <SelectItem key={tenant.id} value={tenant.id}>
-                                        {tenant.name}
-                                    </SelectItem>
+        <div className="w-full space-y-4">
+            <UserFilters
+                filters={filters}
+                branches={branches}
+                tenants={tenants}
+                totalResults={data?.total || 0}
+                onAddClick={() => openForm()}
+                onExport={handleExport}
+            />
+
+            <div className="rounded-md border border-slate-200 shadow-sm bg-white overflow-hidden">
+                <Table>
+                    <TableHeader className="bg-slate-50/80">
+                        {table.getHeaderGroups().map((hg) => (
+                            <TableRow key={hg.id}>
+                                {hg.headers.map((header) => (
+                                    <TableHead key={header.id} className="font-semibold text-slate-700">
+                                        {header.isPlaceholder
+                                            ? null
+                                            : flexRender(header.column.columnDef.header, header.getContext())}
+                                    </TableHead>
                                 ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                )}
-
-                <div className="flex flex-col gap-1.5 w-full sm:w-[220px]">
-                    <Label htmlFor="filter-branch" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Cabang Penugasan
-                    </Label>
-                    <Select value={selectedBranch} onValueChange={(val) => setSelectedBranch(val)}>
-                        <SelectTrigger id="filter-branch" className="w-full bg-background">
-                            <SelectValue placeholder="Pilih Cabang" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ALL">Semua Cabang</SelectItem>
-                            {branches.map((branch) => (
-                                <SelectItem key={branch.id} value={branch.id}>
-                                    {branch.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <div className="flex flex-col gap-1.5 w-full sm:w-[180px]">
-                    <Label htmlFor="filter-status" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Status Karyawan
-                    </Label>
-                    <Select value={selectedStatus} onValueChange={(val) => setSelectedStatus(val)}>
-                        <SelectTrigger id="filter-status" className="w-full bg-background">
-                            <SelectValue placeholder="Pilih Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ALL">Semua Status</SelectItem>
-                            <SelectItem value="active">Aktif</SelectItem>
-                            <SelectItem value="inactive">Nonaktif</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id}>
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground">
+                                    Tidak ada karyawan yang ditemukan.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             </div>
 
-            <DataTable<User>
-                data={data}
-                columns={columns}
-                filters={filters}
-                baseUrl="/users"
-                searchPlaceholder="Cari nama, email, atau telepon..."
-                exportFileName="tokona_karyawan_export.csv"
-                onAddClick={() => openForm()}
-                addButtonText="Tambah Karyawan"
-                extraParams={{
-                    tenant_id: selectedTenant,
-                    branch_id: selectedBranch,
-                    status: selectedStatus,
-                }}
+            <DataTablePagination 
+                data={data as any} 
+                itemName="karyawan" 
+                filters={filters} 
             />
         </div>
     );

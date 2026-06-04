@@ -1,11 +1,15 @@
+import { useForm, usePage } from '@inertiajs/react';
+import L from 'leaflet';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
+import { Building2, MapPin, Sparkles } from 'lucide-react';
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { useForm, usePage } from '@inertiajs/react';
-import { useBranchStore } from '@/pages/branches/stores/useBranchStore';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -14,6 +18,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -21,23 +27,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Building2, MapPin, Sparkles } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { useBranchStore } from '@/pages/branches/stores/useBranchStore';
 import { store as branchesStore, update as branchesUpdate } from '@/routes/branches';
-import { toast } from 'sonner';
 
 // Import komponen Leaflet & GeoSearch
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
-import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
-import L from 'leaflet';
 
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-geosearch/dist/geosearch.css';
 
 // Fix ikon default Leaflet yang sering hilang di bundling React
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-let DefaultIcon = L.icon({
+const DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
@@ -98,6 +98,7 @@ function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => v
             onMapClick(e.latlng.lat, e.latlng.lng);
         },
     });
+
     return null;
 }
 
@@ -126,7 +127,11 @@ export function BranchFormDialog() {
                 cash: true,
                 transfer: true,
                 debt: true
-            }
+            },
+            require_shift: true,
+            enable_canvas: false,
+            enable_consignment: false,
+            enable_attendance: false
         }
     });
 
@@ -151,7 +156,11 @@ export function BranchFormDialog() {
                         cash: true,
                         transfer: true,
                         debt: true
-                    }
+                    },
+                    require_shift: true,
+                    enable_canvas: false,
+                    enable_consignment: false,
+                    enable_attendance: false
                 }
             });
 
@@ -165,6 +174,7 @@ export function BranchFormDialog() {
             reset();
             setMarkerPos(null);
         }
+
         clearErrors();
     }, [selectedBranch, isFormOpen]);
 
@@ -172,6 +182,7 @@ export function BranchFormDialog() {
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=id`);
             const result = await res.json();
+
             if (result && result.address) {
                 setData((prev: any) => ({
                     ...prev,
@@ -205,6 +216,7 @@ export function BranchFormDialog() {
 
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (selectedBranch) {
             put(branchesUpdate(selectedBranch.id).url, { onSuccess: () => closeForm() });
         } else {
@@ -264,6 +276,7 @@ export function BranchFormDialog() {
                                             onClick={() => {
                                                 if (!data.name) {
                                                     toast.error('Silakan isi Nama Cabang terlebih dahulu untuk membuat kode!');
+
                                                     return;
                                                 }
 
@@ -396,10 +409,13 @@ export function BranchFormDialog() {
                                                     checked={data.pos_settings?.activeMethods?.[m.key]}
                                                     onChange={(e) => {
                                                         const updatedMethods = { ...data.pos_settings.activeMethods, [m.key]: e.target.checked };
+
                                                         if (Object.values(updatedMethods).filter(Boolean).length === 0) {
                                                             toast.error('Minimal harus ada 1 metode pembayaran aktif!');
+
                                                             return;
                                                         }
+
                                                         const updated = { ...data.pos_settings, activeMethods: updatedMethods };
                                                         setData('pos_settings', updated);
                                                     }}
@@ -453,6 +469,77 @@ export function BranchFormDialog() {
                                                     <SelectItem value="ceil">Ke Atas (Ceil)</SelectItem>
                                                 </SelectContent>
                                             </Select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Pengaturan Modul Cabang (Shift & Canvas) */}
+                                <div className="space-y-2 bg-slate-50 p-2.5 rounded-lg border">
+                                    <span className="text-xs font-bold text-slate-800 block">Pengaturan Modul Cabang</span>
+                                    
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-center justify-between gap-3 bg-white p-2.5 rounded border">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-bold text-slate-800">Wajibkan Buka Shift</span>
+                                                <span className="text-[10px] text-slate-500">Kasir wajib buka shift sebelum berjualan</span>
+                                            </div>
+                                            <input
+                                                type="checkbox"
+                                                checked={data.pos_settings?.require_shift ?? true}
+                                                onChange={(e) => {
+                                                    const updated = { ...data.pos_settings, require_shift: e.target.checked };
+                                                    setData('pos_settings', updated);
+                                                }}
+                                                className="h-4 w-4 rounded border-slate-350 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-3 bg-white p-2.5 rounded border">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-bold text-slate-800">Aktifkan Canvas Sales</span>
+                                                <span className="text-[10px] text-slate-500">Buka akses modul sales lapangan untuk cabang ini</span>
+                                            </div>
+                                            <input
+                                                type="checkbox"
+                                                checked={data.pos_settings?.enable_canvas ?? false}
+                                                onChange={(e) => {
+                                                    const updated = { ...data.pos_settings, enable_canvas: e.target.checked };
+                                                    setData('pos_settings', updated);
+                                                }}
+                                                className="h-4 w-4 rounded border-slate-350 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-3 bg-white p-2.5 rounded border">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-bold text-slate-800">Aktifkan Titip Barang (Konsinyasi)</span>
+                                                <span className="text-[10px] text-slate-500">Buka akses penerimaan barang titipan dari supplier</span>
+                                            </div>
+                                            <input
+                                                type="checkbox"
+                                                checked={data.pos_settings?.enable_consignment ?? false}
+                                                onChange={(e) => {
+                                                    const updated = { ...data.pos_settings, enable_consignment: e.target.checked };
+                                                    setData('pos_settings', updated);
+                                                }}
+                                                className="h-4 w-4 rounded border-slate-350 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-3 bg-white p-2.5 rounded border">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-bold text-slate-800">Aktifkan Absensi Pegawai</span>
+                                                <span className="text-[10px] text-slate-500">Buka akses modul absensi harian dan pencatatan lokasi GPS pegawai</span>
+                                            </div>
+                                            <input
+                                                type="checkbox"
+                                                checked={data.pos_settings?.enable_attendance ?? false}
+                                                onChange={(e) => {
+                                                    const updated = { ...data.pos_settings, enable_attendance: e.target.checked };
+                                                    setData('pos_settings', updated);
+                                                }}
+                                                className="h-4 w-4 rounded border-slate-350 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                                            />
                                         </div>
                                     </div>
                                 </div>

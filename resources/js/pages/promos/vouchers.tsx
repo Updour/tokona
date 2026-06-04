@@ -1,15 +1,15 @@
-import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { PromoFormDialog } from '@/features/promos/components/PromoFormDialog';
 import { Megaphone, Plus, Search, X, Copy, Ticket, Check, Scissors, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PromoFormDialog } from '@/features/promos/components/PromoFormDialog';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Vouchers({ vouchers, stats, filters }: any) {
     const [search, setSearch] = useState(filters.search || '');
@@ -34,6 +34,7 @@ export default function Vouchers({ vouchers, stats, filters }: any) {
         const handler = setTimeout(() => {
             applyFilters(val, statusFilter);
         }, 350);
+
         return () => clearTimeout(handler);
     };
 

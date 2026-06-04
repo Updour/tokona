@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Calculator, BarChart3, TrendingUp, Landmark, ShieldCheck, ArrowRightLeft, Download } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calculator, BarChart3, TrendingUp, Landmark, ShieldCheck, ArrowRightLeft } from 'lucide-react';
+import MainLayout from '@/layouts/app/app-main-layout';
 import { formatRupiah } from '@/lib/helpers/format';
 
 export default function ProfitLoss({ branches, stats }: any) {
@@ -22,6 +22,29 @@ export default function ProfitLoss({ branches, stats }: any) {
     const grossProfit = stats.revenue - stats.cogs;
     const netProfit = stats.net_profit;
     const years = ['2024', '2025', '2026', '2027'];
+
+    const handleExport = () => {
+        if (!stats.breakdown?.length) return;
+        const rows = stats.breakdown.map((m: any) => ({
+            'Bulan': m.month,
+            'Pendapatan': m.revenue ?? 0,
+            'HPP': m.cogs ?? 0,
+            'Biaya Operasional': m.expenses ?? 0,
+            'Laba Bersih': m.net_profit ?? 0,
+        }));
+        const headers = Object.keys(rows[0]);
+        const csv = [
+            headers.join(','),
+            ...rows.map((r: any) =>
+                headers.map(h => `"${String(r[h]).replace(/"/g, '""')}"`).join(',')
+            ),
+        ].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `laba_rugi_${year}.csv`;
+        link.click();
+    };
 
     return (
         <MainLayout>
@@ -40,7 +63,9 @@ export default function ProfitLoss({ branches, stats }: any) {
 
                     {/* Saringan Laporan */}
                     <div className="flex items-center gap-2 flex-wrap">
-                        <Select value={year} onValueChange={(val) => { setYear(val); handleApply(val, branchId); }}>
+                        <Select value={year} onValueChange={(val) => {
+ setYear(val); handleApply(val, branchId); 
+}}>
                             <SelectTrigger className="w-[100px] h-9 text-xs">
                                 <SelectValue placeholder="Tahun" />
                             </SelectTrigger>
@@ -51,7 +76,9 @@ export default function ProfitLoss({ branches, stats }: any) {
                             </SelectContent>
                         </Select>
 
-                        <Select value={branchId} onValueChange={(val) => { setBranchId(val); handleApply(year, val); }}>
+                        <Select value={branchId} onValueChange={(val) => {
+ setBranchId(val); handleApply(year, val); 
+}}>
                             <SelectTrigger className="w-[150px] h-9 text-xs">
                                 <SelectValue placeholder="Cabang" />
                             </SelectTrigger>
@@ -62,6 +89,16 @@ export default function ProfitLoss({ branches, stats }: any) {
                                 ))}
                             </SelectContent>
                         </Select>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 gap-1.5 text-xs"
+                            onClick={handleExport}
+                            disabled={!stats.breakdown?.length}
+                        >
+                            <Download className="h-3.5 w-3.5" /> Export CSV
+                        </Button>
                     </div>
                 </div>
 

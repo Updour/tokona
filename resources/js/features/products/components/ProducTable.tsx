@@ -1,24 +1,23 @@
 import { usePage, router } from '@inertiajs/react';
+import type {
+    SortingState} from '@tanstack/react-table';
 import {
     flexRender,
     getCoreRowModel,
     getSortedRowModel,
-    SortingState,
     useReactTable,
 } from '@tanstack/react-table';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import {
     Table, TableBody, TableCell,
     TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useProductStore } from '@/pages/products/stores/useProductStore';
+import type {Product, ProductCategory, ProductType, ProductBranch, ProductTenant} from '@/pages/products/types';
 import { columns } from './ProductColumn';
 import { ProductFilters } from './ProductFilters';
-import { useProductStore } from '@/pages/products/stores/useProductStore';
-import {
-    type Product, type ProductCategory,
-    type ProductType, type ProductBranch, type ProductTenant,
-} from '@/pages/products/types';
 
 interface PageProps {
     [key: string]: any;
@@ -55,7 +54,10 @@ export function ProductTable() {
     });
 
     const handleExport = () => {
-        if (!products?.data?.length) return;
+        if (!products?.data?.length) {
+return;
+}
+
         const rows = products.data.map((p) => ({
             Nama: p.name,
             SKU: p.sku ?? '',
@@ -133,29 +135,11 @@ export function ProductTable() {
                 </Table>
             </div>
 
-            <div className="flex items-center justify-between py-2">
-                <p className="text-sm text-muted-foreground">
-                    {products?.from && products?.to
-                        ? `Menampilkan ${products.from}–${products.to} dari ${products.total.toLocaleString('id-ID')} produk`
-                        : `${products?.total ?? 0} produk`}
-                </p>
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline" size="sm"
-                        disabled={!products?.prev_page_url}
-                        onClick={() => products?.prev_page_url && router.get(products.prev_page_url)}
-                    >
-                        Sebelumnya
-                    </Button>
-                    <Button
-                        variant="outline" size="sm"
-                        disabled={!products?.next_page_url}
-                        onClick={() => products?.next_page_url && router.get(products.next_page_url)}
-                    >
-                        Berikutnya
-                    </Button>
-                </div>
-            </div>
+            <DataTablePagination 
+                data={products as any} 
+                itemName="produk" 
+                filters={filters} 
+            />
         </div>
     );
 }

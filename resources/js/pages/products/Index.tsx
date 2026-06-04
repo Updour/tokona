@@ -1,8 +1,8 @@
 import { Head } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { ProductTable } from '@/features/products/components/ProducTable';
 import { ProductFormDialog } from '@/features/products/components/ProductFormDialog';
 import { ProductRestockDialog } from '@/features/products/components/ProductRestockDialog';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Index() {
     return (

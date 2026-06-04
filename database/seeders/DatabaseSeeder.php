@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call(tenantSeeder::class);
         $this->call(TenanLocationSeeder::class);
         $this->call(TenantMediaSeeder::class);
-        $this->call(RoleSeeder::class);
+        $this->call(MenuAndPermissionSeeder::class);
+        $this->call(SalesFieldSeeder::class);
     }
 }

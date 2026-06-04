@@ -1,11 +1,11 @@
 import { Head, router } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { Users, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { CustomerTable } from '@/features/customers/components/CustomerTable';
-import { CustomerFormDialog } from '@/features/customers/components/CustomerFormDialog';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { CustomerFormDialog } from '@/features/customers/components/CustomerFormDialog';
+import { CustomerTable } from '@/features/customers/components/CustomerTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Index({ customers }: any) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);

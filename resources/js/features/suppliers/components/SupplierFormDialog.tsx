@@ -1,12 +1,12 @@
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useForm } from "@inertiajs/react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useForm } from "@inertiajs/react";
-import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect } from "react";
 
 interface Props {
     open: boolean;
@@ -27,6 +27,7 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
     useEffect(() => {
         if (open) {
             clearErrors();
+
             if (supplier) {
                 setData({
                     name: supplier.name || '',
@@ -44,7 +45,7 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (supplier) {
             put(`/suppliers/${supplier.id}`, {
                 onSuccess: () => {
@@ -100,7 +101,7 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
                         <div className="space-y-2">
                             <Label>Status <span className="text-red-500">*</span></Label>
                             <Select value={data.status} onValueChange={(v) => setData('status', v)}>
-                                <SelectTrigger>
+                                <SelectTrigger className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -115,8 +116,8 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
                             Batal
                         </Button>
                         <Button type="submit" disabled={processing}>
-                            {processing 
-                                ? (supplier ? 'Memperbarui...' : 'Menyimpan...') 
+                            {processing
+                                ? (supplier ? 'Memperbarui...' : 'Menyimpan...')
                                 : (supplier ? 'Simpan Perubahan' : 'Simpan Data')
                             }
                         </Button>

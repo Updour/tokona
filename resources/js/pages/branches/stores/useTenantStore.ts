@@ -1,7 +1,7 @@
 // @/features/tenants/store/useTenantStore.ts
 
 import { create } from 'zustand';
-import { type Tenant } from '../../tenants/types'; // Impor tipe data dari file terpisah
+import type {Tenant} from '../../tenants/types'; // Impor tipe data dari file terpisah
 
 // State murni untuk data Tenant
 interface TenantState {

@@ -1,4 +1,4 @@
-# Panduan Standar Arsitektur Bersih (Clean Architecture) — Tokona ERP & CRM
+# Panduan Standar Arsitektur Bersih (Clean Architecture) — Tokona Saas Multi Tenant POS + ERP & CRM 
 
 Panduan ini mendefinisikan arsitektur sistem, standar penulisan kode (*clean code*), dan praktik terbaik (*best practices*) yang wajib dipatuhi di seluruh proyek **Tokona POS + ERP SaaS**.
 
@@ -11,11 +11,13 @@ Untuk menjaga kode tetap bersih, mudah diuji, dan aman dari bug, kita menerapkan
 ```mermaid
 graph TD
     Request[HTTP Request / FormRequest] -->|1. Validasi Input| Controller[Slim Controller]
+    Request --> sudha ada filenya sendiri
     Controller -->|2. Delegasi Logika Bisnis| Service[Service Class / Action]
     Service -->|3. Ambil Data Tersaring| Model[Eloquent Model + Query Scopes]
     Model -->|4. Kembalikan Data| Service
     Service -->|5. Kembalikan Hasil| Controller
     Controller -->|6. Kirim Response| Client[Inertia Response / Redirect]
+    kamu pisah2 dan rpaikan kodingnanya karena sudah ada filenya sendiri
 ```
 
 ### A. Lapisan Form Request (Validasi Input)
@@ -44,6 +46,9 @@ graph TD
 *   Model juga dilindungi secara otomatis oleh **Global Tenant Scope** untuk mengisolasi data antartoko secara transparan tanpa perlu menulis `where('tenant_id', ...)` di setiap query.
 
 ### E. SELALU BERPEGANGAN KE HAL YANG DI REKOMENDASIKAN SAAT KODING AGAR KODE MENJADI SIMPLE DAN BERSIH
+* semua komponent harus berada di @/features 
+* komponennya juga harus punya file @/services untuk logic bisnisnya dan file @/types untuk typenya.
+* kompoentn yg ada di page itu yg sudha rapi dan tidak lebih banyak dari 50 baris 
 * Kode di front end kalau bisa tidak sampe 500 baris maka harus di pecah dna di pilah menjadi beberapa komponen.
 * Seragamkan semua komponen yg sudah ada misalnya table 
 * Jangan membuang waktu untuk memikirkan hal hal yang tidak perlu,karena akan membuang waktu percuma.

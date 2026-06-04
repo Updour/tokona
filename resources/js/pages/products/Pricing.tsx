@@ -1,16 +1,16 @@
-import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { DollarSign, Percent, TrendingUp, Search, X, Edit, Check, Play, Sliders, Calculator, ShieldCheck, Tag } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { DollarSign, Percent, TrendingUp, Search, X, Edit, Check, Play, Sliders, Calculator, ShieldCheck, Tag } from 'lucide-react';
-import { toast } from 'sonner';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Pricing({ products, categories, branches, filters }: any) {
     const [search, setSearch] = useState(filters.search || '');
@@ -46,6 +46,7 @@ export default function Pricing({ products, categories, branches, filters }: any
         const handler = setTimeout(() => {
             applyFilters(val, categoryFilter, branchFilter);
         }, 350);
+
         return () => clearTimeout(handler);
     };
 
@@ -65,6 +66,7 @@ export default function Pricing({ products, categories, branches, filters }: any
     const saveRow = (p: any) => {
         if (editData.min_sell_price > editData.sell_price) {
             toast.error('Harga minimum tidak boleh melebihi harga jual!');
+
             return;
         }
 
@@ -96,10 +98,13 @@ export default function Pricing({ products, categories, branches, filters }: any
 
     const handleBulkMarkup = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (bulkValue <= 0) {
             toast.error('Nilai markup harus lebih besar dari 0!');
+
             return;
         }
+
         setBulkProcessing(true);
 
         router.post('/products/bulk-markup', {
@@ -133,12 +138,14 @@ export default function Pricing({ products, categories, branches, filters }: any
         const cost = Number(cur.base_cost) || 0;
         const sell = Number(cur.sell_price) || 0;
         const stock = Number(cur.current_stock) || 0;
+
         return acc + (stock > 0 ? stock * (sell - cost) : 0);
     }, 0);
 
     const totalInventoryValue = productsData.reduce((acc: number, cur: any) => {
         const cost = Number(cur.base_cost) || 0;
         const stock = Number(cur.current_stock) || 0;
+
         return acc + (stock > 0 ? stock * cost : 0);
     }, 0);
 
@@ -146,7 +153,11 @@ export default function Pricing({ products, categories, branches, filters }: any
         ? productsData.reduce((acc: number, cur: any) => {
             const cost = Number(cur.base_cost) || 0;
             const sell = Number(cur.sell_price) || 0;
-            if (sell === 0) return acc;
+
+            if (sell === 0) {
+return acc;
+}
+
             return acc + (((sell - cost) / sell) * 100);
         }, 0) / productsData.length
         : 0;
@@ -232,7 +243,9 @@ export default function Pricing({ products, categories, branches, filters }: any
                         )}
                     </div>
 
-                    <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); applyFilters(search, v, branchFilter); }}>
+                    <Select value={categoryFilter} onValueChange={(v) => {
+ setCategoryFilter(v); applyFilters(search, v, branchFilter); 
+}}>
                         <SelectTrigger className="w-[150px] h-9 text-sm">
                             <SelectValue placeholder="Kategori" />
                         </SelectTrigger>
@@ -244,7 +257,9 @@ export default function Pricing({ products, categories, branches, filters }: any
                         </SelectContent>
                     </Select>
 
-                    <Select value={branchFilter} onValueChange={(v) => { setBranchFilter(v); applyFilters(search, categoryFilter, v); }}>
+                    <Select value={branchFilter} onValueChange={(v) => {
+ setBranchFilter(v); applyFilters(search, categoryFilter, v); 
+}}>
                         <SelectTrigger className="w-[150px] h-9 text-sm">
                             <SelectValue placeholder="Cabang" />
                         </SelectTrigger>

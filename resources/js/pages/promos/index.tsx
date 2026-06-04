@@ -1,11 +1,11 @@
 import { Head, router } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { Megaphone, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { PromoTable } from '@/features/promos/components/PromoTable';
-import { PromoFormDialog } from '@/features/promos/components/PromoFormDialog';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { PromoFormDialog } from '@/features/promos/components/PromoFormDialog';
+import { PromoTable } from '@/features/promos/components/PromoTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Index({ promos }: any) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);

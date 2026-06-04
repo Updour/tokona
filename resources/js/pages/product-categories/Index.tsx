@@ -1,8 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { CategoryTable } from '@/features/product-categories/components/CategoryTable';
 import { CategoryFormDialog } from '@/features/product-categories/components/CategoryFormDialog';
+import { CategoryTable } from '@/features/product-categories/components/CategoryTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 interface ProductCategory {
     id: string;

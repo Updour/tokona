@@ -1,20 +1,29 @@
-import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Search, X, Receipt, ArrowUpRight, ArrowDownRight, Scale, PiggyBank, Landmark, CircleAlert, Download, SlidersHorizontal, Building2 } from 'lucide-react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, X, Receipt, ArrowUpRight, ArrowDownRight, Scale, PiggyBank, Landmark, CircleAlert } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import MainLayout from '@/layouts/app/app-main-layout';
 import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
 
 export default function CashBooks({ cashBooks, branches, stats, filters }: any) {
     const [search, setSearch] = useState(filters.search || '');
     const [branchFilter, setBranchFilter] = useState(filters.branch_id || 'ALL');
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    const activeFilterCount = [
+        branchFilter !== 'ALL' && branchFilter !== '',
+    ].filter(Boolean).length;
 
     const applyFilters = (s = search, br = branchFilter) => {
+        setIsFilterOpen(false);
         router.get('/cash-books', {
             search: s || undefined,
             branch_id: br !== 'ALL' ? br : undefined
@@ -26,13 +35,39 @@ export default function CashBooks({ cashBooks, branches, stats, filters }: any) 
         const handler = setTimeout(() => {
             applyFilters(val, branchFilter);
         }, 350);
+
         return () => clearTimeout(handler);
     };
 
     const handleReset = () => {
         setSearch('');
         setBranchFilter('ALL');
+        setIsFilterOpen(false);
         router.get('/cash-books', {}, { replace: true });
+    };
+
+    const handleExport = () => {
+        if (!cashBooks?.data?.length) return;
+        const rows = cashBooks.data.map((c: any) => ({
+            'Tanggal': c.created_at,
+            'Arah': c.type === 'in' ? 'MASUK' : 'KELUAR',
+            'Kategori': c.category,
+            'Keterangan': c.note,
+            'Cabang': c.branch?.name || '-',
+            'Nominal': c.amount,
+        }));
+        const headers = Object.keys(rows[0]);
+        const csv = [
+            headers.join(','),
+            ...rows.map((r: any) =>
+                headers.map(h => `"${String(r[h]).replace(/"/g, '""')}"`).join(',')
+            ),
+        ].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `buku_kas_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
     };
 
     return (
@@ -94,39 +129,110 @@ export default function CashBooks({ cashBooks, branches, stats, filters }: any) 
                 </div>
 
                 {/* Saringan Filter Pencarian */}
-                <div className="flex gap-2 items-center flex-wrap bg-white p-3 rounded-lg border shadow-sm">
-                    <div className="relative flex-1 min-w-[200px] max-w-xs">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Cari deskripsi mutasi..."
-                            value={search}
-                            onChange={(e) => handleSearchChange(e.target.value)}
-                            className="pl-8 h-9 text-sm"
-                        />
-                        {search && (
-                            <button onClick={() => handleSearchChange('')} className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground">
-                                <X className="h-4 w-4" />
-                            </button>
+                <div className="space-y-3">
+                    <div className="flex gap-2 items-center flex-wrap bg-white p-3 rounded-lg border shadow-sm">
+                        <div className="relative flex-1 min-w-[200px] max-w-sm">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Cari deskripsi mutasi..."
+                                value={search}
+                                onChange={(e) => handleSearchChange(e.target.value)}
+                                className="pl-8 h-9 text-sm"
+                            />
+                            {search && (
+                                <button onClick={() => handleSearchChange('')} className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground">
+                                    <X className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
+
+                        <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="gap-2 h-9">
+                                    <SlidersHorizontal className="h-4 w-4" />
+                                    Filter
+                                    {activeFilterCount > 0 && (
+                                        <Badge className="h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+                                            {activeFilterCount}
+                                        </Badge>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[340px] p-0" align="start">
+                                <div className="px-4 py-3 border-b flex items-center justify-between">
+                                    <p className="text-sm font-semibold">Filter Mutasi</p>
+                                    {activeFilterCount > 0 && (
+                                        <button onClick={handleReset} className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1">
+                                            <X className="h-3 w-3" /> Reset
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="p-4 space-y-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5">
+                                            <Building2 className="h-3 w-3" /> Cabang
+                                        </Label>
+                                        <Select value={branchFilter || 'ALL'} onValueChange={(v) => setBranchFilter(v)}>
+                                            <SelectTrigger className="h-9 text-sm w-full"><SelectValue placeholder="Semua Cabang" /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="ALL">Semua Cabang</SelectItem>
+                                                {branches?.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                <div className="px-4 py-3 border-t">
+                                    <Button className="w-full" size="sm" onClick={() => applyFilters()}>
+                                        Terapkan Filter
+                                    </Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+
+                        {(search || activeFilterCount > 0) && (
+                            <Button variant="ghost" size="sm" onClick={handleReset} className="h-9 gap-1 text-muted-foreground">
+                                <X className="h-3.5 w-3.5" /> Reset
+                            </Button>
                         )}
+                        
+                        <div className="flex-1" />
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 gap-1.5 text-xs"
+                            onClick={handleExport}
+                            disabled={!cashBooks?.data?.length}
+                        >
+                            <Download className="h-3.5 w-3.5" /> Export CSV
+                        </Button>
                     </div>
 
-                    <Select value={branchFilter} onValueChange={(v) => { setBranchFilter(v); applyFilters(search, v); }}>
-                        <SelectTrigger className="w-[150px] h-9 text-sm">
-                            <SelectValue placeholder="Cabang" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ALL">Semua Cabang</SelectItem>
-                            {branches?.map((b: any) => (
-                                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    {(search || branchFilter !== 'ALL') && (
-                        <Button variant="ghost" size="sm" onClick={handleReset} className="h-9 gap-1 text-muted-foreground">
-                            <X className="h-3.5 w-3.5" /> Reset
-                        </Button>
+                    {/* Active filter chips */}
+                    {activeFilterCount > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                            {(branchFilter !== 'ALL' && branchFilter !== '') && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium">
+                                    Cabang: {branches?.find((b: any) => b.id === branchFilter)?.name ?? '...'}
+                                    <button onClick={() => { setBranchFilter('ALL'); applyFilters(search, 'ALL'); }} className="hover:text-destructive ml-0.5">
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </span>
+                            )}
+                        </div>
                     )}
+
+                    <div className="flex-1" />
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 gap-1.5 text-xs"
+                        onClick={handleExport}
+                        disabled={!cashBooks?.data?.length}
+                    >
+                        <Download className="h-3.5 w-3.5" /> Export CSV
+                    </Button>
                 </div>
 
                 {/* Tabel Jurnal Mutasi Kas */}
@@ -147,6 +253,7 @@ export default function CashBooks({ cashBooks, branches, stats, filters }: any) 
                                 {cashBooks?.data?.length ? (
                                     cashBooks.data.map((c: any) => {
                                         const isIn = c.type === 'in';
+
                                         return (
                                             <TableRow key={c.id} className="hover:bg-slate-50/50">
                                                 <TableCell className="font-mono text-xs text-slate-600">
@@ -196,17 +303,9 @@ export default function CashBooks({ cashBooks, branches, stats, filters }: any) 
                 </Card>
 
                 {/* Paginasi */}
-                {cashBooks?.total > cashBooks?.per_page && (
-                    <div className="flex justify-between items-center py-2">
-                        <p className="text-sm text-muted-foreground">
-                            Menampilkan {cashBooks.from} hingga {cashBooks.to} dari {cashBooks.total} mutasi
-                        </p>
-                        <div className="flex gap-2">
-                            <Button variant="outline" size="sm" disabled={!cashBooks?.prev_page_url} onClick={() => router.get(cashBooks.prev_page_url)}>Sebelumnya</Button>
-                            <Button variant="outline" size="sm" disabled={!cashBooks?.next_page_url} onClick={() => router.get(cashBooks.next_page_url)}>Berikutnya</Button>
-                        </div>
-                    </div>
-                )}
+                <div className="pt-2">
+                    <DataTablePagination data={cashBooks} itemName="mutasi" filters={filters} />
+                </div>
             </div>
         </MainLayout>
     );
