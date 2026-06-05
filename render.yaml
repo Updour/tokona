@@ -3,6 +3,7 @@ services:
     name: tokona-erp
     env: docker
     plan: free
+    region: singapore
     # Render otomatis menggunakan Apache. Kita atur dokumen root ke folder public Laravel.
     envVars:
       - key: APP_NAME
@@ -17,9 +18,9 @@ services:
         value: public
       - key: DB_CONNECTION
         value: pgsql
-      # Menggunakan Pooler host agar lebih stabil di Neon Serverless
+      # Menggunakan koneksi langsung (tanpa pooler) karena transaksi PgBouncer sering bermasalah dengan cache Laravel
       - key: DB_HOST
-        value: ep-icy-term-aotunhqo-pooler.c-2.ap-southeast-1.aws.neon.tech
+        value: ep-icy-term-aotunhqo.c-2.ap-southeast-1.aws.neon.tech
       - key: DB_PORT
         value: 5432
       - key: DB_DATABASE
