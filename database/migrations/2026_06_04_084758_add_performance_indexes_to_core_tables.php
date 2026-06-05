@@ -42,7 +42,7 @@ return new class extends Migration
         // 5. Sales Visits
         Schema::table('sales_visits', function (Blueprint $table) {
             $table->index(['tenant_id', 'branch_id', 'created_at'], 'idx_sv_tenant_branch_date');
-            $table->index('sales_person_id');
+            $table->index('sales_id');
         });
     }
 
@@ -78,7 +78,7 @@ return new class extends Migration
 
         Schema::table('sales_visits', function (Blueprint $table) {
             $table->dropIndex('idx_sv_tenant_branch_date');
-            $table->dropIndex(['sales_person_id']);
+            $table->dropIndex(['sales_id']);
         });
     }
 };
