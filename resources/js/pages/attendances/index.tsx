@@ -1,16 +1,16 @@
-import React from 'react';
 import { Head, usePage } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
+import { LogIn, LogOut, CalendarRange, Clock, AlertTriangle, UserX, Calendar } from 'lucide-react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn, LogOut, CalendarRange, Clock, AlertTriangle, UserX, Calendar } from 'lucide-react';
-import { useAttendance } from '@/features/attendances/services/useAttendance';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { AttendanceFilters } from '@/features/attendances/components/AttendanceFilters';
 import { AttendanceTable } from '@/features/attendances/components/AttendanceTable';
 import { ClockInDialog } from '@/features/attendances/components/ClockInDialog';
 import { ClockOutDialog } from '@/features/attendances/components/ClockOutDialog';
-import { Attendance, AttendanceStats, AttendanceFilters as IFilters } from '@/features/attendances/types';
-import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import { useAttendance } from '@/features/attendances/services/useAttendance';
+import type { Attendance, AttendanceStats, AttendanceFilters as IFilters } from '@/features/attendances/types';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 interface AttendancesPageProps {
     attendances: {
@@ -34,11 +34,26 @@ export default function AttendancesIndex({ attendances, stats, branches, filters
 
     const handleExport = () => {
         const params = new URLSearchParams();
-        if (filters.search) params.set('search', filters.search);
-        if (filters.branch_id) params.set('branch_id', filters.branch_id);
-        if (filters.status) params.set('status', filters.status);
-        if (filters.start_date) params.set('start_date', filters.start_date);
-        if (filters.end_date) params.set('end_date', filters.end_date);
+
+        if (filters.search) {
+params.set('search', filters.search);
+}
+
+        if (filters.branch_id) {
+params.set('branch_id', filters.branch_id);
+}
+
+        if (filters.status) {
+params.set('status', filters.status);
+}
+
+        if (filters.start_date) {
+params.set('start_date', filters.start_date);
+}
+
+        if (filters.end_date) {
+params.set('end_date', filters.end_date);
+}
         
         window.location.href = `/attendances/export?${params.toString()}`;
     };

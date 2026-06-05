@@ -62,7 +62,10 @@ export function ConsignmentSettleDialog() {
 
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedConsignment) return;
+
+        if (!selectedConsignment) {
+return;
+}
 
         post(consignmentsSettle(selectedConsignment.id).url, {
             onSuccess: () => closeSettleForm(),
@@ -71,6 +74,7 @@ export function ConsignmentSettleDialog() {
 
     const totalSubtotal = data.items.reduce((acc, curr) => {
         const sold = curr.qty_received - curr.qty_unsold;
+
         return acc + (sold * curr.base_cost);
     }, 0);
 
@@ -110,6 +114,7 @@ export function ConsignmentSettleDialog() {
                                     {data.items.map((item: any, idx: number) => {
                                         const sold = item.qty_received - item.qty_unsold;
                                         const sub = sold * item.base_cost;
+
                                         return (
                                             <tr key={idx} className="border-b last:border-0 hover:bg-slate-50">
                                                 <td className="px-4 py-2 font-medium">{item.product_name}</td>

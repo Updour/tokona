@@ -1,10 +1,10 @@
-import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { ShoppingCart, ArrowLeft, Plus, Minus, Search, PackageX, Banknote, CreditCard, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatRupiah } from '@/lib/helpers/format';
-import { toast } from 'sonner';
 
 export default function CanvasPos({ sales, visit, loadedStocks }: any) {
     const [cart, setCart] = useState<any[]>([]);
@@ -19,11 +19,14 @@ export default function CanvasPos({ sales, visit, loadedStocks }: any) {
 
     const addToCart = (product: any) => {
         const existing = cart.find(item => item.product_id === product.product_id);
+
         if (existing) {
             if (existing.qty >= product.current_stock) {
                 toast.error('Maksimal stok tercapai!');
+
                 return;
             }
+
             setCart(cart.map(item => 
                 item.product_id === product.product_id 
                     ? { ...item, qty: item.qty + 1 } 
@@ -39,13 +42,20 @@ export default function CanvasPos({ sales, visit, loadedStocks }: any) {
             if (item.product_id === productId) {
                 const stockItem = loadedStocks.find((s: any) => s.product_id === productId);
                 const newQty = item.qty + delta;
-                if (newQty < 1) return item;
+
+                if (newQty < 1) {
+return item;
+}
+
                 if (stockItem && newQty > stockItem.current_stock) {
                     toast.error('Maksimal stok tercapai!');
+
                     return item;
                 }
+
                 return { ...item, qty: newQty };
             }
+
             return item;
         }));
     };
@@ -57,7 +67,9 @@ export default function CanvasPos({ sales, visit, loadedStocks }: any) {
     const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
     const handleCheckout = () => {
-        if (cart.length === 0) return;
+        if (cart.length === 0) {
+return;
+}
 
         setIsProcessing(true);
         router.post('/canvas/checkout', {

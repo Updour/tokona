@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
-import { Search, SlidersHorizontal, X, Clock, CalendarDays, Download } from 'lucide-react';
+import { Search, SlidersHorizontal, X, CalendarDays, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AttendanceFilters as IFilters } from '../types';
+import type { AttendanceFilters as IFilters } from '../types';
 
 interface FiltersProps {
     branches: Array<{ id: string; name: string }>;
@@ -32,15 +32,6 @@ export function AttendanceFilters({ branches, filters, totalResults, onExport }:
         localFilters.end_date,
     ].filter(Boolean).length;
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            if (search !== (filters.search || '')) {
-                applyFilters({ search });
-            }
-        }, 350);
-        return () => clearTimeout(handler);
-    }, [search]);
-
     const applyFilters = (overrides: Record<string, any> = {}) => {
         const params: Record<string, any> = {
             search: search || undefined,
@@ -54,6 +45,16 @@ export function AttendanceFilters({ branches, filters, totalResults, onExport }:
         Object.keys(params).forEach((k) => params[k] === undefined && delete params[k]);
         router.get('/attendances', params, { preserveState: true, replace: true });
     };
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            if (search !== (filters.search || '')) {
+                applyFilters({ search });
+            }
+        }, 350);
+
+        return () => clearTimeout(handler);
+    }, [search]);
 
     const handleReset = () => {
         setSearch('');
@@ -183,13 +184,17 @@ export function AttendanceFilters({ branches, filters, totalResults, onExport }:
                     {localFilters.status && (
                         <FilterChip
                             label={`Status: ${localFilters.status}`}
-                            onRemove={() => { updateLocal('status', ''); applyFilters({ status: undefined }); }}
+                            onRemove={() => {
+ updateLocal('status', ''); applyFilters({ status: undefined }); 
+}}
                         />
                     )}
                     {localFilters.branch_id && (
                         <FilterChip
                             label={`Cabang: ${branches.find((b) => b.id == localFilters.branch_id)?.name ?? '...'}`}
-                            onRemove={() => { updateLocal('branch_id', ''); applyFilters({ branch_id: undefined }); }}
+                            onRemove={() => {
+ updateLocal('branch_id', ''); applyFilters({ branch_id: undefined }); 
+}}
                         />
                     )}
                     {(localFilters.start_date || localFilters.end_date) && (

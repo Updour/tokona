@@ -1,7 +1,7 @@
 import { Link } from '@inertiajs/react';
+import { User, MapPin, ClipboardList } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatRupiah } from '@/lib/helpers/format';
-import { User, MapPin, ClipboardList } from 'lucide-react';
 
 interface DashboardSalesLeaderboardProps {
     leaderboard: any[];

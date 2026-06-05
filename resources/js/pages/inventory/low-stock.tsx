@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { AlertTriangle } from 'lucide-react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { LowStockTable } from '@/features/inventory/components/LowStockTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function LowStockPage({ products, filters }: { products: any; filters: any }) {
     return (

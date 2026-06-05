@@ -80,11 +80,26 @@ export function InventoryFilters({
 
     const handleExport = () => {
         const params = new URLSearchParams();
-        if (search) params.append('search', search);
-        if (localFilters.type) params.append('type', localFilters.type);
-        if (localFilters.branch_id) params.append('branch_id', localFilters.branch_id);
-        if (localFilters.start_date) params.append('start_date', localFilters.start_date);
-        if (localFilters.end_date) params.append('end_date', localFilters.end_date);
+
+        if (search) {
+params.append('search', search);
+}
+
+        if (localFilters.type) {
+params.append('type', localFilters.type);
+}
+
+        if (localFilters.branch_id) {
+params.append('branch_id', localFilters.branch_id);
+}
+
+        if (localFilters.start_date) {
+params.append('start_date', localFilters.start_date);
+}
+
+        if (localFilters.end_date) {
+params.append('end_date', localFilters.end_date);
+}
         
         window.open(`/export/inventory?${params.toString()}`, '_blank');
     };

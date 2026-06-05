@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { Navigation } from 'lucide-react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { SalesMapDetail } from '@/features/sales/components/SalesMapDetail';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 interface SalesMapProps {
     locations: any[];

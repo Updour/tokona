@@ -1,12 +1,12 @@
-import React from 'react';
 import { Store, MapPin, ClipboardCheck, Eye, FileText, Calendar, User, Navigation, FileSpreadsheet } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter,
     DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface VisitDetailsDialogProps {
     visit: any | null;
@@ -15,7 +15,9 @@ interface VisitDetailsDialogProps {
 }
 
 export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDialogProps) {
-    if (!visit) return null;
+    if (!visit) {
+return null;
+}
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

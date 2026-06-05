@@ -8,7 +8,9 @@ import { useConsignmentStore } from '../stores/useConsignmentStore';
 export function ConsignmentDetailDialog() {
     const { isDetailFormOpen, closeDetailForm, selectedConsignmentDetail: consignment } = useConsignmentStore();
 
-    if (!consignment) return null;
+    if (!consignment) {
+return null;
+}
 
     return (
         <Dialog open={isDetailFormOpen} onOpenChange={closeDetailForm}>

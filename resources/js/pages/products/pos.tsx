@@ -1,18 +1,18 @@
 import { Head } from '@inertiajs/react';
 import { ShoppingCart, History, RefreshCw, Bookmark, WifiOff, CloudUpload, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { ShiftStatusBanner } from '@/features/shifts/components/ShiftStatusBanner';
 import { PayDebtDialog } from '@/features/pos/components/PayDebtDialog';
-import { PosTransactionsTab } from '@/features/pos/components/tabs/PosTransactionsTab';
-import { PosReturnsTab } from '@/features/pos/components/tabs/PosReturnsTab';
-import { PosDraftsTab } from '@/features/pos/components/tabs/PosDraftsTab';
-import { PosProductsGrid } from '@/features/pos/components/PosProductsGrid';
 import { PosCartSidebar } from '@/features/pos/components/PosCartSidebar';
-import { PosReceiptDialog } from '@/features/pos/components/PosReceiptDialog';
-import { PosDraftNotesDialog } from '@/features/pos/components/PosDraftNotesDialog';
 import { PosDetailTransactionDialog } from '@/features/pos/components/PosDetailTransactionDialog';
+import { PosDraftNotesDialog } from '@/features/pos/components/PosDraftNotesDialog';
+import { PosProductsGrid } from '@/features/pos/components/PosProductsGrid';
+import { PosReceiptDialog } from '@/features/pos/components/PosReceiptDialog';
+import { PosDraftsTab } from '@/features/pos/components/tabs/PosDraftsTab';
+import { PosReturnsTab } from '@/features/pos/components/tabs/PosReturnsTab';
+import { PosTransactionsTab } from '@/features/pos/components/tabs/PosTransactionsTab';
 import { usePos } from '@/features/pos/services/usePos';
+import { ShiftStatusBanner } from '@/features/shifts/components/ShiftStatusBanner';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Pos({ products, customers, promos, branches, transactions, defaultSettings, filters, activeShift }: any) {
     const pos = usePos({

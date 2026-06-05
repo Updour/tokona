@@ -167,7 +167,10 @@ export function ConsignmentReceiveDialog() {
                                         <Select value={item.product_id} onValueChange={(v) => {
                                             const prod = products?.find((p: any) => p.id === v);
                                             updateItem(idx, 'product_id', v);
-                                            if (prod && !item.base_cost) updateItem(idx, 'base_cost', prod.base_price || prod.cost_price || 0);
+
+                                            if (prod && !item.base_cost) {
+updateItem(idx, 'base_cost', prod.base_price || prod.cost_price || 0);
+}
                                         }}>
                                             <SelectTrigger className="h-8 text-xs w-full">
                                                 <SelectValue placeholder="Pilih Produk" />

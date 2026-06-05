@@ -24,7 +24,10 @@ export default function ProfitLoss({ branches, stats }: any) {
     const years = ['2024', '2025', '2026', '2027'];
 
     const handleExport = () => {
-        if (!stats.breakdown?.length) return;
+        if (!stats.breakdown?.length) {
+return;
+}
+
         const rows = stats.breakdown.map((m: any) => ({
             'Bulan': m.month,
             'Pendapatan': m.revenue ?? 0,

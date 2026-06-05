@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Search, Plus, Trash2, Package2, Loader2, Save } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
 
 interface OpnameDialogProps {
     isOpen: boolean;
@@ -30,8 +30,10 @@ export default function OpnameDialog({ isOpen, onClose, products }: OpnameDialog
     const addItem = (product: any) => {
         if (data.items.find(i => i.product_id === product.id)) {
             toast.error('Produk sudah ada di daftar opname');
+
             return;
         }
+
         setData('items', [
             ...data.items, 
             {
@@ -58,10 +60,13 @@ export default function OpnameDialog({ isOpen, onClose, products }: OpnameDialog
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (data.items.length === 0) {
             toast.error('Tambahkan minimal 1 produk untuk diopname.');
+
             return;
         }
+
         post('/inventory/opname', {
             onSuccess: () => {
                 reset();
@@ -140,6 +145,7 @@ export default function OpnameDialog({ isOpen, onClose, products }: OpnameDialog
                             ) : (
                                 data.items.map((item, idx) => {
                                     const diff = item.physical_stock - item.system_stock;
+
                                     return (
                                         <div key={item.product_id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative">
                                             <button onClick={() => removeItem(item.product_id)} className="absolute top-3 right-3 text-slate-400 hover:text-rose-500">

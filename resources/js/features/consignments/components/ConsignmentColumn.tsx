@@ -4,9 +4,9 @@ import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useConsignmentStore } from '@/features/consignments/stores/useConsignmentStore';
 import { formatTimeAgo } from '@/lib/helpers/date';
 import { formatDateTime, formatRupiah } from '@/lib/helpers/format';
-import { useConsignmentStore } from '@/features/consignments/stores/useConsignmentStore';
 
 export const columns: ColumnDef<any>[] = [
     {
@@ -14,6 +14,7 @@ export const columns: ColumnDef<any>[] = [
         header: 'Tanggal Titip',
         cell: ({ row }) => {
             const dateStr = row.getValue('consignment_date') || row.getValue('created_at');
+
             return (
                 <div className="flex flex-col">
                     <span className="text-xs font-medium">{formatDateTime(dateStr as string).substring(0, 11)}</span>
@@ -28,9 +29,13 @@ export const columns: ColumnDef<any>[] = [
         cell: ({ row }) => {
             const due = row.getValue('due_date');
             const status = row.getValue('status');
-            if (!due) return <span className="text-xs text-muted-foreground">-</span>;
+
+            if (!due) {
+return <span className="text-xs text-muted-foreground">-</span>;
+}
 
             const isLate = status === 'active' && new Date(due as string) < new Date();
+
             return (
                 <div className="flex flex-col">
                     <span className={`text-xs font-medium ${isLate ? 'text-red-600' : ''}`}>
@@ -60,6 +65,7 @@ export const columns: ColumnDef<any>[] = [
         header: 'Status',
         cell: ({ row }) => {
             const status = row.getValue('status');
+
             return status === 'settled'
                 ? <Badge variant="default" className="bg-green-600 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" /> Selesai</Badge>
                 : <Badge variant="secondary" className="text-[10px]"><Clock className="h-3 w-3 mr-1" /> Berjalan</Badge>;
@@ -87,61 +93,63 @@ export const columns: ColumnDef<any>[] = [
     {
         id: 'actions',
         header: 'Aksi',
-        cell: ({ row }) => {
-            const consignment = row.original;
-            const openSettleForm = useConsignmentStore((state) => state.openSettleForm);
-            const openDetailForm = useConsignmentStore((state) => state.openDetailForm);
-            const openEditForm = useConsignmentStore((state) => state.openEditForm);
+        cell: ({ row }) => <ConsignmentActionCell row={row} />,
+    },
+];
 
-            return (
-                <TooltipProvider>
-                    <div className="flex items-center gap-1">
-                        {consignment.status === 'active' && (
-                            <>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50"
-                                            onClick={() => openEditForm(consignment)}
-                                        >
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Edit Titipan</TooltipContent>
-                                </Tooltip>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="h-7 text-xs bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100"
-                                            onClick={() => openSettleForm(consignment)}
-                                        >
-                                            <HandCoins className="h-3.5 w-3.5 mr-1" /> Setor
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Setor Pembayaran ke Supplier</TooltipContent>
-                                </Tooltip>
-                            </>
-                        )}
+function ConsignmentActionCell({ row }: { row: any }) {
+    const consignment = row.original;
+    const openSettleForm = useConsignmentStore((state) => state.openSettleForm);
+    const openDetailForm = useConsignmentStore((state) => state.openDetailForm);
+    const openEditForm = useConsignmentStore((state) => state.openEditForm);
+
+    return (
+        <TooltipProvider>
+            <div className="flex items-center gap-1">
+                {consignment.status === 'active' && (
+                    <>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
-                                    onClick={() => openDetailForm(consignment)}
+                                    className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                                    onClick={() => openEditForm(consignment)}
                                 >
-                                    <Eye className="h-4 w-4" />
+                                    <Edit className="h-4 w-4" />
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Lihat Detail</TooltipContent>
+                            <TooltipContent>Edit Titipan</TooltipContent>
                         </Tooltip>
-                    </div>
-                </TooltipProvider>
-            );
-        },
-    },
-];
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100"
+                                    onClick={() => openSettleForm(consignment)}
+                                >
+                                    <HandCoins className="h-3.5 w-3.5 mr-1" /> Setor
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Setor Pembayaran ke Supplier</TooltipContent>
+                        </Tooltip>
+                    </>
+                )}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
+                            onClick={() => openDetailForm(consignment)}
+                        >
+                            <Eye className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Lihat Detail</TooltipContent>
+                </Tooltip>
+            </div>
+        </TooltipProvider>
+    );
+}

@@ -1,8 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { Clock } from 'lucide-react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { ShiftTable } from '@/features/shifts/components/ShiftTable';
 import { OpenShiftDialog } from '@/features/shifts/components/OpenShiftDialog';
+import { ShiftTable } from '@/features/shifts/components/ShiftTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function ShiftsIndexPage({ shifts, filters }: { shifts: any; filters: any }) {
     return (

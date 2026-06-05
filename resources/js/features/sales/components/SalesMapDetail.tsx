@@ -1,11 +1,11 @@
 import { divIcon } from 'leaflet';
+import { MapPin, Navigation, Compass, Store, UserCheck, Star } from 'lucide-react';
 import { renderToString } from 'react-dom/server';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { MapPin, Navigation, Compass, Store, UserCheck, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CustomerLocation, SalesVisit } from '../types';
+import type { CustomerLocation, SalesVisit } from '../types';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -54,7 +54,10 @@ export function SalesMapDetail({ locations = [], activeVisits = [] }: SalesMapDe
                         {locations.map((loc) => {
                             const lat = Number(loc.latitude);
                             const lng = Number(loc.longitude);
-                            if (isNaN(lat) || isNaN(lng)) return null;
+
+                            if (isNaN(lat) || isNaN(lng)) {
+return null;
+}
 
                             return (
                                 <Marker

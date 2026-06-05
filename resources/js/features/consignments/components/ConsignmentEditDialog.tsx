@@ -49,6 +49,7 @@ export function ConsignmentEditDialog() {
                 due_date: consignment.due_date ? consignment.due_date.substring(0, 10) : '',
             });
         }
+
         if (!isEditFormOpen) {
             reset();
             clearErrors();
@@ -62,7 +63,9 @@ export function ConsignmentEditDialog() {
         });
     };
 
-    if (!consignment) return null;
+    if (!consignment) {
+return null;
+}
 
     return (
         <Dialog open={isEditFormOpen} onOpenChange={(open) => !open && closeEditForm()}>

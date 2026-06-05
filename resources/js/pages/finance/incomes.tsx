@@ -5,15 +5,15 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
-import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import MainLayout from '@/layouts/app/app-main-layout';
 import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
 
@@ -273,7 +273,9 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
                             {(branchFilter !== 'ALL' && branchFilter !== '') && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium">
                                     Cabang: {branches?.find((b: any) => b.id === branchFilter)?.name ?? '...'}
-                                    <button onClick={() => { setBranchFilter('ALL'); applyFilters(search, 'ALL', categoryFilter, startDate, endDate); }} className="hover:text-destructive ml-0.5">
+                                    <button onClick={() => {
+ setBranchFilter('ALL'); applyFilters(search, 'ALL', categoryFilter, startDate, endDate); 
+}} className="hover:text-destructive ml-0.5">
                                         <X className="h-3 w-3" />
                                     </button>
                                 </span>
@@ -281,7 +283,9 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
                             {(categoryFilter !== 'ALL' && categoryFilter !== '') && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium">
                                     Kategori: {categories.find((c) => c.value === categoryFilter)?.label.split(' ')[0] ?? '...'}
-                                    <button onClick={() => { setCategoryFilter('ALL'); applyFilters(search, branchFilter, 'ALL', startDate, endDate); }} className="hover:text-destructive ml-0.5">
+                                    <button onClick={() => {
+ setCategoryFilter('ALL'); applyFilters(search, branchFilter, 'ALL', startDate, endDate); 
+}} className="hover:text-destructive ml-0.5">
                                         <X className="h-3 w-3" />
                                     </button>
                                 </span>
@@ -289,7 +293,9 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
                             {(startDate || endDate) && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium">
                                     Tanggal: {startDate || '...'} - {endDate || '...'}
-                                    <button onClick={() => { setStartDate(''); setEndDate(''); applyFilters(search, branchFilter, categoryFilter, '', ''); }} className="hover:text-destructive ml-0.5">
+                                    <button onClick={() => {
+ setStartDate(''); setEndDate(''); applyFilters(search, branchFilter, categoryFilter, '', ''); 
+}} className="hover:text-destructive ml-0.5">
                                         <X className="h-3 w-3" />
                                     </button>
                                 </span>

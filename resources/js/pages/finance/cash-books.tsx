@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Label } from '@/components/ui/label';
-import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import MainLayout from '@/layouts/app/app-main-layout';
 import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
 
@@ -47,7 +47,10 @@ export default function CashBooks({ cashBooks, branches, stats, filters }: any) 
     };
 
     const handleExport = () => {
-        if (!cashBooks?.data?.length) return;
+        if (!cashBooks?.data?.length) {
+return;
+}
+
         const rows = cashBooks.data.map((c: any) => ({
             'Tanggal': c.created_at,
             'Arah': c.type === 'in' ? 'MASUK' : 'KELUAR',
@@ -214,7 +217,9 @@ export default function CashBooks({ cashBooks, branches, stats, filters }: any) 
                             {(branchFilter !== 'ALL' && branchFilter !== '') && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium">
                                     Cabang: {branches?.find((b: any) => b.id === branchFilter)?.name ?? '...'}
-                                    <button onClick={() => { setBranchFilter('ALL'); applyFilters(search, 'ALL'); }} className="hover:text-destructive ml-0.5">
+                                    <button onClick={() => {
+ setBranchFilter('ALL'); applyFilters(search, 'ALL'); 
+}} className="hover:text-destructive ml-0.5">
                                         <X className="h-3 w-3" />
                                     </button>
                                 </span>

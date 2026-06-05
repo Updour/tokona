@@ -1,12 +1,12 @@
 import { router } from '@inertiajs/react';
+import debounce from 'lodash/debounce';
 import { AlertCircle, Search, PackageX } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { formatRupiah } from '@/lib/helpers/format';
-import debounce from 'lodash/debounce';
 
 interface Props {
     products: any;
@@ -17,6 +17,7 @@ function StockBadge({ current, min }: { current: number; min: number }) {
     if (current <= 0) {
         return <Badge variant="destructive" className="gap-1"><PackageX className="h-3 w-3" /> Habis</Badge>;
     }
+
     return <Badge variant="outline" className="border-orange-400 text-orange-500 gap-1"><AlertCircle className="h-3 w-3" /> Menipis</Badge>;
 }
 
@@ -36,7 +37,9 @@ export function LowStockTable({ products, filters }: Props) {
                     <Input
                         placeholder="Cari produk..."
                         value={search}
-                        onChange={(e) => { setSearch(e.target.value); onSearch(e.target.value); }}
+                        onChange={(e) => {
+ setSearch(e.target.value); onSearch(e.target.value); 
+}}
                         className="pl-9"
                     />
                 </div>

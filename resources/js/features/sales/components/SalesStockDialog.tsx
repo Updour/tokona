@@ -1,15 +1,15 @@
-import React, { useEffect } from 'react';
 import { useForm, router } from '@inertiajs/react';
 import { Package, PlusCircle, AlertCircle, ArrowDownToLine } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React, { useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { SalesPerson } from '../types';
+import { Spinner } from '@/components/ui/spinner';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { SalesPerson } from '../types';
 
 interface SalesStockDialogProps {
     open: boolean;
@@ -43,8 +43,13 @@ export function SalesStockDialog({ open, onOpenChange, selectedSales, products =
     const [isUnloading, setIsUnloading] = React.useState(false);
 
     const handleUnloadStock = () => {
-        if (!selectedSales) return;
-        if (!confirm('Anda yakin ingin menarik semua sisa barang muatan di kendaraan sales ini kembali ke gudang?')) return;
+        if (!selectedSales) {
+return;
+}
+
+        if (!confirm('Anda yakin ingin menarik semua sisa barang muatan di kendaraan sales ini kembali ke gudang?')) {
+return;
+}
         
         setIsUnloading(true);
         router.post('/sales/unload-stock', {

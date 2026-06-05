@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import { Search, SlidersHorizontal, X, Building2, Coins } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SalesFiltersProps {
@@ -35,6 +35,7 @@ export function SalesFilters({ branches = [], filters = {}, totalSales }: SalesF
                 applyFilters({ search });
             }
         }, 350);
+
         return () => clearTimeout(handler);
     }, [search]);
 
@@ -186,7 +187,9 @@ export function SalesFilters({ branches = [], filters = {}, totalSales }: SalesF
                     {localFilters.branch_id && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-150 text-indigo-700 text-[10px] px-2.5 py-1 font-bold shadow-xs">
                             Cabang: {branches.find(b => b.id === localFilters.branch_id)?.name ?? '...'}
-                            <button onClick={() => { updateLocal('branch_id', ''); applyFilters({ branch_id: undefined }); }} className="hover:text-destructive ml-0.5">
+                            <button onClick={() => {
+ updateLocal('branch_id', ''); applyFilters({ branch_id: undefined }); 
+}} className="hover:text-destructive ml-0.5">
                                 <X className="h-3 w-3" />
                             </button>
                         </span>
@@ -194,7 +197,9 @@ export function SalesFilters({ branches = [], filters = {}, totalSales }: SalesF
                     {localFilters.commission_type && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-150 text-indigo-700 text-[10px] px-2.5 py-1 font-bold shadow-xs">
                             Tipe Komisi: {localFilters.commission_type === 'percent' ? 'Persentase' : 'Nominal Tetap'}
-                            <button onClick={() => { updateLocal('commission_type', ''); applyFilters({ commission_type: undefined }); }} className="hover:text-destructive ml-0.5">
+                            <button onClick={() => {
+ updateLocal('commission_type', ''); applyFilters({ commission_type: undefined }); 
+}} className="hover:text-destructive ml-0.5">
                                 <X className="h-3 w-3" />
                             </button>
                         </span>
@@ -202,7 +207,9 @@ export function SalesFilters({ branches = [], filters = {}, totalSales }: SalesF
                     {localFilters.is_active !== '' && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-150 text-indigo-700 text-[10px] px-2.5 py-1 font-bold shadow-xs">
                             Status: {localFilters.is_active === 'true' ? 'Aktif' : 'Nonaktif'}
-                            <button onClick={() => { updateLocal('is_active', ''); applyFilters({ is_active: undefined }); }} className="hover:text-destructive ml-0.5">
+                            <button onClick={() => {
+ updateLocal('is_active', ''); applyFilters({ is_active: undefined }); 
+}} className="hover:text-destructive ml-0.5">
                                 <X className="h-3 w-3" />
                             </button>
                         </span>

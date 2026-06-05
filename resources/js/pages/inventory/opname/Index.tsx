@@ -1,10 +1,10 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
 import { ClipboardList, Plus, Search, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import MainLayout from '@/layouts/app/app-main-layout';
 import OpnameDialog from './components/OpnameDialog';
 

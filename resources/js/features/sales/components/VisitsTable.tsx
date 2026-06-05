@@ -1,10 +1,10 @@
-import { useState } from 'react';
 import { Store, MapPin, ClipboardCheck, Eye, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { VisitDetailsDialog } from './VisitDetailsDialog';
 import type { SalesVisit } from '../types';
+import { VisitDetailsDialog } from './VisitDetailsDialog';
 
 interface VisitsTableProps {
     visits: SalesVisit[];

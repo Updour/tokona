@@ -1,13 +1,13 @@
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
+import { DashboardAttendanceSummary } from '@/features/dashboard/components/DashboardAttendanceSummary';
 import { DashboardHeader } from '@/features/dashboard/components/DashboardHeader';
 import { DashboardPaymentMethods } from '@/features/dashboard/components/DashboardPaymentMethods';
 import { DashboardSalesChart } from '@/features/dashboard/components/DashboardSalesChart';
+import { DashboardSalesLeaderboard } from '@/features/dashboard/components/DashboardSalesLeaderboard';
 import { DashboardStats } from '@/features/dashboard/components/DashboardStats';
 import { DashboardStockAlerts } from '@/features/dashboard/components/DashboardStockAlerts';
 import { DashboardTopProducts } from '@/features/dashboard/components/DashboardTopProducts';
-import { DashboardSalesLeaderboard } from '@/features/dashboard/components/DashboardSalesLeaderboard';
-import { DashboardAttendanceSummary } from '@/features/dashboard/components/DashboardAttendanceSummary';
 import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Dashboard({ branches, filters, salesSummary, productPerformance, stockReport, salesFieldReport, attendanceReport }: any) {

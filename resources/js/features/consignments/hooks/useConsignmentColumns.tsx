@@ -25,6 +25,7 @@ export function useConsignmentColumns(openSettleForm: (row: any) => void) {
             header: 'Status',
             cell: (info) => {
                 const status = info.getValue();
+
                 return status === 'settled' 
                     ? <Badge variant="default" className="bg-green-600 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" /> Selesai</Badge>
                     : <Badge variant="secondary" className="text-[10px]"><Clock className="h-3 w-3 mr-1" /> Berjalan</Badge>;
@@ -54,6 +55,7 @@ export function useConsignmentColumns(openSettleForm: (row: any) => void) {
             header: 'Aksi',
             cell: (info) => {
                 const row = info.row.original;
+
                 if (row.status === 'active') {
                     return (
                         <Button size="sm" variant="outline" className="h-7 text-xs bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100" onClick={() => openSettleForm(row)}>
@@ -61,6 +63,7 @@ export function useConsignmentColumns(openSettleForm: (row: any) => void) {
                         </Button>
                     );
                 }
+
                 return null;
             },
         }),

@@ -1,8 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
+import { CanvasCustomerList } from '@/features/canvas/components/CanvasCustomerList';
 import { CanvasMobileHeader } from '@/features/canvas/components/CanvasMobileHeader';
 import { CanvasOngoingVisit } from '@/features/canvas/components/CanvasOngoingVisit';
-import { CanvasCustomerList } from '@/features/canvas/components/CanvasCustomerList';
 import CheckInDialog from '@/features/canvas/components/CheckInDialog';
 
 export default function CanvasIndex({ sales, customers, todayVisits }: any) {

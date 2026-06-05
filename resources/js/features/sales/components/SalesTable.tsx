@@ -1,22 +1,22 @@
-import { useState, useEffect } from 'react';
 import { 
     Users, UserPlus, Phone, Mail, Award, CheckCircle2, 
     TrendingUp, Building, Package, Pencil, Trash2
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { SalesPerson } from '../types';
+import type { SalesPerson } from '../types';
 
 // Subcomponents
-import { SalesFilters } from './SalesFilters';
 import { SalesAddDialog } from './SalesAddDialog';
-import { SalesEditDialog } from './SalesEditDialog';
 import { SalesDeleteDialog } from './SalesDeleteDialog';
-import { SalesStockDialog } from './SalesStockDialog';
+import { SalesEditDialog } from './SalesEditDialog';
+import { SalesFilters } from './SalesFilters';
 import { SalesPerformanceDialog } from './SalesPerformanceDialog';
+import { SalesStockDialog } from './SalesStockDialog';
 
 interface SalesTableProps {
     sales: {
@@ -46,6 +46,7 @@ export function SalesTable({ sales, branches = [], products = [], filters = {} }
     useEffect(() => {
         if (selectedSales) {
             const latest = sales?.data?.find(s => s.id === selectedSales.id);
+
             if (latest) {
                 setSelectedSales(latest);
             }

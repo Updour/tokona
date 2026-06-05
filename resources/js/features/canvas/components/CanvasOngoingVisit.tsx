@@ -2,7 +2,9 @@ import { Link } from '@inertiajs/react';
 import { Clock, ChevronRight } from 'lucide-react';
 
 export function CanvasOngoingVisit({ ongoingVisit }: { ongoingVisit: any }) {
-    if (!ongoingVisit) return null;
+    if (!ongoingVisit) {
+return null;
+}
 
     return (
         <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-xl shadow-sm flex items-start justify-between gap-3 animate-pulse">

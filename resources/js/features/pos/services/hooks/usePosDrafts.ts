@@ -30,6 +30,7 @@ export function usePosDrafts({
 
     useEffect(() => {
         const stored = localStorage.getItem('tokona_pos_drafts');
+
         if (stored) {
             try {
                 setDrafts(JSON.parse(stored));
@@ -42,6 +43,7 @@ export function usePosDrafts({
     const handleSaveDraft = () => {
         if (cart.length === 0) {
             toast.error('Tidak ada barang di keranjang untuk disimpan.');
+
             return;
         }
 

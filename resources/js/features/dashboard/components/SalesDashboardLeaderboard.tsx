@@ -1,7 +1,7 @@
 import { Link } from '@inertiajs/react';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { formatRupiah } from '@/lib/helpers/format';
 
 interface Row {

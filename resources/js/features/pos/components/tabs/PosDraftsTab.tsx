@@ -1,8 +1,8 @@
+import { FolderOpen, Trash2, Search, X, Bookmark } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FolderOpen, Trash2, Search, X, Bookmark } from 'lucide-react';
 import { formatRupiah } from '@/lib/helpers/format';
 
 interface PosDraftsTabProps {
@@ -19,6 +19,7 @@ export function PosDraftsTab({ drafts, handleDeleteDraft, handleLoadDraft }: Pos
             const matchesSearch =
                 dr.notes.toLowerCase().includes(search.toLowerCase()) ||
                 dr.items.some((it: any) => it.name.toLowerCase().includes(search.toLowerCase()));
+
             return matchesSearch;
         });
     }, [drafts, search]);

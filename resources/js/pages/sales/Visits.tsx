@@ -1,10 +1,10 @@
 import { Head } from '@inertiajs/react';
 import { CalendarRange, FileSpreadsheet } from 'lucide-react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { Button } from '@/components/ui/button';
-import { VisitsTable } from '@/features/sales/components/VisitsTable';
-import { VisitFilters } from '@/features/sales/components/VisitFilters';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import { VisitFilters } from '@/features/sales/components/VisitFilters';
+import { VisitsTable } from '@/features/sales/components/VisitsTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 interface SalesVisitsProps {
     visits: {
@@ -22,7 +22,9 @@ interface SalesVisitsProps {
 
 export default function SalesVisits({ visits, salesPersons = [], filters = {} }: SalesVisitsProps) {
     const handleExportCSV = () => {
-        if (!visits?.data?.length) return;
+        if (!visits?.data?.length) {
+return;
+}
 
         const rows = visits.data.map((item) => ({
             Salesperson: item.sales_person?.name ?? '-',

@@ -1,13 +1,13 @@
-import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Banknote, CreditCard, Receipt } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatRupiah } from '@/lib/helpers/format';
-import { toast } from 'sonner';
-import { Banknote, CreditCard, Receipt } from 'lucide-react';
 
 interface PayDebtDialogProps {
     isOpen: boolean;
@@ -20,7 +20,9 @@ export function PayDebtDialog({ isOpen, onClose, transaction }: PayDebtDialogPro
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer'>('cash');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    if (!transaction) return null;
+    if (!transaction) {
+return null;
+}
 
     const remainingDebt = transaction.total - (transaction.paid_amount || 0);
 
@@ -30,13 +32,16 @@ export function PayDebtDialog({ isOpen, onClose, transaction }: PayDebtDialogPro
 
     const handleSubmit = () => {
         const numAmount = Number(amount);
+
         if (!amount || numAmount <= 0) {
             toast.error('Masukkan nominal pelunasan yang valid');
+
             return;
         }
 
         if (numAmount > remainingDebt) {
             toast.error('Nominal pelunasan tidak boleh lebih besar dari sisa piutang');
+
             return;
         }
 

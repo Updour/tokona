@@ -1,11 +1,11 @@
 import { Head, router } from '@inertiajs/react';
 import { LayoutDashboard } from 'lucide-react';
 import { useState } from 'react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SalesDashboardKpi } from '@/features/dashboard/components/SalesDashboardKpi';
 import { SalesDashboardChart } from '@/features/dashboard/components/SalesDashboardChart';
+import { SalesDashboardKpi } from '@/features/dashboard/components/SalesDashboardKpi';
 import { SalesDashboardLeaderboard } from '@/features/dashboard/components/SalesDashboardLeaderboard';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function SalesDashboard({ branches, filters, kpi, daily_visits, leaderboard }: any) {
     const [branchId, setBranchId] = useState(filters?.branchId || 'ALL');

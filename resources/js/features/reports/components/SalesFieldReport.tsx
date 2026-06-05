@@ -1,6 +1,6 @@
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { formatRupiah } from '@/lib/helpers/format';
 
 interface SalesFieldReportProps {
@@ -30,7 +30,9 @@ const KPI_CARDS = [
 ] as const;
 
 export default function SalesFieldReport({ salesFieldReport }: SalesFieldReportProps) {
-    if (!salesFieldReport) return null;
+    if (!salesFieldReport) {
+return null;
+}
 
     return (
         <div className="space-y-6">

@@ -1,13 +1,13 @@
-import React, { useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Pencil } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { SalesPerson } from '../types';
+import type { SalesPerson } from '../types';
 
 interface SalesEditDialogProps {
     open: boolean;
@@ -41,7 +41,11 @@ export function SalesEditDialog({ open, onOpenChange, selectedSales, branches = 
 
     const handleEditSales = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedSales) return;
+
+        if (!selectedSales) {
+return;
+}
+
         editForm.put(`/sales/update/${selectedSales.id}`, {
             onSuccess: () => {
                 onOpenChange(false);

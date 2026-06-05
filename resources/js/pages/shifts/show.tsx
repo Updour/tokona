@@ -1,11 +1,11 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, TrendingUp, TrendingDown, Banknote, CreditCard, Receipt, AlertTriangle } from 'lucide-react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ShiftSummary } from '@/features/shifts/types';
+import MainLayout from '@/layouts/app/app-main-layout';
+import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
 
 export default function ShiftShowPage(props: ShiftSummary) {
     const { shift, total_sales, cash_sales, non_cash_sales, tx_count, expected_balance, difference } = props;

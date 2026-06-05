@@ -1,8 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { Users } from 'lucide-react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { SalesMetrics } from '@/features/sales/components/SalesMetrics';
 import { SalesTable } from '@/features/sales/components/SalesTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 interface SalesIndexProps {
     sales: {

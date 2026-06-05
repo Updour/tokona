@@ -1,9 +1,9 @@
 import { Head } from '@inertiajs/react';
 import { Users } from 'lucide-react';
-import MainLayout from '@/layouts/app/app-main-layout';
-import { UserTable } from '@/features/users/components/UserTable';
 import { UserFormDialog } from '@/features/users/components/UserFormDialog';
-import { type User, type Role } from './types';
+import { UserTable } from '@/features/users/components/UserTable';
+import MainLayout from '@/layouts/app/app-main-layout';
+import type {User, Role} from './types';
 
 interface IndexProps {
     users: any;

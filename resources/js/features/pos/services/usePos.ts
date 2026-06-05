@@ -1,11 +1,11 @@
 import { router, usePage } from '@inertiajs/react';
-import { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
+import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { usePosCart } from './hooks/usePosCart';
 import { usePosDrafts } from './hooks/usePosDrafts';
-import { usePosReturns } from './hooks/usePosReturns';
 import { usePosReceipt } from './hooks/usePosReceipt';
+import { usePosReturns } from './hooks/usePosReturns';
 
 interface UsePosProps {
     products: any[];
@@ -36,6 +36,7 @@ export function usePos({
     const [pendingTransactions, setPendingTransactions] = useState<any[]>(() => {
         try {
             const saved = localStorage.getItem('pos_pending_transactions');
+
             return saved ? JSON.parse(saved) : [];
         } catch (e) {
             return [];
@@ -84,6 +85,7 @@ export function usePos({
             const matchesStatus = txStatus === 'all' || tx.status === txStatus;
 
             let matchesDate = true;
+
             if (txDateRange !== 'all') {
                 const txDate = new Date(tx.created_at);
                 const today = new Date();
@@ -134,10 +136,12 @@ export function usePos({
     useEffect(() => {
         if (defaultSettings) {
             setPosSettings(defaultSettings);
+
             return;
         }
 
         const storedSettings = localStorage.getItem('tokona_pos_settings');
+
         if (storedSettings) {
             try {
                 setPosSettings(JSON.parse(storedSettings));
@@ -202,6 +206,7 @@ export function usePos({
     useEffect(() => {
         if (posSettings.activeMethods && !posSettings.activeMethods[paymentMethod]) {
             const activeKeys = Object.keys(posSettings.activeMethods).filter(k => posSettings.activeMethods[k]);
+
             if (activeKeys.length > 0) {
                 setPaymentMethod(activeKeys[0] as any);
             }
@@ -276,16 +281,19 @@ export function usePos({
     const handleCheckout = () => {
         if (cart.length === 0) {
             toast.error('Keranjang belanja Anda masih kosong.');
+
             return;
         }
 
         if (paymentMethod !== 'debt' && paidAmount < cartTotal) {
             toast.error('Jumlah uang pembayaran tidak mencukupi total tagihan.');
+
             return;
         }
 
         if (paymentMethod === 'debt' && selectedCustomer === 'umum') {
             toast.error('Pelanggan Kategori Umum tidak diizinkan menggunakan metode hutang.');
+
             return;
         }
 
@@ -346,6 +354,7 @@ export function usePos({
             clearCart();
             setShowSuccessModal(true);
             toast.success('Offline Mode: Transaksi disimpan secara lokal di perangkat!');
+
             return;
         }
 
@@ -390,7 +399,9 @@ export function usePos({
     };
 
     const syncPendingTransactions = async () => {
-        if (pendingTransactions.length === 0 || isOffline) return;
+        if (pendingTransactions.length === 0 || isOffline) {
+return;
+}
         
         setIsSyncing(true);
         let successCount = 0;
@@ -429,6 +440,7 @@ export function usePos({
     // Filter produk aktif berdasarkan kategori & pencarian kata kunci
     const categories = useMemo(() => {
         const unique = new Set(products.map(p => p.category));
+
         return ['Semua', ...Array.from(unique)];
     }, [products]);
 
@@ -439,6 +451,7 @@ export function usePos({
                 p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (p.barcode && p.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
+
             return matchesCategory && matchesSearch;
         });
     }, [products, selectedCategory, searchQuery]);

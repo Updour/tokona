@@ -1,12 +1,12 @@
 import { Search, Settings, Sparkles, AlertCircle, ShoppingCart } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { formatRupiah } from '@/lib/helpers/format';
-import { toast } from 'sonner';
 
 interface PosProductsGridProps {
     products: any[];
@@ -127,6 +127,7 @@ export function PosProductsGrid({
                                                         // Minimal harus ada 1 metode pembayaran yang aktif
                                                         if (Object.values(updatedMethods).filter(Boolean).length === 0) {
                                                             toast.error('Minimal harus ada 1 metode pembayaran aktif!');
+
                                                             return;
                                                         }
 

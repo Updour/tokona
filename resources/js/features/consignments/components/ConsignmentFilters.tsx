@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { Search, SlidersHorizontal, X, Plus, Download, PackageOpen } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Download, PackageOpen } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,15 +38,6 @@ export function ConsignmentFilters({
         localFilters.date_to,
     ].filter(Boolean).length;
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            if (search !== (filters.search || '')) {
-                applyFilters({ search });
-            }
-        }, 350);
-        return () => clearTimeout(handler);
-    }, [search]);
-
     const applyFilters = (overrides: Record<string, any> = {}) => {
         const params: Record<string, any> = {
             search: search || undefined,
@@ -60,6 +51,16 @@ export function ConsignmentFilters({
         Object.keys(params).forEach((k) => params[k] === undefined && delete params[k]);
         router.get('/consignments', params, { preserveState: true, replace: true });
     };
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            if (search !== (filters.search || '')) {
+                applyFilters({ search });
+            }
+        }, 350);
+
+        return () => clearTimeout(handler);
+    }, [search]);
 
     const resetFilters = () => {
         setSearch('');
@@ -190,13 +191,17 @@ export function ConsignmentFilters({
                     {localFilters.status && (
                         <FilterChip
                             label={`Status: ${localFilters.status === 'active' ? 'Berjalan' : 'Selesai'}`}
-                            onRemove={() => { updateLocal('status', ''); applyFilters({ status: undefined }); }}
+                            onRemove={() => {
+ updateLocal('status', ''); applyFilters({ status: undefined }); 
+}}
                         />
                     )}
                     {localFilters.supplier_id && (
                         <FilterChip
                             label={`Supplier: ${suppliers.find((s) => s.id == localFilters.supplier_id)?.name ?? '...'}`}
-                            onRemove={() => { updateLocal('supplier_id', ''); applyFilters({ supplier_id: undefined }); }}
+                            onRemove={() => {
+ updateLocal('supplier_id', ''); applyFilters({ supplier_id: undefined }); 
+}}
                         />
                     )}
                     {(localFilters.date_from || localFilters.date_to) && (

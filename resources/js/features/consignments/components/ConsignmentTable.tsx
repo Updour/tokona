@@ -5,10 +5,10 @@ import { useState } from 'react';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useConsignmentStore } from '@/features/consignments/stores/useConsignmentStore';
+import { formatRupiah } from '@/lib/helpers/format';
 import { columns } from './ConsignmentColumn';
 import { ConsignmentEditDialog } from './ConsignmentEditDialog';
 import { ConsignmentFilters } from './ConsignmentFilters';
-import { formatRupiah } from '@/lib/helpers/format';
 
 interface PageProps {
     [key: string]: any;
@@ -41,7 +41,9 @@ export function ConsignmentTable() {
     });
 
     const handleExport = () => {
-        if (!consignments?.data?.length) return;
+        if (!consignments?.data?.length) {
+return;
+}
 
         const rows = consignments.data.map((c) => ({
             'No. Referensi': c.reference_number,

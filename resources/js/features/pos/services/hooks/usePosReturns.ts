@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { router } from '@inertiajs/react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 interface UsePosReturnsProps {
@@ -17,12 +17,15 @@ export function usePosReturns({
 
     const handleReturnTxChange = (txId: string) => {
         setSelectedReturnTxId(txId);
+
         if (txId === 'select') {
             setReturnItems([]);
+
             return;
         }
 
         const tx = transactions.find((t: any) => t.id === txId);
+
         if (tx) {
             setReturnItems(tx.items.map((i: any) => ({
                 product_id: i.product_id,
@@ -39,16 +42,20 @@ export function usePosReturns({
         setReturnItems(returnItems.map(item => {
             if (item.product_id === productId) {
                 const newQty = Math.max(0, Math.min(item.qty_bought, val));
+
                 return { ...item, qty: newQty };
             }
+
             return item;
         }));
     };
 
     const handleReturnQtyInputChange = (productId: string, val: string) => {
         const cleanVal = val.replace(/[^0-9]/g, '');
+
         if (cleanVal === '') {
             setReturnItems(returnItems.map(i => i.product_id === productId ? { ...i, qty: 0 } : i));
+
             return;
         }
 
@@ -56,19 +63,24 @@ export function usePosReturns({
         setReturnItems(returnItems.map(item => {
             if (item.product_id === productId) {
                 const newQty = Math.max(0, Math.min(item.qty_bought, parsed));
+
                 if (parsed > item.qty_bought) {
                     toast.error(`Jumlah retur melebihi batas pembelian (${item.qty_bought} item).`);
                 }
+
                 return { ...item, qty: newQty };
             }
+
             return item;
         }));
     };
 
     const handleProcessReturn = () => {
         const itemsToReturn = returnItems.filter(i => i.qty > 0);
+
         if (itemsToReturn.length === 0) {
             toast.error('Tentukan minimal 1 barang dengan jumlah retur > 0.');
+
             return;
         }
 

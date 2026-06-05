@@ -1,9 +1,9 @@
 import { Head } from '@inertiajs/react';
-import MainLayout from '@/layouts/app/app-main-layout';
+import { ConsignmentDetailDialog } from '@/features/consignments/components/ConsignmentDetailDialog';
 import { ConsignmentReceiveDialog } from '@/features/consignments/components/ConsignmentReceiveDialog';
 import { ConsignmentSettleDialog } from '@/features/consignments/components/ConsignmentSettleDialog';
-import { ConsignmentDetailDialog } from '@/features/consignments/components/ConsignmentDetailDialog';
 import { ConsignmentTable } from '@/features/consignments/components/ConsignmentTable';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function ConsignmentsIndex() {
 

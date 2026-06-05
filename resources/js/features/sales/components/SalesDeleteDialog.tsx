@@ -1,9 +1,9 @@
-import React from 'react';
 import { router } from '@inertiajs/react';
 import { ShieldAlert } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { SalesPerson } from '../types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import type { SalesPerson } from '../types';
 
 interface SalesDeleteDialogProps {
     open: boolean;
@@ -13,7 +13,10 @@ interface SalesDeleteDialogProps {
 
 export function SalesDeleteDialog({ open, onOpenChange, selectedSales }: SalesDeleteDialogProps) {
     const handleDeleteSales = () => {
-        if (!selectedSales) return;
+        if (!selectedSales) {
+return;
+}
+
         router.delete(`/sales/destroy/${selectedSales.id}`, {
             onSuccess: () => {
                 onOpenChange(false);

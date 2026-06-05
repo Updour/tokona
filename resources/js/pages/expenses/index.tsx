@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import MainLayout from '@/layouts/app/app-main-layout';
 import { formatRupiah, formatDate } from '@/lib/helpers/format';
 
@@ -98,7 +98,10 @@ export default function Expenses({ expenses, branches, stats, filters }: any) {
     };
 
     const handleExport = () => {
-        if (!expenses?.data?.length) return;
+        if (!expenses?.data?.length) {
+return;
+}
+
         const rows = expenses.data.map((e: any) => ({
             'Tanggal': e.expense_date,
             'Kategori': e.category,

@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
+import { Eye, Printer, Wallet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Printer, Wallet } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatRupiah } from '@/lib/helpers/format';
 
@@ -34,6 +34,7 @@ export const getPosTransactionColumns = ({
         header: () => <div className="h-9 flex items-center py-1 text-xs">No. Faktur</div>,
         cell: ({ row }) => {
             const tx = row.original;
+
             return (
                 <button
                     type="button"
@@ -63,6 +64,7 @@ export const getPosTransactionColumns = ({
         cell: ({ row }) => {
             const method = row.original.payment_method;
             const label = method === 'cash' ? 'Tunai' : method === 'transfer' ? 'Transfer' : method === 'split' ? 'Split' : 'Hutang';
+
             return <div className="capitalize text-xs font-semibold text-slate-600 py-1">{label}</div>;
         }
     },
@@ -82,6 +84,7 @@ export const getPosTransactionColumns = ({
             const status = row.original.status;
             const badgeClass = status === 'paid' ? 'bg-emerald-500 text-white' : status === 'returned' ? 'bg-red-500 text-white' : 'bg-amber-500 text-white';
             const label = status === 'paid' ? 'Lunas' : status === 'returned' ? 'Diretur' : 'Kredit';
+
             return (
                 <div className="text-center py-1">
                     <Badge className={`border-0 font-extrabold text-[10px] px-2 py-0 h-5 ${badgeClass}`}>
@@ -96,6 +99,7 @@ export const getPosTransactionColumns = ({
         header: () => <div className="h-9 flex items-center justify-center py-1 text-xs">Aksi</div>,
         cell: ({ row }) => {
             const tx = row.original;
+
             return (
                 <div className="flex justify-center items-center gap-1 py-1">
                     <TooltipProvider>

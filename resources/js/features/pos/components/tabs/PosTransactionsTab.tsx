@@ -1,14 +1,14 @@
-import { useState, useMemo, useEffect } from 'react';
 import {
     flexRender,
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PosTransactionFilters } from './PosTransactionFilters';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getPosTransactionColumns } from './PosTransactionColumns';
+import { PosTransactionFilters } from './PosTransactionFilters';
 
 interface PosTransactionsTabProps {
     transactions: any[];
@@ -63,6 +63,7 @@ export function PosTransactionsTab({
             const matchesStatus = localFilters.status === 'all' || tx.status === localFilters.status;
 
             let matchesDate = true;
+
             if (localFilters.date_range !== 'all') {
                 const txDate = new Date(tx.created_at);
                 const today = new Date();
@@ -93,11 +94,14 @@ export function PosTransactionsTab({
     // Calculate paginated data
     const paginatedTransactions = useMemo(() => {
         const start = (page - 1) * perPage;
+
         return filteredTransactions.slice(start, start + perPage);
     }, [filteredTransactions, page, perPage]);
 
     const handleExport = () => {
-        if (!filteredTransactions.length) return;
+        if (!filteredTransactions.length) {
+return;
+}
 
         const rows = filteredTransactions.map((tx) => ({
             Tanggal: new Date(tx.created_at).toLocaleString('id-ID'),
@@ -193,7 +197,9 @@ export function PosTransactionsTab({
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                             <span className="font-semibold text-slate-500">Tampilkan</span>
-                            <Select value={perPage.toString()} onValueChange={(v) => { setPerPage(Number(v)); setPage(1); }}>
+                            <Select value={perPage.toString()} onValueChange={(v) => {
+ setPerPage(Number(v)); setPage(1); 
+}}>
                                 <SelectTrigger className="h-7 w-[70px] text-xs font-bold border-slate-200 bg-white">
                                     <SelectValue placeholder="15" />
                                 </SelectTrigger>

@@ -1,9 +1,9 @@
-import React from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Badge } from '@/components/ui/badge';
 import { MapPin } from 'lucide-react';
+import React from 'react';
+import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/helpers/format';
-import { Attendance } from '../types';
+import type { Attendance } from '../types';
 
 const getStatusBadge = (status: Attendance['status']) => {
     const styles = {
@@ -30,7 +30,10 @@ const getStatusBadge = (status: Attendance['status']) => {
 };
 
 const renderLocationLink = (lat: number | null, lng: number | null, label: string) => {
-    if (!lat || !lng) return <span className="text-xs text-muted-foreground">-</span>;
+    if (!lat || !lng) {
+return <span className="text-xs text-muted-foreground">-</span>;
+}
+
     return (
         <a
             href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`}
@@ -45,9 +48,13 @@ const renderLocationLink = (lat: number | null, lng: number | null, label: strin
 };
 
 const formatOnlyTime = (dateTimeString: string | null) => {
-    if (!dateTimeString) return '-';
+    if (!dateTimeString) {
+return '-';
+}
+
     try {
         const date = new Date(dateTimeString);
+
         return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
     } catch {
         return '-';
@@ -55,13 +62,18 @@ const formatOnlyTime = (dateTimeString: string | null) => {
 };
 
 const calculateWorkingHours = (checkIn: string | null, checkOut: string | null) => {
-    if (!checkIn) return '-';
+    if (!checkIn) {
+return '-';
+}
+
     try {
         const start = new Date(checkIn);
         const end = checkOut ? new Date(checkOut) : new Date();
         const diffMs = end.getTime() - start.getTime();
         
-        if (diffMs < 0) return '-';
+        if (diffMs < 0) {
+return '-';
+}
         
         const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
         const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -69,6 +81,7 @@ const calculateWorkingHours = (checkIn: string | null, checkOut: string | null) 
         if (!checkOut) {
             return <span className="text-blue-600 font-medium animate-pulse">{diffHrs}j {diffMins}m (Bekerja)</span>;
         }
+
         return <span className="text-slate-700 font-medium">{diffHrs}j {diffMins}m</span>;
     } catch {
         return '-';
@@ -82,6 +95,7 @@ export const columns: ColumnDef<Attendance>[] = [
         accessorFn: (row) => row.user?.name,
         cell: ({ row }) => {
             const item = row.original;
+
             return (
                 <div>
                     <span className="font-semibold text-slate-800">{item.user?.name || 'Pegawai Terhapus'}</span>
@@ -146,6 +160,7 @@ export const columns: ColumnDef<Attendance>[] = [
         header: 'Lokasi GPS',
         cell: ({ row }) => {
             const item = row.original;
+
             return (
                 <div className="space-y-1">
                     <div>{renderLocationLink(item.lat_in, item.lng_in, 'GPS Masuk')}</div>
@@ -159,6 +174,7 @@ export const columns: ColumnDef<Attendance>[] = [
         header: 'Catatan',
         cell: ({ row }) => {
             const notes = row.getValue('notes') as string | null;
+
             return (
                 <span className="text-xs text-slate-600 max-w-[200px] truncate block" title={notes || ''}>
                     {notes || '-'}

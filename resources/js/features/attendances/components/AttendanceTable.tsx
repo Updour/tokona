@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
 import type { SortingState } from '@tanstack/react-table';
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { Attendance } from '../types';
 import { columns } from './AttendanceColumn';
-import { Attendance } from '../types';
 
 interface TableProps {
     data: Attendance[];

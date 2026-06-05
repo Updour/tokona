@@ -22,8 +22,10 @@ export function useAttendance() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
                 reject(new Error('Geolocation tidak didukung oleh browser Anda.'));
+
                 return;
             }
+
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     resolve({
@@ -33,9 +35,11 @@ export function useAttendance() {
                 },
                 (error) => {
                     let msg = 'Gagal mendapatkan lokasi GPS.';
+
                     if (error.code === error.PERMISSION_DENIED) {
                         msg = 'Akses lokasi ditolak. Harap izinkan akses GPS untuk melakukan absensi.';
                     }
+
                     reject(new Error(msg));
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
@@ -45,6 +49,7 @@ export function useAttendance() {
 
     const handleClockIn = async () => {
         formIn.clearErrors();
+
         try {
             toast.loading('Mendapatkan koordinat GPS...', { id: 'gps-load' });
             const loc = await getGPSLocation();
@@ -64,13 +69,16 @@ export function useAttendance() {
                 branch_id: formIn.data.branch_id || undefined,
             }, {
                 onSuccess: (page) => {
-                    const hasError = page.props.flash?.error;
+                    const props = page.props as any;
+
+                    const hasError = props.flash?.error;
+
                     if (!hasError) {
                         store.closeClockIn();
                         formIn.reset();
                     }
                 },
-                onError: (err) => {
+                onError: () => {
                     // Global handler will catch this if we don't do anything, but let's just close modal on success
                 }
             });
@@ -91,12 +99,22 @@ export function useAttendance() {
                 longitude: loc.longitude,
             }, {
                 onSuccess: (page) => {
-                    const hasError = page.props.flash?.error;
-                    if (!hasError) {
-                        store.closeClockOut();
+                    // Tambahkan 'as any' di sini untuk mematikan proteksi strict TypeScript
+                    const props = page.props as any;
+                    const hasError = props.flash?.error;
+
+                    // Tampilkan pesan error jika dikirim dari backend Laravel
+                    if (hasError) {
+                        toast.error(hasError);
+                        store.closeClockIn();
+                        formIn.reset();
                     }
+
+                    // Jika tidak ada error, tutup modal secara sukses
+                    store.closeClockOut();
+                    toast.success('Berhasil melakukan clock-out!');
                 },
-                onError: (err) => {
+                onError: () => {
                 }
             });
         } catch (error: any) {

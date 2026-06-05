@@ -1,8 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
-import MainLayout from '@/layouts/app/app-main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Error({ message }: { message: string }) {
     return (

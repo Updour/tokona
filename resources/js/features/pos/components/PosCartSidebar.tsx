@@ -304,8 +304,13 @@ export function PosCartSidebar({
 
                         <div className="grid grid-cols-3 gap-2">
                             {['cash', 'transfer', 'debt', 'split'].map((method) => {
-                                if (method === 'split' && (!posSettings.activeMethods?.cash || !posSettings.activeMethods?.transfer)) return null;
-                                if (method !== 'split' && posSettings.activeMethods && !posSettings.activeMethods[method]) return null;
+                                if (method === 'split' && (!posSettings.activeMethods?.cash || !posSettings.activeMethods?.transfer)) {
+return null;
+}
+
+                                if (method !== 'split' && posSettings.activeMethods && !posSettings.activeMethods[method]) {
+return null;
+}
 
                                 const isSelected = paymentMethod === method;
                                 const labels: any = {

@@ -1,4 +1,14 @@
+import { divIcon } from 'leaflet';
+import {
+    Building2, Mail, Phone, MapPin, Calendar, Clock, X,
+    Globe, ShieldCheck, HardDrive, Map, ExternalLink
+} from 'lucide-react';
 import * as React from 'react';
+import { renderToString } from 'react-dom/server';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -7,26 +17,18 @@ import {
     DialogTitle,
     DialogClose
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useTenantStore } from '@/pages/tenants/stores/useTenantStore';
-import {
-    Building2, Mail, Phone, MapPin, Calendar, Clock, X,
-    Globe, ShieldCheck, HardDrive, Map, ExternalLink
-} from 'lucide-react';
-
 import { formatDateTime, formatTimeAgo } from '@/lib/helpers/date'
+import { useTenantStore } from '@/pages/tenants/stores/useTenantStore';
+
 // IMPOR UNTUK LEAFLET MAP
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import { divIcon } from 'leaflet';
-import { renderToString } from 'react-dom/server';
 import 'leaflet/dist/leaflet.css'; // Wajib diimpor agar style peta tidak rusak
 
 export function TenantViewDialog() {
     const { isViewOpen, selectedTenant, closeView } = useTenantStore();
 
-    if (!selectedTenant) return null;
+    if (!selectedTenant) {
+return null;
+}
 
     const location = selectedTenant.location;
     const lat = location?.latitude ? parseFloat(location.latitude) : null;
@@ -34,7 +36,9 @@ export function TenantViewDialog() {
     const hasCoordinates = lat !== null && lon !== null && !isNaN(lat) && !isNaN(lon);
 
     const handleOpenMaps = () => {
-        if (!location) return;
+        if (!location) {
+return;
+}
 
         if (location.maps_link) {
             window.open(location.maps_link, '_blank', 'noopener,noreferrer');

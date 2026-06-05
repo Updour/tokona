@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { Head, Link } from '@inertiajs/react';
+import type { Engine, ISourceOptions } from '@tsparticles/engine';
 import { Particles, ParticlesProvider } from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
-import type { Engine, ISourceOptions } from '@tsparticles/engine';
+import React, { useCallback, useEffect, useState } from 'react';
 import AppLogoIcon from '@/components/app-logo-icon';
-import { Head, Link } from '@inertiajs/react';
 
 // ── Konfigurasi Partikel berdasarkan mode ──────────────────────────────────
 function buildParticleOptions(isDark: boolean): ISourceOptions {
@@ -172,6 +172,7 @@ export default function AuthAntigravityLayout({
         const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
 
         mq.addEventListener('change', handler);
+
         return () => mq.removeEventListener('change', handler);
     }, []);
 

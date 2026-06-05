@@ -1,17 +1,17 @@
 import { Link, router } from '@inertiajs/react';
-import { useState } from 'react';
-import { Search, Eye, StopCircle, X } from 'lucide-react';
 import debounce from 'lodash/debounce';
+import { Search, Eye, StopCircle, X } from 'lucide-react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
-import { CloseShiftDialog } from './CloseShiftDialog';
 import type { Shift } from '../types';
+import { CloseShiftDialog } from './CloseShiftDialog';
 
 interface Props {
     shifts: any;
@@ -45,11 +45,15 @@ export function ShiftTable({ shifts, filters }: Props) {
                     <Input
                         placeholder="Cari nama kasir..."
                         value={search}
-                        onChange={(e) => { setSearch(e.target.value); onSearch(e.target.value); }}
+                        onChange={(e) => {
+ setSearch(e.target.value); onSearch(e.target.value); 
+}}
                         className="pl-8 h-9 text-xs"
                     />
                     {search && (
-                        <button onClick={() => { setSearch(''); onSearch(''); }} className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground">
+                        <button onClick={() => {
+ setSearch(''); onSearch(''); 
+}} className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground">
                             <X className="h-4 w-4" />
                         </button>
                     )}

@@ -1,10 +1,10 @@
-import React from 'react';
 import { TrendingUp, MapPin, ShoppingBag, Target, Award, Zap } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { SalesPerson } from '../types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import type { SalesPerson } from '../types';
 
 interface SalesPerformanceDialogProps {
     open: boolean;

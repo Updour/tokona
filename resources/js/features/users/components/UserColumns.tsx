@@ -112,6 +112,7 @@ export const columns: ColumnDef<User>[] = [
         header: 'Tanggal Daftar',
         cell: ({ row }) => {
             const dateStr = row.getValue('created_at') as string;
+
             return (
                 <span className="text-muted-foreground text-sm">
                     {dateStr ? new Date(dateStr).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}

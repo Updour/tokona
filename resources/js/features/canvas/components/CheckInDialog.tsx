@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { MapPin, Loader2, AlertCircle, Camera } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 
 interface CheckInDialogProps {
@@ -26,6 +26,7 @@ export default function CheckInDialog({ isOpen, onClose, customer }: CheckInDial
     const handleCheckIn = () => {
         if (!navigator.geolocation) {
             setError('Geolocation tidak didukung oleh browser Anda.');
+
             return;
         }
 
@@ -57,6 +58,7 @@ export default function CheckInDialog({ isOpen, onClose, customer }: CheckInDial
             },
             (error) => {
                 setIsLoading(false);
+
                 switch(error.code) {
                     case error.PERMISSION_DENIED:
                         setError('Izin akses lokasi ditolak. Mohon aktifkan GPS/Lokasi.');
@@ -76,7 +78,9 @@ export default function CheckInDialog({ isOpen, onClose, customer }: CheckInDial
         );
     };
 
-    if (!customer) return null;
+    if (!customer) {
+return null;
+}
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>

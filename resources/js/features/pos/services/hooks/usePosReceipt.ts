@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import html2canvas from 'html2canvas';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { formatRupiah } from '@/lib/helpers/format';
 
@@ -9,11 +9,16 @@ export function usePosReceipt() {
 
     const handlePrintReceipt = () => {
         const printContent = document.getElementById('receipt-print-area');
-        if (!printContent) return;
+
+        if (!printContent) {
+return;
+}
 
         const printWindow = window.open('', '_blank', 'width=350,height=600');
+
         if (!printWindow) {
             toast.error('Pop-up terblokir! Silakan aktifkan izin pop-up untuk mencetak struk.');
+
             return;
         }
 
@@ -69,8 +74,10 @@ export function usePosReceipt() {
 
     const handleDownloadReceiptImage = () => {
         const element = document.getElementById('receipt-print-area');
+
         if (!element) {
             toast.error('Gagal mendeteksi area struk untuk diambil gambar.');
+
             return;
         }
 
@@ -105,6 +112,7 @@ export function usePosReceipt() {
                 element.style.maxHeight = originalMaxHeight;
                 element.style.overflow = originalOverflow;
                 element.className = originalClassName;
+
                 throw err;
             }),
             {
@@ -116,7 +124,9 @@ export function usePosReceipt() {
     };
 
     const handleSendWhatsAppReceipt = () => {
-        if (!lastTransaction) return;
+        if (!lastTransaction) {
+return;
+}
 
         const phone = lastTransaction.phone || '';
         const name = lastTransaction.customer || 'Pelanggan';
