@@ -8,6 +8,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    build: {
+        chunkSizeWarningLimit: 1500,
+    },
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
@@ -50,7 +53,7 @@ export default defineConfig({
                 ]
             },
             workbox: {
-                globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,ttf}'],
+                globPatterns: ['**/*.{js,css,png,svg,woff2,ttf}'],
                 navigateFallback: null,
                 runtimeCaching: [
                     {
