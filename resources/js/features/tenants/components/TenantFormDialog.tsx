@@ -119,6 +119,7 @@ export function TenantFormDialog() {
         status: 'active' as 'active' | 'suspended' | 'trial',
         plan: 'free' as 'free' | 'pro' | 'enterprise',
         expires_at: '',
+        logo: null as File | null,
     });
 
     useEffect(() => {
@@ -140,6 +141,7 @@ export function TenantFormDialog() {
                 latitude: loc.latitude ?? '',
                 longitude: loc.longitude ?? '',
                 expires_at: selectedTenant.expires_at ? selectedTenant.expires_at.split(' ')[0].split('T')[0] : '',
+                logo: null,
             });
 
             if (loc.latitude && loc.longitude) {
@@ -207,7 +209,8 @@ export function TenantFormDialog() {
         e.preventDefault();
 
         if (selectedTenant) {
-            put(tenantsUpdate(selectedTenant.id).url, { onSuccess: () => closeForm() });
+            // Inertia doesn't support file uploads via PUT, so we use POST with _method=PUT
+            post(`${tenantsUpdate(selectedTenant.id).url}?_method=PUT`, { onSuccess: () => closeForm() });
         } else {
             post(tenantsStore().url, { onSuccess: () => closeForm() });
         }
@@ -238,6 +241,12 @@ export function TenantFormDialog() {
                                 <Label htmlFor="t-name" className="text-xs font-bold uppercase text-muted-foreground">Tenant Name <span className="text-destructive">*</span></Label>
                                 <Input id="t-name" value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="e.g. Makmur Jaya Corp" required />
                                 {errors.name && <span className="text-xs text-destructive">{errors.name}</span>}
+                            </div>
+
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="t-logo" className="text-xs font-bold uppercase text-muted-foreground">Logo Perusahaan</Label>
+                                <Input id="t-logo" type="file" accept="image/*" onChange={(e) => setData('logo', e.target.files ? e.target.files[0] : null)} />
+                                {errors.logo && <span className="text-xs text-destructive">{errors.logo as string}</span>}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

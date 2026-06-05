@@ -6,6 +6,7 @@ use App\Models\Tenants;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 use App\Http\Requests\Tenants\StoreTenantRequest;
 use App\Http\Requests\Tenants\UpdateTenantRequest;
@@ -57,6 +58,12 @@ class TenantsController extends Controller
         $validated['status'] ??= 'active';
         $validated['plan'] ??= 'free';
 
+        $logoUrl = null;
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('logos', 'public');
+            $logoUrl = Storage::url($path);
+        }
+
         $tenant = Tenants::create([
             'name' => $validated['name'],
             'email' => $validated['email'] ?? null,
@@ -65,6 +72,7 @@ class TenantsController extends Controller
             'status' => $validated['status'],
             'plan' => $validated['plan'],
             'expires_at' => $validated['expires_at'] ?? null,
+            'logo_url' => $logoUrl,
         ]);
 
         $tenant->location()->create([
@@ -74,6 +82,14 @@ class TenantsController extends Controller
             'city' => $validated['city'] ?? null,
             'province' => $validated['province'] ?? null,
             'maps_link' => $validated['maps_link'] ?? null,
+        ]);
+
+        // Auto-create default branch (HQ) for this tenant
+        \App\Models\Branch::create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Cabang Pusat (HQ)',
+            'code' => 'HQ-01',
+            'is_main' => true,
         ]);
 
         return redirect()->route('tenants.index')
@@ -89,6 +105,17 @@ class TenantsController extends Controller
 
         $validated = $request->validated();
 
+        $logoUrl = $tenant->logo_url;
+        if ($request->hasFile('logo')) {
+            // Delete old logo if exists
+            if ($tenant->logo_url) {
+                $oldPath = str_replace(Storage::url(''), '', $tenant->logo_url);
+                Storage::disk('public')->delete($oldPath);
+            }
+            $path = $request->file('logo')->store('logos', 'public');
+            $logoUrl = Storage::url($path);
+        }
+
         $tenant->update([
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']),
@@ -98,6 +125,7 @@ class TenantsController extends Controller
             'status' => $validated['status'] ?? $tenant->status,
             'plan' => $validated['plan'] ?? $tenant->plan,
             'expires_at' => $validated['expires_at'] ?? $tenant->expires_at,
+            'logo_url' => $logoUrl,
         ]);
 
         $tenant->location()->updateOrCreate(

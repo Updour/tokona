@@ -22,7 +22,7 @@ class UpdateUserRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:20'],
             'status' => ['required', 'string', Rule::in(['active', 'inactive'])],
             'tenant_id' => ['nullable', 'uuid', 'exists:tenants,id'],
-            'branch_id' => ['required', 'uuid', 'exists:branches,id'],
+            'branch_id' => ['nullable', 'uuid', 'exists:branches,id'],
             'role_id' => ['required', 'uuid', 'exists:roles,id'],
             'avatar' => ['nullable', 'string', 'max:255'],
         ];

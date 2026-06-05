@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
 
-class UserController extends Controller
+class EmployeeController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -84,12 +84,11 @@ class UserController extends Controller
             $tenants = Tenants::select('id', 'name')->orderBy('name')->get();
         }
 
-        return Inertia::render('users/Index', [
+        return Inertia::render('employees/Index', [
             'users' => $users,
             'branches' => $branches,
             'roles' => $roles,
-            'tenants' => $tenants,
-            'filters' => $request->only(['search', 'sort', 'direction', 'per_page', 'branch_id', 'status', 'tenant_id']),
+            'filters' => $request->only(['search', 'sort', 'direction', 'per_page', 'branch_id', 'status']),
         ]);
     }
 
@@ -136,7 +135,7 @@ class UserController extends Controller
         // Sync the role
         $user->roles()->sync([$roleId]);
 
-        return redirect()->route('users.index')->with('success', 'Karyawan berhasil ditambahkan.');
+        return redirect()->route('employees.index')->with('success', 'Karyawan berhasil ditambahkan.');
     }
 
     /**
@@ -173,7 +172,7 @@ class UserController extends Controller
         // Sync the role
         $user->roles()->sync([$roleId]);
 
-        return redirect()->route('users.index')->with('success', 'Data karyawan berhasil diperbarui.');
+        return redirect()->route('employees.index')->with('success', 'Data karyawan berhasil diperbarui.');
     }
 
     /**
@@ -188,6 +187,6 @@ class UserController extends Controller
 
         $user->delete();
 
-        return redirect()->route('users.index')->with('success', 'Karyawan berhasil dihapus.');
+        return redirect()->route('employees.index')->with('success', 'Karyawan berhasil dihapus.');
     }
 }

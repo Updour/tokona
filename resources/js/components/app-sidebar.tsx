@@ -34,18 +34,6 @@ const iconMap: Record<string, React.ComponentType<any>> = {
     ShieldAlert: Icons.ShieldAlert,
 };
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Platform Guide',
-        href: '#',
-        icon: Icons.BookOpen,
-    },
-    {
-        title: 'Settings',
-        href: '#',
-        icon: Icons.Settings,
-    },
-];
 
 export function AppSidebar() {
     const { props } = usePage<any>();
@@ -109,7 +97,6 @@ export function AppSidebar() {
                         </div>
                     </div>
                 )}
-                <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

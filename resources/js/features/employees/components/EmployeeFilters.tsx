@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 
-interface UserFiltersProps {
+interface EmployeeFiltersProps {
     filters: Record<string, any>;
     branches: any[];
     tenants?: any[];
@@ -18,14 +18,14 @@ interface UserFiltersProps {
     onExport: () => void;
 }
 
-export function UserFilters({
+export function EmployeeFilters({
     filters,
     branches,
     tenants = [],
     totalResults,
     onAddClick,
     onExport,
-}: UserFiltersProps) {
+}: EmployeeFiltersProps) {
     const [search, setSearch] = useState(filters.search || '');
     const [localFilters, setLocalFilters] = useState({
         branch_id: filters.branch_id || '',
@@ -179,7 +179,7 @@ export function UserFilters({
                     <Download className="mr-2 h-4 w-4" /> Export
                 </Button>
                 <Button onClick={onAddClick} className="shadow-sm">
-                    <Plus className="mr-2 h-4 w-4" /> Tambah users
+                    <Plus className="mr-2 h-4 w-4" /> Tambah Karyawan
                 </Button>
             </div>
         </div>

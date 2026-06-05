@@ -8,6 +8,7 @@ use App\Http\Controllers\OpnameController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TenantsController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CustomerController;
 
@@ -88,6 +89,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ── Users & Roles ───────────────────────────────────────────────────────
     Route::resource('users', UserController::class);
+    Route::resource('employees', EmployeeController::class);
     Route::resource('roles', RoleController::class)->except(['create', 'edit', 'show']);
 
     // ── Produk ─────────────────────────────────────────────────────────────

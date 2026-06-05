@@ -31,8 +31,7 @@ class StoreTenantRequest extends FormRequest
             'city' => ['nullable', 'string', 'max:255'],
             'province' => ['nullable', 'string', 'max:255'],
             'maps_link' => ['nullable', 'url', 'max:255'],
-
-
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ];
     }
 }

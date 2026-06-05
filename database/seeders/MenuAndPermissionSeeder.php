@@ -357,7 +357,7 @@ class MenuAndPermissionSeeder extends Seeder
                 'permission_key' => 'users.index',
                 'order' => 10,
                 'children' => [
-                    ['title' => 'Daftar karyawan', 'href' => '/users', 'permission_key' => 'users.index', 'order' => 1],
+                    ['title' => 'Daftar karyawan', 'href' => '/employees', 'permission_key' => 'users.index', 'order' => 1],
                     ['title' => 'Role & permission', 'href' => '/roles', 'permission_key' => 'roles.index', 'order' => 2],
                     ['title' => 'Absensi karyawan', 'href' => '/attendances', 'permission_key' => 'users.index', 'order' => 3],
                 ]

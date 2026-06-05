@@ -63,7 +63,15 @@ export const columns: ColumnDef<Tenant>[] = [
             </Button>
         ),
         cell: ({ row }) => (
-            <span className="font-medium">{row.original.name}</span>
+            <div className="flex items-center gap-3">
+                <Avatar className="h-9 w-9 border border-border/50 shadow-sm">
+                    <AvatarImage src={row.original.logo_url} alt={row.original.name} className="object-cover" />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+                        {row.original.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                </Avatar>
+                <span className="font-medium">{row.original.name}</span>
+            </div>
         ),
     },
     {

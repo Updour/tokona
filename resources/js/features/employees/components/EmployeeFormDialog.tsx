@@ -12,21 +12,21 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUserStore } from '@/pages/users/stores/useUserStore';
-import { store as usersStore, update as usersUpdate } from '@/routes/users';
+import { useEmployeeStore } from '@/pages/employees/stores/useEmployeeStore';
+import { store as employeesStore, update as employeesUpdate } from '@/routes/employees';
 
-interface UserFormDialogProps {
+interface EmployeeFormDialogProps {
     branches: any[];
     roles: any[];
     tenants?: any[];
 }
 
-export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialogProps) {
-    const { isFormOpen, selectedUser, closeForm } = useUserStore();
+export function EmployeeFormDialog({ branches, roles, tenants = [] }: EmployeeFormDialogProps) {
+    const { isFormOpen, selectedEmployee, closeForm } = useEmployeeStore();
     const { auth } = usePage().props as any;
 
-    // Check if the current user is a Super Admin
-    const isSuperAdmin = auth?.user?.roles?.some((r: any) => r.name === 'super-admin') || auth?.user?.tenant_id === null;
+    // Check if the current employee is a Super Admin
+    const isSuperAdmin = auth?.employee?.roles?.some((r: any) => r.name === 'super-admin') || auth?.employee?.tenant_id === null;
 
     const [selectedTenantId, setSelectedTenantId] = useState<string>('');
 
@@ -43,25 +43,25 @@ export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialog
 
     // Populate form data on edit
     useEffect(() => {
-        if (selectedUser) {
+        if (selectedEmployee) {
             setData({
-                name: selectedUser.name,
-                email: selectedUser.email,
+                name: selectedEmployee.name,
+                email: selectedEmployee.email,
                 password: '', // Leave empty on edit unless changing
-                phone: selectedUser.phone || '',
-                status: selectedUser.status,
-                branch_id: selectedUser.branch_id || '',
-                role_id: selectedUser.roles?.[0]?.id || '',
-                tenant_id: selectedUser.tenant_id || '',
+                phone: selectedEmployee.phone || '',
+                status: selectedEmployee.status,
+                branch_id: selectedEmployee.branch_id || '',
+                role_id: selectedEmployee.roles?.[0]?.id || '',
+                tenant_id: selectedEmployee.tenant_id || '',
             });
-            setSelectedTenantId(selectedUser.tenant_id || '');
+            setSelectedTenantId(selectedEmployee.tenant_id || '');
         } else {
             reset();
             setSelectedTenantId('');
         }
 
         clearErrors();
-    }, [selectedUser, isFormOpen]);
+    }, [selectedEmployee, isFormOpen]);
 
     // Handle tenant selection change to filter branches
     const handleTenantChange = (tenantId: string) => {
@@ -83,14 +83,14 @@ export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialog
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (selectedUser) {
-            put(usersUpdate(selectedUser.id).url, {
+        if (selectedEmployee) {
+            put(employeesUpdate(selectedEmployee.id).url, {
                 onSuccess: () => {
                     closeForm();
                 },
             });
         } else {
-            post(usersStore().url, {
+            post(employeesStore().url, {
                 onSuccess: () => {
                     closeForm();
                 },
@@ -104,12 +104,12 @@ export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialog
                 <form onSubmit={onSubmit} className="space-y-4">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-bold text-foreground">
-                            {selectedUser ? 'Edit Akun User' : 'Tambah Akun Baru'}
+                            {selectedEmployee ? 'Edit Profil Karyawan' : 'Tambah Karyawan Baru'}
                         </DialogTitle>
                         <DialogDescription>
-                            {selectedUser
-                                ? 'Perbarui informasi kredensial, penugasan cabang, atau peran akses akun di sini.'
-                                : 'Masukkan kredensial akun baru beserta cabang penugasan dan hak aksesnya.'}
+                            {selectedEmployee
+                                ? 'Perbarui informasi data diri, penugasan cabang, atau peran akses karyawan di sini.'
+                                : 'Masukkan data karyawan baru beserta cabang penugasan dan hak aksesnya.'}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -175,14 +175,14 @@ export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialog
                         {/* Password */}
                         <div className="grid gap-1.5">
                             <Label htmlFor="password" className="text-sm font-semibold">
-                                {selectedUser ? 'Kata Sandi Baru (Opsional)' : 'Kata Sandi Akses'}
+                                {selectedEmployee ? 'Kata Sandi Baru (Opsional)' : 'Kata Sandi Akses'}
                             </Label>
                             <Input
                                 id="password"
                                 type="password"
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
-                                placeholder={selectedUser ? 'Kosongkan jika tidak ingin mengubah sandi' : 'Minimal 8 karakter'}
+                                placeholder={selectedEmployee ? 'Kosongkan jika tidak ingin mengubah sandi' : 'Minimal 8 karakter'}
                                 className={errors.password ? 'border-red-500' : ''}
                             />
                             {errors.password && <span className="text-xs text-red-500 font-medium">{errors.password}</span>}
@@ -252,7 +252,11 @@ export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialog
                                     <SelectContent>
                                         {roles
                                             .filter(r => {
-                                                if (!isSuperAdmin) return true;
+                                                if (!isSuperAdmin) {
+                                                    // Tenants should not see super-admin role
+                                                    if (r.name === 'super-admin') return false;
+                                                    return true; 
+                                                }
                                                 // For Super Admin:
                                                 if (r.name === 'super-admin') return true; // Always show super-admin option
                                                 if (!selectedTenantId) return false; // Don't show tenant roles if no tenant selected
@@ -264,7 +268,7 @@ export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialog
                                             }, [] as any[])
                                             .map((r) => (
                                                 <SelectItem key={r.id} value={r.id}>
-                                                    {r.name === 'super-admin' ? 'Super Admin' : r.name.toUpperCase()}
+                                                    {r.name.toUpperCase()}
                                                 </SelectItem>
                                             ))}
                                     </SelectContent>
@@ -279,7 +283,7 @@ export function UserFormDialog({ branches, roles, tenants = [] }: UserFormDialog
                             Batal
                         </Button>
                         <Button type="submit" disabled={processing} className="bg-primary text-primary-foreground">
-                            {processing ? 'Menyimpan...' : 'Simpan Akun'}
+                            {processing ? 'Menyimpan...' : 'Simpan Karyawan'}
                         </Button>
                     </DialogFooter>
                 </form>

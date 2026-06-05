@@ -34,7 +34,7 @@ class HandleInertiaRequests extends Middleware
 
         if ($user) {
             if ($isSuperAdmin) {
-                $tenants = Tenants::select('id', 'name', 'slug', 'status')
+                $tenants = Tenants::select('id', 'name', 'slug', 'status', 'logo_url')
                     ->orderBy('name')
                     ->get();
 
@@ -43,7 +43,7 @@ class HandleInertiaRequests extends Middleware
                     ->get();
             } else {
                 $tenants = Tenants::where('id', $user->tenant_id)
-                    ->select('id', 'name', 'slug', 'status')
+                    ->select('id', 'name', 'slug', 'status', 'logo_url')
                     ->get();
 
                 $branches = Branch::where('tenant_id', $user->tenant_id)
