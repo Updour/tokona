@@ -35,9 +35,7 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Render uses the PORT environment variable to bind the server
-RUN echo "Listen \${PORT}" > /etc/apache2/ports.conf
-RUN sed -ri -e 's!\*:80!\*:\${PORT}!g' /etc/apache2/sites-available/*.conf
+# Port binding will be handled by start.sh at runtime
 
 # Build Application
 RUN composer install --no-dev --optimize-autoloader || composer update --no-dev --optimize-autoloader
