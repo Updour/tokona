@@ -29,7 +29,7 @@ class ReportService
 
         // 1. Mengambil Cabang untuk Dropdown Saringan
         $branchesQuery = Branch::select('id', 'name')->orderBy('name');
-        if (!auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
             $branchesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
         $branches = $branchesQuery->get();
@@ -368,7 +368,7 @@ class ReportService
         $endDate   = $filters['end_date']   ?? now()->toDateString();
 
         $branchesQuery = Branch::select('id', 'name')->orderBy('name');
-        if (!auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
             $branchesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
         $branches = $branchesQuery->get();

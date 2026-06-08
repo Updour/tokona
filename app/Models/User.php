@@ -29,15 +29,7 @@ class User extends Authenticatable
         ];
     }
 
-    protected static function booted()
-    {
-        static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->hasUser() && !auth()->user()->isSuperAdmin()) {
-                $builder->where('tenant_id', auth()->user()->tenant_id);
-            }
-        });
-    }
-
+    // booted method removed to prevent infinite recursion during Auth::user() resolution
     /**
      * Relasi Utama Banyak-ke-Banyak (Many-to-Many).
      */
