@@ -11,6 +11,7 @@ export interface Branch {
     created_at: string;
     updated_at: string;
     tenant?: any; // To represent the tenant relationship if loaded
+    pos_settings?: any;
 }
 
 export interface BranchFilters {
