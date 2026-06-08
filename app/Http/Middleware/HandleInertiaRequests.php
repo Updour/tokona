@@ -153,7 +153,7 @@ class HandleInertiaRequests extends Middleware
                     'limits' => $limits,
                     'usage' => [
                         'branches' => $activeTenant->location()->count(),
-                        'products' => \App\Models\Product::where('tenant_id', $activeTenant->id)->count(),
+                        'products' => \App\Models\Products::where('tenant_id', $activeTenant->id)->count(),
                         'users' => \App\Models\User::where('tenant_id', $activeTenant->id)->count(),
                     ],
                 ];
