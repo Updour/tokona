@@ -14,11 +14,16 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
-        $middleware->web(append: [
-            \App\Http\Middleware\CheckTenantSubscription::class,
-            HandleAppearance::class,
-            HandleInertiaRequests::class,
-        ]);
+        $middleware->web(
+            append: [
+                \App\Http\Middleware\CheckTenantSubscription::class,
+                HandleAppearance::class,
+                HandleInertiaRequests::class,
+            ],
+            remove: [
+                \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            ]
+        );
 
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,
