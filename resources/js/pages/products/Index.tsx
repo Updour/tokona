@@ -1,10 +1,17 @@
 import { Head } from '@inertiajs/react';
-import { ProductTable } from '@/features/products/components/ProducTable';
+import { ProductTable } from '@/features/products/components/ProductTable';
 import { ProductFormDialog } from '@/features/products/components/ProductFormDialog';
 import { ProductRestockDialog } from '@/features/products/components/ProductRestockDialog';
+import { ProductDetailSheet } from '@/features/products/components/ProductDetailSheet';
+import { ProductDeleteDialog } from '@/features/products/components/ProductDeleteDialog';
+import { ProductImportDialog } from '@/features/products/components/ProductImportDialog';
+import { useProductStore } from '@/pages/products/stores/useProductStore';
 import MainLayout from '@/layouts/app/app-main-layout';
 
-export default function Index() {
+export default function Index({ categories, types, suppliers, branches }: any) {
+    const isImportOpen = useProductStore((state) => state.isImportOpen);
+    const closeImport = useProductStore((state) => state.closeImport);
+
     return (
         <MainLayout>
             <Head title="Produk" />
@@ -20,11 +27,16 @@ export default function Index() {
                 <ProductTable />
             </div>
 
-            {/* Dialog form tambah/edit produk */}
+            {/* Dialog Form Tambah/Edit Produk */}
             <ProductFormDialog />
 
-            {/* Dialog restock / tambah stok manual */}
+            {/* Dialog Restock Cepat */}
             <ProductRestockDialog />
+            <ProductDetailSheet />
+            <ProductDeleteDialog />
+            
+            {/* Dialog Import Excel */}
+            <ProductImportDialog open={isImportOpen} onOpenChange={(open) => !open && closeImport()} />
         </MainLayout>
     );
 }

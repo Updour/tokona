@@ -23,6 +23,7 @@ use Illuminate\Support\Str;
     'status',
     'plan',
     'expires_at',
+    'settings',
 ])]
 class Tenants extends Model
 {
@@ -51,6 +52,7 @@ class Tenants extends Model
             'expires_at' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'settings' => 'array',
         ];
     }
 
@@ -91,5 +93,20 @@ class Tenants extends Model
     public function scopeForDropdown(Builder $query): Builder
     {
         return $query->select('id', 'name')->orderBy('name');
+    }
+
+    /**
+     * Helper untuk mengambil konfigurasi Poin Loyalitas
+     */
+    public function getLoyaltySettings(): array
+    {
+        $settings = $this->settings ?? [];
+        return [
+            // Default: Tiap kelipatan Rp 10.000 dapat 1 Poin
+            'earn_amount' => $settings['loyalty_earn_amount'] ?? 10000,
+            
+            // Default: 1 Poin ditukar diskon Rp 1
+            'redeem_rate' => $settings['loyalty_redeem_rate'] ?? 1,
+        ];
     }
 }

@@ -1,3 +1,4 @@
+import { formatNumber } from '@/lib/helpers/format';
 import { router } from '@inertiajs/react';
 import { Search, SlidersHorizontal, X, Building2, Layers, Calendar, Download } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -232,7 +233,7 @@ params.append('end_date', localFilters.end_date);
                 </Button>
 
                 <span className="text-sm text-muted-foreground hidden sm:block">
-                    {totalResults.toLocaleString('id-ID')} riwayat
+                    {formatNumber(totalResults)} riwayat
                 </span>
             </div>
 

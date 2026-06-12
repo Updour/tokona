@@ -16,6 +16,11 @@ export interface User {
     avatar: string | null;
     tenant_id: string | null;
     branch_id: string | null;
+    nip: string | null;
+    position: string | null;
+    employment_status: string | null;
+    basic_salary: number | string | null;
+    join_date: string | null;
     tenant?: {
         id: string;
         name: string;
@@ -25,6 +30,7 @@ export interface User {
         name: string;
     } | null;
     roles?: Role[];
+    last_login_at?: string | null;
     created_at: string;
 }
 

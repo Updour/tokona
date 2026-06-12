@@ -1,3 +1,4 @@
+import { formatNumber } from '@/lib/helpers/format';
 import { useForm } from '@inertiajs/react';
 import { PackagePlus, TrendingUp, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { useEffect } from 'react';
@@ -96,7 +97,7 @@ return;
                                     {' · '}
                                     Stok saat ini:{' '}
                                     <Badge variant="outline" className="font-mono text-xs">
-                                        {Number(selectedProduct.current_stock ?? 0).toLocaleString('id-ID')}
+                                        {formatNumber(selectedProduct.current_stock)}
                                     </Badge>
                                 </span>
                             )}

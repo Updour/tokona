@@ -44,7 +44,8 @@ export function PosProductsGrid({
                 <div className="relative flex-1 w-full">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     <Input
-                        placeholder="Cari nama barang, kode SKU, atau scan barcode..."
+                        id="pos-search-input"
+                        placeholder="Cari nama barang, kode SKU, atau scan barcode... (F2)"
                         className="pl-9 h-10 border-slate-200"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}

@@ -1,3 +1,4 @@
+import { formatRupiah } from '@/lib/helpers/format';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Printer, CheckCircle2, CircleDashed, Wallet, Building2, CalendarDays } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -97,7 +98,7 @@ return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 bo
                             
                             <div className="flex flex-col justify-center items-start md:items-end p-5">
                                 <span className="text-sm text-slate-500 mb-1">Total Nilai Transaksi</span>
-                                <span className="text-4xl md:text-5xl font-black text-primary tracking-tighter">Rp {Number(purchase.total_cost).toLocaleString('id-ID')}</span>
+                                <span className="text-4xl md:text-5xl font-black text-primary tracking-tighter">{formatRupiah(purchase.total_cost)}</span>
                             </div>
                         </div>
 
@@ -122,8 +123,8 @@ return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 bo
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right font-medium text-slate-700">{item.qty}</TableCell>
-                                            <TableCell className="text-right text-slate-600">Rp {Number(item.unit_cost).toLocaleString('id-ID')}</TableCell>
-                                            <TableCell className="text-right font-bold text-slate-800">Rp {Number(item.subtotal).toLocaleString('id-ID')}</TableCell>
+                                            <TableCell className="text-right text-slate-600">{formatRupiah(item.unit_cost)}</TableCell>
+                                            <TableCell className="text-right font-bold text-slate-800">{formatRupiah(item.subtotal)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

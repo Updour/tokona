@@ -8,9 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useCustomerStore } from '@/pages/customers/stores/useCustomerStore';
 
-export function CustomerFormDialog({ open, onOpenChange, customer }: any) {
-    const isEditing = !!customer;
+export function CustomerFormDialog() {
+    const { isFormOpen, selectedCustomer, closeForm } = useCustomerStore();
+    const isEditing = !!selectedCustomer;
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         name: '',
@@ -22,25 +24,25 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: any) {
     });
 
     useEffect(() => {
-        if (open) {
-            if (isEditing) {
+        if (isFormOpen) {
+            if (isEditing && selectedCustomer) {
                 setData({
-                    name: customer.name || '',
-                    email: customer.email || '',
-                    phone: customer.phone || '',
-                    address: customer.address || '',
-                    tier: customer.tier || 'regular',
-                    is_active: Boolean(customer.is_active),
+                    name: selectedCustomer.name || '',
+                    email: selectedCustomer.email || '',
+                    phone: selectedCustomer.phone || '',
+                    address: selectedCustomer.address || '',
+                    tier: selectedCustomer.tier || 'regular',
+                    is_active: Boolean(selectedCustomer.is_active),
                 });
             } else {
                 reset();
             }
         }
-    }, [open, isEditing, customer]);
+    }, [isFormOpen, isEditing, selectedCustomer]);
 
     const handleClose = () => {
         reset();
-        onOpenChange(false);
+        closeForm();
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -54,15 +56,15 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: any) {
             onError: () => toast.error('Cek kembali isian form Anda.'),
         };
 
-        if (isEditing) {
-            put(`/customers/${customer.id}`, options);
+        if (isEditing && selectedCustomer) {
+            put(`/customers/${selectedCustomer.id}`, options);
         } else {
             post('/customers', options);
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+        <Dialog open={isFormOpen} onOpenChange={(open) => !open && handleClose()}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>{isEditing ? 'Edit Data Pelanggan' : 'Tambah Pelanggan Baru'}</DialogTitle>

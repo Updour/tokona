@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { ImageOff, Upload, Star, Trash2, GripVertical } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type {ProductImage} from '@/pages/products/types';
@@ -47,12 +48,16 @@ inputRef.current.value = '';
     };
 
     const handleDelete = (imageId: string) => {
-        if (!confirm('Hapus gambar ini?')) {
-return;
-}
-
-        router.delete(`/products/${productId}/images/${imageId}`, {
-            preserveScroll: true,
+        toast('Hapus gambar ini?', {
+            action: {
+                label: 'Ya, Hapus',
+                onClick: () => {
+                    router.delete(`/products/${productId}/images/${imageId}`, {
+                        preserveScroll: true,
+                    });
+                }
+            },
+            cancel: { label: 'Batal', onClick: () => {} }
         });
     };
 

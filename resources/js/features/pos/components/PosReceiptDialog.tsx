@@ -1,7 +1,7 @@
 import { CheckCircle2, Printer, Download, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { formatRupiah } from '@/lib/helpers/format';
+import { formatRupiah , formatDateTime, formatNumber } from '@/lib/helpers/format';
 
 interface PosReceiptDialogProps {
     open: boolean;
@@ -36,7 +36,7 @@ export function PosReceiptDialog({
                     <div className="text-center space-y-1">
                         <h2 className="text-sm font-black tracking-widest uppercase">TOKONA ERP & CRM</h2>
                         <p className="text-[10px] text-slate-500">Cabang Kasir Utama Tokona</p>
-                        <p className="text-[10px] text-slate-500">Tanggal: {lastTransaction?.date ? new Date(lastTransaction.date).toLocaleString('id-ID') : '-'}</p>
+                        <p className="text-[10px] text-slate-500">Tanggal: {lastTransaction?.date ? formatDateTime(lastTransaction.date) : '-'}</p>
                         <p className="text-[10px] text-slate-500">Inv: {lastTransaction?.invoice_number}</p>
                         <p className="text-[10px] text-slate-500">Pelanggan: {lastTransaction?.customer}</p>
                         <p className="text-[10px] text-slate-500">Kasir: {lastTransaction?.cashier || lastTransaction?.creator?.name || '-'}</p>
@@ -99,6 +99,21 @@ export function PosReceiptDialog({
                             </>
                         )}
                     </div>
+
+                    {(lastTransaction?.earned_points > 0 || lastTransaction?.current_points > 0) && (
+                        <div className="border-t border-dashed border-slate-300 pt-2 space-y-1 text-[10px]">
+                            {lastTransaction?.earned_points > 0 && (
+                                <div className="flex justify-between font-bold text-amber-600">
+                                    <span>Poin Tambahan (Hari Ini)</span>
+                                    <span>+ {formatNumber(lastTransaction.earned_points)} Pts</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between font-black">
+                                <span>Total Poin Tersedia</span>
+                                <span>{formatNumber(lastTransaction?.current_points || 0)} Pts</span>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="text-center pt-2 border-t border-dashed border-slate-300 text-[9px] text-slate-400">
                         *** TERIMA KASIH ATAS KUNJUNGAN ANDA ***

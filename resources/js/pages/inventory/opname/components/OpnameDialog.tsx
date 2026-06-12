@@ -7,13 +7,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
+import { useOpnameStore } from '../stores/useOpnameStore';
+
 interface OpnameDialogProps {
-    isOpen: boolean;
-    onClose: () => void;
     products: any[];
 }
 
-export default function OpnameDialog({ isOpen, onClose, products }: OpnameDialogProps) {
+export default function OpnameDialog({ products }: OpnameDialogProps) {
+    const { isCreateOpen, closeCreate } = useOpnameStore();
     const [search, setSearch] = useState('');
     
     const { data, setData, post, processing, reset, errors } = useForm({
@@ -70,13 +71,13 @@ export default function OpnameDialog({ isOpen, onClose, products }: OpnameDialog
         post('/inventory/opname', {
             onSuccess: () => {
                 reset();
-                onClose();
+                closeCreate();
             }
         });
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isCreateOpen} onOpenChange={closeCreate}>
             <DialogContent className="max-w-4xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
                 <DialogHeader className="p-5 border-b bg-slate-50 shrink-0">
                     <DialogTitle className="text-xl font-black text-slate-800">Catat Stock Opname</DialogTitle>
@@ -205,7 +206,7 @@ export default function OpnameDialog({ isOpen, onClose, products }: OpnameDialog
                 </div>
 
                 <DialogFooter className="p-4 border-t bg-slate-50 shrink-0">
-                    <Button variant="outline" onClick={onClose} disabled={processing}>Batal</Button>
+                    <Button variant="outline" onClick={closeCreate} disabled={processing}>Batal</Button>
                     <Button onClick={handleSubmit} disabled={processing || data.items.length === 0} className="bg-indigo-650 hover:bg-indigo-700">
                         {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Simpan Penyesuaian

@@ -31,6 +31,7 @@ export interface Tenant {
     email: string | null;
     phone: string | null;
     logo: string | null;
+    logo_url?: string;
     address: string | null;
     status: TenantStatus;
     plan: TenantPlan;

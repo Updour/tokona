@@ -135,6 +135,13 @@ class EmployeeController extends Controller
         // Sync the role
         $user->roles()->sync([$roleId]);
 
+        // Save Basic Salary if provided
+        if (isset($validated['basic_salary'])) {
+            app(\App\Services\EmployeeSalaryService::class)->setSalary($user->id, [
+                'basic_salary' => $validated['basic_salary']
+            ]);
+        }
+
         return redirect()->route('employees.index')->with('success', 'Karyawan berhasil ditambahkan.');
     }
 
@@ -171,6 +178,13 @@ class EmployeeController extends Controller
 
         // Sync the role
         $user->roles()->sync([$roleId]);
+
+        // Save Basic Salary if provided
+        if (isset($validated['basic_salary'])) {
+            app(\App\Services\EmployeeSalaryService::class)->setSalary($user->id, [
+                'basic_salary' => $validated['basic_salary']
+            ]);
+        }
 
         return redirect()->route('employees.index')->with('success', 'Data karyawan berhasil diperbarui.');
     }

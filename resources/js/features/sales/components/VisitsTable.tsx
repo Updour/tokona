@@ -1,3 +1,4 @@
+import { formatDateTime } from '@/lib/helpers/format';
 import { Store, MapPin, ClipboardCheck, Eye, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +47,7 @@ export function VisitsTable({ visits }: VisitsTableProps) {
                                         </div>
                                     </TableCell>
                                     <TableCell className="font-semibold text-slate-700 text-sm">
-                                        {item.visited_at ? new Date(item.visited_at).toLocaleString('id-ID') : '-'}
+                                        {item.visited_at ? formatDateTime(item.visited_at) : '-'}
                                     </TableCell>
                                     <TableCell>
                                         {item.status === 'ordered' ? (

@@ -21,7 +21,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { formatRupiah } from '@/lib/helpers/format';
+import { formatRupiah , formatNumber} from '@/lib/helpers/format';
 import { store as consignmentsStore } from '@/routes/consignments';
 import { useConsignmentStore } from '../stores/useConsignmentStore';
 
@@ -201,7 +201,7 @@ updateItem(idx, 'base_cost', prod.base_price || prod.cost_price || 0);
                                                 type="text"
                                                 className="h-8 text-xs font-mono text-right pl-7"
                                                 placeholder="0"
-                                                value={item.base_cost === 0 ? '' : item.base_cost.toLocaleString('id-ID')}
+                                                value={item.base_cost === 0 ? '' : formatNumber(item.base_cost)}
                                                 onChange={(e) => {
                                                     const rawValue = e.target.value.replace(/[^0-9]/g, '');
                                                     updateItem(idx, 'base_cost', rawValue ? parseInt(rawValue, 10) : 0);

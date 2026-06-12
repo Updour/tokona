@@ -1,6 +1,6 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Shield, Plus, Trash2, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,20 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import MainLayout from '@/layouts/app/app-main-layout';
-
-interface Permission {
-    id: string;
-    key: string;
-    name: string;
-    module: string;
-}
-
-interface Role {
-    id: string;
-    name: string;
-    description: string | null;
-    permissions: Permission[];
-}
+import type { Permission, Role } from '@/pages/roles/types';
+import { useRoleStore } from '@/pages/roles/stores/useRoleStore';
 
 interface PageProps {
     roles: Role[];
@@ -36,8 +24,13 @@ export default function Index() {
     const { props } = usePage<any>();
     const { roles = [], permissionsGrouped = {} } = props as PageProps;
 
-    const [selectedRole, setSelectedRole] = useState<Role | null>(roles[0] || null);
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const { selectedRole, setSelectedRole, isCreateOpen, openCreate, closeCreate } = useRoleStore();
+
+    useEffect(() => {
+        if (!selectedRole && roles.length > 0) {
+            setSelectedRole(roles[0]);
+        }
+    }, [roles]);
 
     // Form for creating a new role
     const createForm = useForm({
@@ -120,7 +113,7 @@ return;
         createForm.post('/roles', {
             onSuccess: () => {
                 toast.success('Role baru berhasil dibuat!');
-                setIsCreateOpen(false);
+                closeCreate();
                 createForm.reset();
 
                 if (roles.length > 0) {
@@ -141,14 +134,20 @@ return;
             return;
         }
 
-        if (confirm(`Hapus role "${role.name}"? Karyawan dengan role ini akan kehilangan akses.`)) {
-            editForm.delete(`/roles/${role.id}`, {
-                onSuccess: () => {
-                    toast.success('Role berhasil dihapus.');
-                    setSelectedRole(roles[0] || null);
+        toast(`Hapus role "${role.name}"? Karyawan dengan role ini akan kehilangan akses.`, {
+            action: {
+                label: 'Ya, Hapus',
+                onClick: () => {
+                    editForm.delete(`/roles/${role.id}`, {
+                        onSuccess: () => {
+                            toast.success('Role berhasil dihapus.');
+                            setSelectedRole(roles[0] || null);
+                        }
+                    });
                 }
-            });
-        }
+            },
+            cancel: { label: 'Batal', onClick: () => {} }
+        });
     };
 
     const getRoleBadgeVariant = (name: string) => {
@@ -180,7 +179,7 @@ return;
                                 <CardTitle className="text-sm font-bold">Daftar Peran</CardTitle>
                                 <CardDescription className="text-xs">Pilih peran untuk mengatur hak akses.</CardDescription>
                             </div>
-                            <Button size="sm" onClick={() => setIsCreateOpen(true)} className="h-8 text-xs gap-1">
+                            <Button size="sm" onClick={openCreate} className="h-8 text-xs gap-1">
                                 <Plus className="h-3.5 w-3.5" /> Tambah
                             </Button>
                         </CardHeader>
@@ -337,7 +336,7 @@ return;
             </div>
 
             {/* DIALOG: Buat Role Baru */}
-            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <Dialog open={isCreateOpen} onOpenChange={(open) => !open && closeCreate()}>
                 <DialogContent className="sm:max-w-[425px]">
                     <form onSubmit={handleCreateRole}>
                         <DialogHeader>
@@ -371,7 +370,7 @@ return;
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateOpen(false)} className="text-xs h-8">
+                            <Button type="button" variant="outline" size="sm" onClick={closeCreate} className="text-xs h-8">
                                 Batal
                             </Button>
                             <Button type="submit" disabled={createForm.processing} size="sm" className="text-xs h-8">

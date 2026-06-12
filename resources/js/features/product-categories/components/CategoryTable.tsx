@@ -1,5 +1,6 @@
 import { usePage, router } from '@inertiajs/react';
 import { Edit, Trash, Tag } from 'lucide-react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
@@ -12,13 +13,7 @@ import {
 } from '@/components/ui/tooltip';
 import { usePermission } from '@/hooks/use-permission';
 import { CategoryFilters } from './CategoryFilters';
-
-interface ProductCategory {
-    id: string;
-    name: string;
-    description?: string | null;
-    products_count?: number;
-}
+import type { ProductCategory } from '@/pages/product-categories/types';
 
 interface PageProps {
     [key: string]: any;
@@ -45,9 +40,13 @@ export function CategoryTable({
     const { categories, filters } = props;
 
     const handleDelete = (cat: ProductCategory) => {
-        if (confirm(`Hapus kategori "${cat.name}"?`)) {
-            router.delete(`/product-categories/${cat.id}`, { preserveScroll: true });
-        }
+        toast(`Hapus kategori "${cat.name}"?`, {
+            action: {
+                label: 'Ya, Hapus',
+                onClick: () => router.delete(`/product-categories/${cat.id}`, { preserveScroll: true })
+            },
+            cancel: { label: 'Batal', onClick: () => {} }
+        });
     };
 
     return (

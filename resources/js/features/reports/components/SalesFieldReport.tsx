@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatRupiah } from '@/lib/helpers/format';
+import { formatRupiah , formatNumber} from '@/lib/helpers/format';
 
 interface SalesFieldReportProps {
     salesFieldReport: {
@@ -23,8 +23,8 @@ interface SalesFieldReportProps {
 }
 
 const KPI_CARDS = [
-    { key: 'total_visits', label: 'Total Kunjungan', color: 'text-indigo-700', format: (v: number) => v.toLocaleString('id-ID') },
-    { key: 'total_orders', label: 'Canvas Orders', color: 'text-emerald-700', format: (v: number) => v.toLocaleString('id-ID') },
+    { key: 'total_visits', label: 'Total Kunjungan', color: 'text-indigo-700', format: (v: number) => formatNumber(v) },
+    { key: 'total_orders', label: 'Canvas Orders', color: 'text-emerald-700', format: (v: number) => formatNumber(v) },
     { key: 'total_revenue', label: 'Omset Canvas', color: 'text-amber-700', format: formatRupiah },
     { key: 'conversion_rate', label: 'Konversi', color: 'text-rose-700', format: (v: number) => `${v}%` },
 ] as const;

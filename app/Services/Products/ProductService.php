@@ -76,11 +76,23 @@ class ProductService
         return $product->fresh();
     }
 
-    public function delete(Products $product): string
+    public function delete(Products $product, bool $force = false): string
     {
-        // Hapus semua gambar — file fisik dihapus via ProductImage::booted()
-        $product->images()->each(fn ($img) => $img->delete());
-        $product->delete();
+        if ($force) {
+            // Hapus semua gambar — file fisik dihapus via ProductImage::booted()
+            $product->images()->each(fn ($img) => $img->delete());
+            $product->forceDelete();
+        } else {
+            $product->delete();
+        }
+
+        return $product->name;
+    }
+
+    public function restore(string $id): string
+    {
+        $product = Products::withTrashed()->findOrFail($id);
+        $product->restore();
 
         return $product->name;
     }

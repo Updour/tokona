@@ -12,6 +12,7 @@ use App\Models\SalesPerson;
 use App\Models\Attendance;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class ReportService
@@ -34,7 +35,13 @@ class ReportService
         }
         $branches = $branchesQuery->get();
 
-        // ── A. LAPORAN PENJUALAN (SALES PERFORMANCE SUMMARY) ──────────────────
+        $tenantId = auth()->check() ? auth()->user()->tenant_id : 'guest';
+        $page = (int) ($filters['page'] ?? 1);
+        $perPage = (int) ($filters['per_page'] ?? 15);
+        $cacheKey = "reports_data_{$tenantId}_{$branchId}_{$startDate}_{$endDate}_p{$page}_pp{$perPage}";
+
+        return Cache::remember($cacheKey, now()->addMinutes(3), function () use ($filters, $branchId, $startDate, $endDate, $branches, $page, $perPage) {
+            // ── A. LAPORAN PENJUALAN (SALES PERFORMANCE SUMMARY) ──────────────────
         $salesQuery = Transaction::where('status', 'paid')
             ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate]);
 
@@ -141,6 +148,23 @@ class ReportService
                     'label' => $methodLabel,
                     'amount' => (float) $item->total_amount,
                     'count' => $item->count
+                ];
+            });
+
+        // Top Employees (Kasir Ter-Rajin)
+        $topEmployees = $salesQuery->clone()
+            ->select('created_by', DB::raw('SUM(total) as total_revenue'), DB::raw('COUNT(id) as tx_count'))
+            ->with(['creator:id,name'])
+            ->groupBy('created_by')
+            ->orderByDesc('total_revenue')
+            ->limit(10)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->created_by,
+                    'name' => $item->creator->name ?? 'Kasir Dihapus',
+                    'tx_count' => (int) $item->tx_count,
+                    'total_revenue' => (float) $item->total_revenue,
                 ];
             });
 
@@ -333,6 +357,7 @@ class ReportService
                 'daily_sales'    => $paginatedDailySales,
                 'all_daily_sales'=> array_reverse($dailySales), // Untuk export non-paginasi
                 'payment_methods' => $paymentMethods,
+                'top_employees'  => $topEmployees,
             ],
             'productPerformance' => [
                 'top_products' => $topProducts,
@@ -355,6 +380,7 @@ class ReportService
             ],
             'attendanceReport' => $attendanceReport,
         ];
+        });
     }
 
     /**
@@ -373,6 +399,10 @@ class ReportService
         }
         $branches = $branchesQuery->get();
 
+        $tenantId = auth()->check() ? auth()->user()->tenant_id : 'guest';
+        $cacheKey = "sales_dashboard_{$tenantId}_{$branchId}_{$startDate}_{$endDate}";
+
+        return Cache::remember($cacheKey, now()->addMinutes(3), function () use ($branchId, $startDate, $endDate, $branches) {
         // KPI: total kunjungan, orders, & omset canvas periode ini
         $visitsQuery = SalesVisit::whereBetween('created_at', [
             $startDate . ' 00:00:00', $endDate . ' 23:59:59'
@@ -447,5 +477,6 @@ class ReportService
             'daily_visits' => $dailyVisits,
             'leaderboard'  => $leaderboard,
         ];
+        });
     }
 }

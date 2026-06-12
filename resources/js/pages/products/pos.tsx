@@ -14,7 +14,7 @@ import { usePos } from '@/features/pos/services/usePos';
 import { ShiftStatusBanner } from '@/features/shifts/components/ShiftStatusBanner';
 import MainLayout from '@/layouts/app/app-main-layout';
 
-export default function Pos({ products, customers, promos, branches, transactions, defaultSettings, filters, activeShift }: any) {
+export default function Pos({ products, customers, promos, branches, transactions, defaultSettings, filters, activeShift, loyaltySettings }: any) {
     const pos = usePos({
         products,
         customers,
@@ -22,7 +22,8 @@ export default function Pos({ products, customers, promos, branches, transaction
         branches,
         transactions,
         defaultSettings,
-        filters
+        filters,
+        loyaltySettings
     });
 
     return (
@@ -183,6 +184,7 @@ export default function Pos({ products, customers, promos, branches, transaction
                                 handleCheckout={pos.handleCheckout}
                                 isSubmitting={pos.isSubmitting}
                                 setShowDraftModal={pos.setShowDraftModal}
+                                loyaltySettings={pos.loyaltySettings}
                             />
                         </div>
                     )

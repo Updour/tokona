@@ -5,20 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import type { SalesPerson } from '../types';
+import { useSalesStore } from '../stores/useSalesStore';
+import { formatRupiah } from '@/lib/helpers/format';
 
-interface SalesPerformanceDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    selectedSales: SalesPerson | null;
-}
-
-export function SalesPerformanceDialog({ open, onOpenChange, selectedSales }: SalesPerformanceDialogProps) {
+export function SalesPerformanceDialog() {
+    const { isPerformanceOpen, closePerformance, selectedSales } = useSalesStore();
     const visitsCount = selectedSales?.visits_count ?? 0;
     const ordersCount = selectedSales?.orders_count ?? 0;
     const conversionRate = visitsCount > 0 ? (ordersCount / visitsCount * 100).toFixed(0) : '0';
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={isPerformanceOpen} onOpenChange={(open) => !open && closePerformance()}>
             <DialogContent className="w-[96vw] max-w-4xl sm:max-w-4xl rounded-2xl p-6 border-slate-100 shadow-2xl overflow-y-auto">
                 <DialogHeader className="pb-4 border-b border-slate-100">
                     <DialogTitle className="flex items-center gap-2.5 text-emerald-655 text-xl font-black">
@@ -81,7 +78,7 @@ export function SalesPerformanceDialog({ open, onOpenChange, selectedSales }: Sa
                                     <div className="flex justify-between py-1 border-b">
                                         <span className="text-slate-400 font-bold">Nilai Komisi:</span>
                                         <span className="font-extrabold text-indigo-655">
-                                            {selectedSales?.commission_type === 'percent' ? `${selectedSales?.commission_value}%` : `Rp ${Number(selectedSales?.commission_value).toLocaleString('id-ID')}`}
+                                            {selectedSales?.commission_type === 'percent' ? `${selectedSales?.commission_value}%` : formatRupiah(selectedSales?.commission_value)}
                                         </span>
                                     </div>
                                     <div className="flex justify-between py-1 border-b">
@@ -130,7 +127,7 @@ export function SalesPerformanceDialog({ open, onOpenChange, selectedSales }: Sa
 
                 <DialogFooter className="border-t border-slate-100 pt-4">
                     <Button 
-                        onClick={() => onOpenChange(false)}
+                        onClick={() => closePerformance()}
                         className="bg-slate-900 hover:bg-slate-850 text-white font-extrabold text-xs h-9 px-4 rounded-lg ml-auto"
                     >
                         Tutup Laporan

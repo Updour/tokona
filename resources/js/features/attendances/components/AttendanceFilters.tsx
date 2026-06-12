@@ -1,3 +1,4 @@
+import { formatNumber } from '@/lib/helpers/format';
 import { router } from '@inertiajs/react';
 import { Search, SlidersHorizontal, X, CalendarDays, Download } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
@@ -169,7 +170,7 @@ export function AttendanceFilters({ branches, filters, totalResults, onExport }:
                 <div className="flex-1" />
 
                 <span className="text-sm text-muted-foreground hidden sm:block">
-                    {totalResults.toLocaleString('id-ID')} absensi
+                    {formatNumber(totalResults)} absensi
                 </span>
 
                 {onExport && (

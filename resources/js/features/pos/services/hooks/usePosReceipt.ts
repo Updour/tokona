@@ -1,7 +1,7 @@
 import html2canvas from 'html2canvas';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { formatRupiah } from '@/lib/helpers/format';
+import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
 
 export function usePosReceipt() {
     const [lastTransaction, setLastTransaction] = useState<any>(null);
@@ -133,7 +133,7 @@ return;
         let text = `*TOKONA POS - STRUK BELANJA*\n`;
         text += `=========================\n`;
         text += `Inv: ${lastTransaction.invoice_number}\n`;
-        text += `Tanggal: ${new Date(lastTransaction.date).toLocaleString('id-ID')}\n`;
+        text += `Tanggal: ${formatDateTime(lastTransaction.date)}\n`;
         text += `Pelanggan: ${name}\n`;
         text += `=========================\n`;
         lastTransaction.items.forEach((it: any) => {
@@ -154,6 +154,15 @@ return;
 
         text += `*TOTAL: ${formatRupiah(lastTransaction.total)}*\n`;
         text += `=========================\n`;
+        
+        if (lastTransaction.earned_points > 0 || lastTransaction.current_points > 0) {
+            if (lastTransaction.earned_points > 0) {
+                text += `Poin Tambahan: +${lastTransaction.earned_points} Pts\n`;
+            }
+            text += `Total Poin Anda: ${lastTransaction.current_points || 0} Pts\n`;
+            text += `=========================\n`;
+        }
+        
         text += `Terima kasih atas kunjungan Anda!\n`;
 
         window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`, '_blank');

@@ -1,28 +1,11 @@
 import { Head } from '@inertiajs/react';
-import { useState } from 'react';
 import { CategoryFormDialog } from '@/features/product-categories/components/CategoryFormDialog';
 import { CategoryTable } from '@/features/product-categories/components/CategoryTable';
 import MainLayout from '@/layouts/app/app-main-layout';
-
-interface ProductCategory {
-    id: string;
-    name: string;
-    description?: string | null;
-}
+import { useCategoryStore } from '@/pages/product-categories/stores/useCategoryStore';
 
 export default function Index() {
-    const [isOpen, setIsOpen] = useState(false);
-    const [selected, setSelected] = useState<ProductCategory | null>(null);
-
-    const openCreate = () => {
-        setSelected(null);
-        setIsOpen(true);
-    };
-
-    const openEdit = (cat: ProductCategory) => {
-        setSelected(cat);
-        setIsOpen(true);
-    };
+    const { openForm } = useCategoryStore();
 
     return (
         <MainLayout>
@@ -36,14 +19,10 @@ export default function Index() {
             </div>
 
             <div className="flex-1 bg-background rounded-lg border shadow-sm p-4 w-full">
-                <CategoryTable onEdit={openEdit} onAddClick={openCreate} />
+                <CategoryTable onEdit={(cat) => openForm(cat)} onAddClick={() => openForm()} />
             </div>
 
-            <CategoryFormDialog
-                open={isOpen}
-                onOpenChange={setIsOpen}
-                category={selected}
-            />
+            <CategoryFormDialog />
         </MainLayout>
     );
 }

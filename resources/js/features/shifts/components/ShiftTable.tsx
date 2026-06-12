@@ -2,6 +2,7 @@ import { Link, router } from '@inertiajs/react';
 import debounce from 'lodash/debounce';
 import { Search, Eye, StopCircle, X } from 'lucide-react';
 import { useState } from 'react';
+import { useShiftStore } from '@/pages/shifts/stores/useShiftStore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
@@ -9,9 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
+import { formatRupiah, formatDateTime, formatNumber } from '@/lib/helpers/format';
 import type { Shift } from '../types';
-import { CloseShiftDialog } from './CloseShiftDialog';
 
 interface Props {
     shifts: any;
@@ -20,7 +20,7 @@ interface Props {
 
 export function ShiftTable({ shifts, filters }: Props) {
     const [search, setSearch] = useState(filters.search || '');
-    const [closingShift, setClosingShift] = useState<Shift | null>(null);
+    const { openClose } = useShiftStore();
 
     const onSearch = debounce((val: string) => {
         router.get('/shifts', { search: val || undefined, status: filters.status }, { preserveState: true, replace: true });
@@ -46,14 +46,14 @@ export function ShiftTable({ shifts, filters }: Props) {
                         placeholder="Cari nama kasir..."
                         value={search}
                         onChange={(e) => {
- setSearch(e.target.value); onSearch(e.target.value); 
-}}
+                            setSearch(e.target.value); onSearch(e.target.value);
+                        }}
                         className="pl-8 h-9 text-xs"
                     />
                     {search && (
                         <button onClick={() => {
- setSearch(''); onSearch(''); 
-}} className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground">
+                            setSearch(''); onSearch('');
+                        }} className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground">
                             <X className="h-4 w-4" />
                         </button>
                     )}
@@ -81,7 +81,7 @@ export function ShiftTable({ shifts, filters }: Props) {
                 <div className="flex-1" />
 
                 <span className="text-xs text-muted-foreground hidden sm:block">
-                    {shifts.total.toLocaleString('id-ID')} shift ditemukan
+                    {formatNumber(shifts.total)} shift ditemukan
                 </span>
             </div>
 
@@ -145,7 +145,7 @@ export function ShiftTable({ shifts, filters }: Props) {
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
-                                                                onClick={() => setClosingShift(s)}
+                                                                onClick={() => openClose(s)}
                                                             >
                                                                 <StopCircle className="h-4 w-4" />
                                                             </Button>
@@ -165,13 +165,7 @@ export function ShiftTable({ shifts, filters }: Props) {
 
             <DataTablePagination data={shifts} itemName="shift" filters={filters} />
 
-            {closingShift && (
-                <CloseShiftDialog
-                    shift={closingShift}
-                    open={!!closingShift}
-                    onOpenChange={(o) => !o && setClosingShift(null)}
-                />
-            )}
+
         </div>
     );
 }

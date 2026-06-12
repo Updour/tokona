@@ -1,5 +1,6 @@
 import { useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -39,6 +40,11 @@ export function EmployeeFormDialog({ branches, roles, tenants = [] }: EmployeeFo
         branch_id: '',
         role_id: '',
         tenant_id: '',
+        nip: '',
+        position: '',
+        join_date: '',
+        employment_status: '',
+        basic_salary: '',
     });
 
     // Populate form data on edit
@@ -53,6 +59,11 @@ export function EmployeeFormDialog({ branches, roles, tenants = [] }: EmployeeFo
                 branch_id: selectedEmployee.branch_id || '',
                 role_id: selectedEmployee.roles?.[0]?.id || '',
                 tenant_id: selectedEmployee.tenant_id || '',
+                nip: selectedEmployee.nip || '',
+                position: selectedEmployee.position || '',
+                join_date: selectedEmployee.join_date || '',
+                employment_status: selectedEmployee.employment_status || '',
+                basic_salary: String(selectedEmployee.basic_salary !== undefined ? selectedEmployee.basic_salary : (selectedEmployee.employee_salary?.basic_salary || '')),
             });
             setSelectedTenantId(selectedEmployee.tenant_id || '');
         } else {
@@ -98,6 +109,38 @@ export function EmployeeFormDialog({ branches, roles, tenants = [] }: EmployeeFo
         }
     };
 
+    const generateNIP = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+
+        const getInitials = (fullName: string) => {
+            if (!fullName || fullName.trim() === '') return 'EM';
+            const words = fullName.trim().split(/\s+/);
+            if (words.length >= 2) {
+                return (words[0][0] + words[1][0]).toUpperCase();
+            }
+            const word = words[0].toUpperCase();
+            if (word.length === 1) return word + word;
+
+            // Find first consonant after the first letter
+            const consonants = word.substring(1).replace(/[AEIOU]/g, '');
+            if (consonants.length > 0) {
+                return word[0] + consonants[0];
+            }
+            // If no consonants left, take first and last letter
+            return word[0] + word[word.length - 1];
+        };
+
+        const nameInitials = getInitials(data.name);
+
+        const randomNum = Math.floor(1000 + Math.random() * 9000); // 4 digit acak
+
+        const newNIP = `${year}${month}${day}-${nameInitials}-${randomNum}`;
+        setData('nip', newNIP);
+    };
+
     return (
         <Dialog open={isFormOpen} onOpenChange={(open) => !open && closeForm()}>
             <DialogContent className="sm:max-w-[600px]">
@@ -138,6 +181,80 @@ export function EmployeeFormDialog({ branches, roles, tenants = [] }: EmployeeFo
                                     className={errors.email ? 'border-red-500' : ''}
                                 />
                                 {errors.email && <span className="text-xs text-red-500 font-medium">{errors.email}</span>}
+                            </div>
+                        </div>
+
+                        {/* NIP & Jabatan */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="nip" className="text-sm font-semibold flex items-center justify-between">
+                                    NIP (Opsional)
+                                </Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="nip"
+                                        value={data.nip}
+                                        onChange={(e) => setData('nip', e.target.value)}
+                                        placeholder="Contoh: 1989012015011002"
+                                        className={errors.nip ? 'border-red-500 flex-1' : 'flex-1'}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={generateNIP}
+                                        title="Generate NIP Otomatis"
+                                        className="shrink-0 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 transition-colors"
+                                    >
+                                        <Sparkles className="w-4 h-4 text-amber-500" />
+                                    </Button>
+                                </div>
+                                {errors.nip && <span className="text-xs text-red-500 font-medium">{errors.nip}</span>}
+                            </div>
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="position" className="text-sm font-semibold">Jabatan</Label>
+                                <Input
+                                    id="position"
+                                    value={data.position}
+                                    onChange={(e) => setData('position', e.target.value)}
+                                    placeholder="Contoh: Kasir"
+                                    className={errors.position ? 'border-red-500' : ''}
+                                />
+                                {errors.position && <span className="text-xs text-red-500 font-medium">{errors.position}</span>}
+                            </div>
+                        </div>
+
+                        {/* Status Kepegawaian & Gaji */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="employment_status" className="text-sm font-semibold">Status Kepegawaian</Label>
+                                <Select
+                                    value={data.employment_status}
+                                    onValueChange={(val) => setData('employment_status', val)}
+                                >
+                                    <SelectTrigger id="employment_status" className={errors.employment_status ? 'border-red-500 w-full' : 'w-full'}>
+                                        <SelectValue placeholder="Pilih Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Tetap">Karyawan Tetap</SelectItem>
+                                        <SelectItem value="Kontrak">Karyawan Kontrak</SelectItem>
+                                        <SelectItem value="Training">Masa Percobaan / Training</SelectItem>
+                                        <SelectItem value="Freelance">Freelance / Lepas</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {errors.employment_status && <span className="text-xs text-red-500 font-medium">{errors.employment_status}</span>}
+                            </div>
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="basic_salary" className="text-sm font-semibold">Gaji Pokok (Rp)</Label>
+                                <Input
+                                    id="basic_salary"
+                                    type="number"
+                                    value={data.basic_salary}
+                                    onChange={(e) => setData('basic_salary', e.target.value)}
+                                    placeholder="Contoh: 3000000"
+                                    className={errors.basic_salary ? 'border-red-500' : ''}
+                                />
+                                {errors.basic_salary && <span className="text-xs text-red-500 font-medium">{errors.basic_salary}</span>}
                             </div>
                         </div>
 
@@ -255,7 +372,7 @@ export function EmployeeFormDialog({ branches, roles, tenants = [] }: EmployeeFo
                                                 if (!isSuperAdmin) {
                                                     // Tenants should not see super-admin role
                                                     if (r.name === 'super-admin') return false;
-                                                    return true; 
+                                                    return true;
                                                 }
                                                 // For Super Admin:
                                                 if (r.name === 'super-admin') return true; // Always show super-admin option
@@ -264,9 +381,9 @@ export function EmployeeFormDialog({ branches, roles, tenants = [] }: EmployeeFo
                                             })
                                             .reduce((unique, item) => {
                                                 // Prevent duplicates by role name
-                                                return unique.some(x => x.name === item.name) ? unique : [...unique, item];
+                                                return unique.some((x: any) => x.name === item.name) ? unique : [...unique, item];
                                             }, [] as any[])
-                                            .map((r) => (
+                                            .map((r: any) => (
                                                 <SelectItem key={r.id} value={r.id}>
                                                     {r.name.toUpperCase()}
                                                 </SelectItem>

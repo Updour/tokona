@@ -6,11 +6,18 @@ use App\Queries\PurchaseQuery;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Models\CashBook;
-use Illuminate\Support\Facades\Auth;
+use App\Services\PurchaseService;
+use App\Http\Requests\Purchases\StorePurchaseRequest;
+use App\Http\Requests\Purchases\UpdatePurchaseStatusRequest;
 
 class PurchaseController extends Controller
 {
+    protected PurchaseService $purchaseService;
+
+    public function __construct(PurchaseService $purchaseService)
+    {
+        $this->purchaseService = $purchaseService;
+    }
     public function index(Request $request): Response
     {
         return Inertia::render('purchases/index', (new PurchaseQuery($request))->indexData());
@@ -53,163 +60,22 @@ class PurchaseController extends Controller
         ]);
     }
 
-    public function updateStatus(Request $request, \App\Models\Purchase $purchase)
+    public function updateStatus(UpdatePurchaseStatusRequest $request, \App\Models\Purchase $purchase)
     {
-        $validated = $request->validate([
-            'status' => 'required|in:draft,received,paid',
-        ]);
-
-        $oldStatus = $purchase->status;
-        $newStatus = $validated['status'];
-
-        if ($oldStatus === $newStatus) {
-            return back();
+        try {
+            $this->purchaseService->updateStatus($purchase, $request->validated('status'));
+            return back()->with('success', "Status PO berhasil diubah menjadi {$request->validated('status')}!");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengubah status: ' . $e->getMessage());
         }
-
-        $purchase->update(['status' => $newStatus]);
-
-        // LOGIKA AKUNTANSI: Jika dari Draft -> Masuk Gudang (Received/Paid)
-        if ($oldStatus === 'draft' && in_array($newStatus, ['received', 'paid'])) {
-            foreach ($purchase->items as $item) {
-                $product = \App\Models\Products::withCurrentStock()->find($item->product_id);
-                if ($product && $product->track_stock) {
-                    $effectiveUnitCost = $item->qty > 0 ? (($item->qty * $item->unit_cost) - $item->discount) / $item->qty : $item->unit_cost;
-                    
-                    // UPDATE BASE COST (WAC)
-                    $product->updateBaseCostWAC((float) $effectiveUnitCost, (int) $item->qty);
-
-                    $product->recordStockMovement('IN', $item->qty, [
-                        'branch_id'   => $purchase->branch_id,
-                        'source_type' => 'purchase',
-                        'notes'       => 'Penerimaan PO: ' . ($purchase->invoice_number ?: 'Draft'),
-                        'unit_cost'   => $effectiveUnitCost,
-                    ]);
-                }
-            }
-        }
-        
-        // LOGIKA AKUNTANSI: Jika di-Revert dari Masuk Gudang -> kembali ke Draft
-        if (in_array($oldStatus, ['received', 'paid']) && $newStatus === 'draft') {
-            foreach ($purchase->items as $item) {
-                $product = \App\Models\Products::find($item->product_id);
-                if ($product && $product->track_stock) {
-                    $product->recordStockMovement('OUT', $item->qty, [
-                        'branch_id'   => $purchase->branch_id,
-                        'source_type' => 'purchase_revert',
-                        'notes'       => 'Pembatalan PO ke Draft: ' . ($purchase->invoice_number ?: 'Draft'),
-                        'unit_cost'   => $item->unit_cost,
-                    ]);
-                }
-            }
-        }
-
-        // AKUNTANSI KEUANGAN: Jika Lunas, otomatis potong saldo kas
-        if ($newStatus === 'paid' && $oldStatus !== 'paid') {
-            CashBook::create([
-                'tenant_id'      => $purchase->tenant_id,
-                'branch_id'      => $purchase->branch_id,
-                'type'           => 'out',
-                'category'       => 'pembelian',
-                'amount'         => $purchase->total_cost,
-                'reference_type' => 'purchase',
-                'reference_id'   => $purchase->id,
-                'note'           => 'Pembayaran PO ke Supplier: ' . ($purchase->invoice_number ?: 'Tanpa No. INV'),
-                'created_by'     => auth()->id() ?? $purchase->tenant_id,
-            ]);
-        }
-
-        // AKUNTANSI KEUANGAN: Jika di-Revert dari Paid, kembalikan uang (hapus kas keluar)
-        if ($oldStatus === 'paid' && $newStatus !== 'paid') {
-            CashBook::where('reference_type', 'purchase')
-                ->where('reference_id', $purchase->id)
-                ->where('type', 'out')
-                ->where('category', 'pembelian')
-                ->delete();
-        }
-
-        return back()->with('success', "Status PO berhasil diubah menjadi {$newStatus}!");
     }
 
-    public function store(Request $request)
+    public function store(StorePurchaseRequest $request)
     {
-        $validated = $request->validate([
-            'branch_id'      => 'required|uuid',
-            'invoice_number' => 'nullable|string',
-            'purchase_date'  => 'required|date',
-            'status'         => 'required|in:draft,received,paid',
-            'global_discount'=> 'nullable|numeric|min:0',
-            'items'          => 'required|array|min:1',
-            'items.*.product_id' => 'required|uuid',
-            'items.*.qty'        => 'required|integer|min:1',
-            'items.*.unit_cost'  => 'required|numeric|min:0',
-            'items.*.discount'   => 'nullable|numeric|min:0',
-        ]);
-
-        \Illuminate\Support\Facades\DB::beginTransaction();
         try {
-            $globalDiscount = $validated['global_discount'] ?? 0;
-            $totalCost = collect($validated['items'])->sum(fn($i) => ($i['qty'] * $i['unit_cost']) - ($i['discount'] ?? 0)) - $globalDiscount;
-
-            $purchase = \App\Models\Purchase::create([
-                'tenant_id'      => auth()->user()->tenant_id,
-                'branch_id'      => $validated['branch_id'],
-                'supplier_id'    => $request->input('supplier_id'),
-                'invoice_number' => $validated['invoice_number'],
-                'purchase_date'  => $validated['purchase_date'],
-                'status'         => $validated['status'],
-                'global_discount'=> $globalDiscount,
-                'total_cost'     => $totalCost,
-            ]);
-
-            foreach ($validated['items'] as $item) {
-                $discount = $item['discount'] ?? 0;
-                $purchase->items()->create([
-                    'product_id' => $item['product_id'],
-                    'qty'        => $item['qty'],
-                    'unit_cost'  => $item['unit_cost'],
-                    'discount'   => $discount,
-                    'subtotal'   => ($item['qty'] * $item['unit_cost']) - $discount,
-                ]);
-
-                // ─── SINKRONISASI OTOMATIS: Tambah stok jika diterima/lunas ───
-                if (in_array($purchase->status, ['received', 'paid'])) {
-                    $product = \App\Models\Products::withCurrentStock()->find($item['product_id']);
-                    if ($product && $product->track_stock) {
-                        $effectiveUnitCost = $item['qty'] > 0 ? (($item['qty'] * $item['unit_cost']) - $discount) / $item['qty'] : $item['unit_cost'];
-                        
-                        // UPDATE BASE COST (WAC)
-                        $product->updateBaseCostWAC((float) $effectiveUnitCost, (int) $item['qty']);
-
-                        $product->recordStockMovement('IN', $item['qty'], [
-                            'branch_id'   => $validated['branch_id'],
-                            'source_type' => 'purchase',
-                            'notes'       => 'Penerimaan PO/Invoice: ' . ($purchase->invoice_number ?: 'Tanpa No. INV'),
-                            'unit_cost'   => $effectiveUnitCost,
-                        ]);
-                    }
-                }
-            }
-
-            // AKUNTANSI KEUANGAN: Jika dibuat langsung Lunas, otomatis potong saldo kas
-            if ($purchase->status === 'paid') {
-                CashBook::create([
-                    'tenant_id'      => $purchase->tenant_id,
-                    'branch_id'      => $purchase->branch_id,
-                    'type'           => 'out',
-                    'category'       => 'pembelian',
-                    'amount'         => $purchase->total_cost,
-                    'reference_type' => 'purchase',
-                    'reference_id'   => $purchase->id,
-                    'note'           => 'Pembayaran PO ke Supplier: ' . ($purchase->invoice_number ?: 'Tanpa No. INV'),
-                    'created_by'     => auth()->id() ?? $purchase->tenant_id,
-                ]);
-            }
-
-            \Illuminate\Support\Facades\DB::commit();
+            $this->purchaseService->storePurchase($request->validated());
             return redirect()->route('purchases.index')->with('success', 'Transaksi pembelian berhasil disimpan!');
-            
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\DB::rollBack();
             return back()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
     }

@@ -1,28 +1,11 @@
 import { Head } from '@inertiajs/react';
-import { useState } from 'react';
 import { TypeFormDialog } from '@/features/product-types/components/TypeFormDialog';
 import { TypeTable } from '@/features/product-types/components/TypeTable';
 import MainLayout from '@/layouts/app/app-main-layout';
-
-interface ProductType {
-    id: string;
-    name: string;
-    description?: string | null;
-}
+import { useTypeStore } from '@/pages/product-types/stores/useTypeStore';
 
 export default function Index() {
-    const [isOpen, setIsOpen] = useState(false);
-    const [selected, setSelected] = useState<ProductType | null>(null);
-
-    const openCreate = () => {
-        setSelected(null);
-        setIsOpen(true);
-    };
-
-    const openEdit = (type: ProductType) => {
-        setSelected(type);
-        setIsOpen(true);
-    };
+    const { openForm } = useTypeStore();
 
     return (
         <MainLayout>
@@ -36,14 +19,10 @@ export default function Index() {
             </div>
 
             <div className="flex-1 bg-background rounded-lg border shadow-sm p-4 w-full">
-                <TypeTable onEdit={openEdit} onAddClick={openCreate} />
+                <TypeTable onEdit={(type) => openForm(type)} onAddClick={() => openForm()} />
             </div>
 
-            <TypeFormDialog
-                open={isOpen}
-                onOpenChange={setIsOpen}
-                type={selected}
-            />
+            <TypeFormDialog />
         </MainLayout>
     );
 }

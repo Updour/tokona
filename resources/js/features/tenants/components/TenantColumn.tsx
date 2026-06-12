@@ -7,16 +7,6 @@ import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogClose,
-} from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTenantStore  } from '@/pages/tenants/stores/useTenantStore';
 import type {Tenant} from '@/pages/tenants/stores/useTenantStore';
@@ -146,19 +136,7 @@ return <span className="text-muted-foreground">—</span>;
         header: 'Actions',
         cell: ({ row }) => {
             const tenant = row.original;
-            const openForm = useTenantStore((state) => state.openForm);
-            const openView = useTenantStore((state) => state.openView);
-
-            const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-            const [isDeleting, setIsDeleting] = React.useState(false);
-
-            const handleDelete = () => {
-                setIsDeleting(true);
-                router.delete(tenantsDestroy(tenant.id).url, {
-                    onSuccess: () => setIsDeleteDialogOpen(false),
-                    onFinish: () => setIsDeleting(false),
-                });
-            };
+            const { openForm, openView, openDelete } = useTenantStore();
 
             return (
                 <TooltipProvider>
@@ -193,49 +171,20 @@ return <span className="text-muted-foreground">—</span>;
                             <TooltipContent>Edit Tenant</TooltipContent>
                         </Tooltip>
 
-                        {/* Delete with confirmation dialog */}
-                        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <DialogTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
-                                        >
-                                            <Trash className="h-4 w-4" />
-                                        </Button>
-                                    </DialogTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>Delete Tenant</TooltipContent>
-                            </Tooltip>
-
-                            <DialogContent className="sm:max-w-md">
-                                <DialogHeader>
-                                    <DialogTitle>Delete Tenant</DialogTitle>
-                                    <DialogDescription>
-                                        Are you sure you want to delete tenant{' '}
-                                        <strong className="text-foreground">"{tenant.name}"</strong>?
-                                        This action cannot be undone and all associated data will be permanently removed.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <DialogFooter className="mt-2">
-                                    <DialogClose asChild>
-                                        <Button variant="outline" type="button">
-                                            Cancel
-                                        </Button>
-                                    </DialogClose>
-                                    <Button
-                                        variant="destructive"
-                                        type="button"
-                                        disabled={isDeleting}
-                                        onClick={handleDelete}
-                                    >
-                                        {isDeleting ? 'Deleting...' : 'Yes, Delete Tenant'}
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
+                        {/* Delete button */}
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
+                                    onClick={() => openDelete(tenant)}
+                                >
+                                    <Trash className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Delete Tenant</TooltipContent>
+                        </Tooltip>
                     </div>
                 </TooltipProvider>
             );

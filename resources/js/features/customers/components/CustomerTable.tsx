@@ -6,13 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { getCustomerColumns } from './CustomerColumn';
 import { CustomerFilters } from './CustomerFilters';
 
-export function CustomerTable({ customers, onEdit, onAddClick }: any) {
+export function CustomerTable({ customers, onEdit, onView, onAddClick }: any) {
     const { props } = usePage<any>();
     const filters = props.filters || {};
 
     const table = useReactTable({
         data: customers?.data || [],
-        columns: getCustomerColumns(onEdit),
+        columns: getCustomerColumns(onEdit, onView),
         getCoreRowModel: getCoreRowModel(),
     });
 

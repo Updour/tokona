@@ -5,22 +5,64 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-export function MenuFormDialog({
-    isOpen,
-    onClose,
-    data,
-    setData,
-    onSubmit,
-    errors,
-    processing,
-    menus,
-    permissions,
-    isEdit
-}: any) {
+import { useForm, usePage } from '@inertiajs/react';
+import { useMenuStore } from '@/pages/superadmin/Menus/stores/useMenuStore';
+import { toast } from 'sonner';
+
+export function MenuFormDialog() {
+    const { isFormOpen, closeForm, selectedMenu } = useMenuStore();
+    const { menus = [], permissions = {} } = usePage<any>().props;
+    const isEdit = !!selectedMenu;
     const [isManualPermission, setIsManualPermission] = useState(false);
 
+    const { data, setData, post, put, processing, errors, reset, clearErrors, transform } = useForm({
+        title: '', href: '', icon: '', parent_id: '', permission_key: '', order: 1
+    });
+
+    React.useEffect(() => {
+        if (isFormOpen) {
+            if (selectedMenu) {
+                setData({ 
+                    title: selectedMenu.title || '', 
+                    href: selectedMenu.href || '', 
+                    icon: selectedMenu.icon || '', 
+                    parent_id: selectedMenu.parent_id || '', 
+                    permission_key: selectedMenu.permission_key || '', 
+                    order: selectedMenu.order || 1 
+                });
+            } else {
+                reset();
+            }
+            clearErrors();
+        }
+    }, [selectedMenu, isFormOpen]);
+
+    const onSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const url = selectedMenu ? `/superadmin/menus/${selectedMenu.id}` : '/superadmin/menus';
+
+        transform((currentData) => ({
+            ...currentData,
+            parent_id: currentData.parent_id === '__none__' || currentData.parent_id === '' ? null : currentData.parent_id,
+            permission_key: currentData.permission_key === '__none__' || currentData.permission_key === '' ? null : currentData.permission_key
+        }));
+
+        const options = {
+            onSuccess: () => {
+                toast.success(`Menu berhasil ${selectedMenu ? 'diperbarui' : 'ditambahkan'}!`);
+                closeForm();
+            }
+        };
+
+        if (selectedMenu) {
+            put(url, options);
+        } else {
+            post(url, options);
+        }
+    };
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isFormOpen} onOpenChange={closeForm}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>{isEdit ? 'Edit Menu' : 'Tambah Menu Baru'}</DialogTitle>
@@ -111,7 +153,7 @@ export function MenuFormDialog({
                     </div>
 
                     <DialogFooter className="mt-6">
-                        <Button type="button" variant="outline" onClick={onClose}>Batal</Button>
+                        <Button type="button" variant="outline" onClick={closeForm}>Batal</Button>
                         <Button type="submit" disabled={processing}>
                             {processing ? (isEdit ? 'Menyimpan Perubahan...' : 'Menyimpan...') : (isEdit ? 'Simpan Perubahan' : 'Tambah Menu')}
                         </Button>

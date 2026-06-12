@@ -1,5 +1,6 @@
 import { usePage, router } from '@inertiajs/react';
 import { Edit, Trash, Layers } from 'lucide-react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
@@ -11,13 +12,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { TypeFilters } from './TypeFilters';
-
-interface ProductType {
-    id: string;
-    name: string;
-    description?: string | null;
-    products_count?: number;
-}
+import type { ProductType } from '@/pages/product-types/types';
 
 interface PageProps {
     [key: string]: any;
@@ -43,9 +38,13 @@ export function TypeTable({
     const { types, filters } = props;
 
     const handleDelete = (type: ProductType) => {
-        if (confirm(`Hapus tipe "${type.name}"?`)) {
-            router.delete(`/product-types/${type.id}`, { preserveScroll: true });
-        }
+        toast(`Hapus tipe "${type.name}"?`, {
+            action: {
+                label: 'Ya, Hapus',
+                onClick: () => router.delete(`/product-types/${type.id}`, { preserveScroll: true })
+            },
+            cancel: { label: 'Batal', onClick: () => {} }
+        });
     };
 
     return (

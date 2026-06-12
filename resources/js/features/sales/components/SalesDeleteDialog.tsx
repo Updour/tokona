@@ -4,14 +4,10 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import type { SalesPerson } from '../types';
+import { useSalesStore } from '../stores/useSalesStore';
 
-interface SalesDeleteDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    selectedSales: SalesPerson | null;
-}
-
-export function SalesDeleteDialog({ open, onOpenChange, selectedSales }: SalesDeleteDialogProps) {
+export function SalesDeleteDialog() {
+    const { isDeleteOpen, closeDelete, selectedSales } = useSalesStore();
     const handleDeleteSales = () => {
         if (!selectedSales) {
 return;
@@ -19,13 +15,13 @@ return;
 
         router.delete(`/sales/destroy/${selectedSales.id}`, {
             onSuccess: () => {
-                onOpenChange(false);
+                closeDelete();
             },
         });
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={isDeleteOpen} onOpenChange={(open) => !open && closeDelete()}>
             <DialogContent className="max-w-md rounded-2xl p-6 border-slate-100 shadow-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-red-650 font-black">
@@ -44,7 +40,7 @@ return;
                 <DialogFooter className="gap-2 mt-4">
                     <Button 
                         variant="outline" 
-                        onClick={() => onOpenChange(false)}
+                        onClick={() => closeDelete()}
                         className="text-xs font-bold"
                     >
                         Batal

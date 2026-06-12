@@ -13,35 +13,22 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useCategoryStore } from '@/pages/product-categories/stores/useCategoryStore';
 
-interface ProductCategory {
-    id: string;
-    name: string;
-    description?: string | null;
-}
+export function CategoryFormDialog() {
+    const { isFormOpen, selectedCategory, closeForm } = useCategoryStore();
 
-interface CategoryFormDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    category: ProductCategory | null;
-}
-
-export function CategoryFormDialog({
-    open,
-    onOpenChange,
-    category,
-}: CategoryFormDialogProps) {
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         name: '',
         description: '',
     });
 
     useEffect(() => {
-        if (open) {
-            if (category) {
+        if (isFormOpen) {
+            if (selectedCategory) {
                 setData({
-                    name: category.name,
-                    description: category.description ?? '',
+                    name: selectedCategory.name,
+                    description: selectedCategory.description ?? '',
                 });
             } else {
                 reset();
@@ -49,22 +36,22 @@ export function CategoryFormDialog({
 
             clearErrors();
         }
-    }, [open, category]);
+    }, [isFormOpen, selectedCategory]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (category) {
-            put(`/product-categories/${category.id}`, {
+        if (selectedCategory) {
+            put(`/product-categories/${selectedCategory.id}`, {
                 onSuccess: () => {
-                    onOpenChange(false);
+                    closeForm();
                     reset();
                 },
             });
         } else {
             post('/product-categories', {
                 onSuccess: () => {
-                    onOpenChange(false);
+                    closeForm();
                     reset();
                 },
             });
@@ -72,16 +59,16 @@ export function CategoryFormDialog({
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={isFormOpen} onOpenChange={(open) => !open && closeForm()}>
             <DialogContent className="sm:max-w-[440px]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Tag className="h-4 w-4 text-primary" />
-                            {category ? 'Edit Kategori' : 'Tambah Kategori'}
+                            {selectedCategory ? 'Edit Kategori' : 'Tambah Kategori'}
                         </DialogTitle>
                         <DialogDescription>
-                            {category
+                            {selectedCategory
                                 ? 'Perbarui nama dan deskripsi kategori.'
                                 : 'Buat kategori baru untuk mengelompokkan produk.'}
                         </DialogDescription>
@@ -114,11 +101,11 @@ export function CategoryFormDialog({
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" type="button" onClick={() => onOpenChange(false)} disabled={processing}>
+                        <Button variant="outline" type="button" onClick={closeForm} disabled={processing}>
                             Batal
                         </Button>
                         <Button type="submit" disabled={processing}>
-                            {processing ? 'Menyimpan...' : category ? 'Simpan Perubahan' : 'Tambah Kategori'}
+                            {processing ? 'Menyimpan...' : selectedCategory ? 'Simpan Perubahan' : 'Tambah Kategori'}
                         </Button>
                     </DialogFooter>
                 </form>

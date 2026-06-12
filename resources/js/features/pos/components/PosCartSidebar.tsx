@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatRupiah } from '@/lib/helpers/format';
+import { formatRupiah , formatNumber} from '@/lib/helpers/format';
 
 interface PosCartSidebarProps {
     cart: any[];
@@ -42,6 +42,7 @@ interface PosCartSidebarProps {
     handleCheckout: () => void;
     isSubmitting: boolean;
     setShowDraftModal: (show: boolean) => void;
+    loyaltySettings?: any;
 }
 
 export function PosCartSidebar({
@@ -80,9 +81,15 @@ export function PosCartSidebar({
     changeAmount,
     handleCheckout,
     isSubmitting,
-    setShowDraftModal
+    setShowDraftModal,
+    loyaltySettings
 }: PosCartSidebarProps) {
     const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+    const selectedCustomerObj = customers.find(c => c.id === selectedCustomer);
+    
+    // Hitung sisa poin yang tersedia dikurangi poin yang mau di-redeem
+    const currentPoints = selectedCustomerObj?.points || 0;
+    const maxRedeemAmount = currentPoints * (loyaltySettings?.redeem_rate || 1);
 
     return (
         <div className="xl:col-span-5 flex flex-col bg-white rounded-2xl border shadow-md overflow-hidden h-full">
@@ -112,9 +119,16 @@ export function PosCartSidebar({
             {/* Member & Customer Selector */}
             <div className="p-4 border-b grid grid-cols-2 gap-3 bg-slate-50/20 shrink-0">
                 <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        Pelanggan (Member)
-                    </label>
+                    <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Pelanggan (Member)
+                        </label>
+                        {selectedCustomerObj && currentPoints > 0 && (
+                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-sm">
+                                {formatNumber(currentPoints)} Poin
+                            </span>
+                        )}
+                    </div>
                     <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
                         <SelectTrigger className="w-full h-9 text-xs bg-white mt-1 border-slate-200">
                             <SelectValue placeholder="Pilih Pelanggan" />
@@ -144,7 +158,7 @@ export function PosCartSidebar({
                         <SelectContent>
                             <SelectItem value="NO_PROMO">Tidak Ada Voucher</SelectItem>
                             {promos.map((pr: any) => {
-                                const text = pr.type === 'percentage' ? `${pr.name} (${pr.value}%)` : `${pr.name} (Rp ${parseFloat(pr.value).toLocaleString()})`;
+                                const text = pr.type === 'percentage' ? `${pr.name} (${pr.value}%)` : `${pr.name} (Rp ${formatNumber(pr.value)})`;
 
                                 return (
                                     <SelectItem key={pr.id} value={pr.id}>
@@ -347,7 +361,7 @@ return null;
                                             type="text"
                                             inputMode="numeric"
                                             placeholder="0"
-                                            value={splitCashInput ? Number(splitCashInput).toLocaleString('id-ID') : ''}
+                                            value={splitCashInput ? formatNumber(splitCashInput) : ''}
                                             onChange={(e) => handleSplitCashChange(e.target.value)}
                                             className="pl-20 h-14 text-sm font-bold placeholder:font-normal bg-white rounded-xl border-2 border-slate-900 focus-visible:ring-slate-900"
                                         />
@@ -360,7 +374,7 @@ return null;
                                             type="text"
                                             inputMode="numeric"
                                             placeholder="0"
-                                            value={splitTransferInput ? Number(splitTransferInput).toLocaleString('id-ID') : ''}
+                                            value={splitTransferInput ? formatNumber(splitTransferInput) : ''}
                                             onChange={(e) => handleSplitTransferChange(e.target.value)}
                                             className="pl-16 h-14 text-sm font-bold placeholder:font-normal bg-white rounded-xl border-2 border-slate-900 focus-visible:ring-slate-900"
                                         />
@@ -375,6 +389,7 @@ return null;
                                     <div className="relative flex-1">
                                         <span className="absolute left-4 top-3.5 text-base font-black text-slate-400">Rp</span>
                                         <Input
+                                            id="pos-paid-amount-input"
                                             type="text"
                                             placeholder="0"
                                             className="pl-11 h-14 text-xl font-black border-2 border-slate-900 rounded-xl font-mono text-slate-900 focus-visible:ring-slate-900 shadow-sm focus:border-slate-900 bg-white"
@@ -400,7 +415,7 @@ return null;
                                             onClick={() => setQuickCash(amt)}
                                             className="px-2.5 py-1 bg-white hover:bg-slate-100 border text-[10px] font-black rounded-md text-slate-650 shrink-0 font-mono"
                                         >
-                                            +{amt.toLocaleString('id-ID')}
+                                            +{formatNumber(amt)}
                                         </button>
                                     ))}
                                 </div>
@@ -420,7 +435,7 @@ return null;
                     disabled={cart.length === 0 || isSubmitting}
                     className="w-full h-14 bg-slate-900 hover:bg-slate-950 text-white font-black text-base gap-2 rounded-xl shadow-lg transition-all active:scale-[0.98] shrink-0"
                 >
-                    {isSubmitting ? 'Memproses Checkout...' : 'PROSES TRANSAKSI'}
+                    {isSubmitting ? 'Memproses Checkout...' : 'PROSES TRANSAKSI (F4)'}
                 </Button>
             </div>
         </div>

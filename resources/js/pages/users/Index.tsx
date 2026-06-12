@@ -1,6 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { Users } from 'lucide-react';
 import { UserFormDialog } from '@/features/users/components/UserFormDialog';
+import { UserDetailSheet } from '@/features/users/components/UserDetailSheet';
+import { UserDeleteDialog } from '@/features/users/components/UserDeleteDialog';
 import { UserTable } from '@/features/users/components/UserTable';
 import MainLayout from '@/layouts/app/app-main-layout';
 import type {User, Role} from './types';
@@ -39,6 +41,8 @@ export default function Index({ users, filters, branches, roles, tenants = [] }:
                 roles={roles} 
                 tenants={tenants} 
             />
+            <UserDetailSheet />
+            <UserDeleteDialog />
         </MainLayout>
     );
 }

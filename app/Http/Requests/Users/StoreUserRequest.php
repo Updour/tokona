@@ -25,6 +25,11 @@ class StoreUserRequest extends FormRequest
             'branch_id' => ['nullable', 'uuid', 'exists:branches,id'],
             'role_id' => ['required', 'uuid', 'exists:roles,id'],
             'avatar' => ['nullable', 'string', 'max:255'],
+            'nip' => ['nullable', 'string', 'max:50'],
+            'position' => ['nullable', 'string', 'max:100'],
+            'join_date' => ['nullable', 'date'],
+            'employment_status' => ['nullable', 'string', 'max:50'],
+            'basic_salary' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }

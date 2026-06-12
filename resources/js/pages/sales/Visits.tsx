@@ -1,3 +1,4 @@
+import { formatDateTime } from '@/lib/helpers/format';
 import { Head } from '@inertiajs/react';
 import { CalendarRange, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,7 +30,7 @@ return;
         const rows = visits.data.map((item) => ({
             Salesperson: item.sales_person?.name ?? '-',
             Outlet: item.customer?.name ?? 'Toko Mitra',
-            'Waktu Kunjungan': item.visited_at ? new Date(item.visited_at).toLocaleString('id-ID') : '-',
+            'Waktu Kunjungan': item.visited_at ? formatDateTime(item.visited_at) : '-',
             Status: item.status === 'ordered' ? 'Buat Order' : 'Cek Toko',
             Catatan: item.notes ?? '-',
             Latitude: item.latitude ?? '-',

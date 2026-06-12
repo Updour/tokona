@@ -3,7 +3,10 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-export function MenuTable({ flatMenus, onEdit, onDelete }: { flatMenus: any[], onEdit: (m: any) => void, onDelete: (m: any) => void }) {
+import { useMenuStore } from '@/pages/superadmin/Menus/stores/useMenuStore';
+
+export function MenuTable({ flatMenus }: { flatMenus: any[] }) {
+    const { openForm, openDelete } = useMenuStore();
     return (
         <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
             <div className="bg-slate-50/50 border-b p-4">
@@ -57,10 +60,10 @@ export function MenuTable({ flatMenus, onEdit, onDelete }: { flatMenus: any[], o
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-1">
-                                        <Button variant="ghost" size="icon" onClick={() => onEdit(m)} className="h-8 w-8 text-blue-600">
+                                        <Button variant="ghost" size="icon" onClick={() => openForm(m)} className="h-8 w-8 text-blue-600">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => onDelete(m)} className="h-8 w-8 text-red-600">
+                                        <Button variant="ghost" size="icon" onClick={() => openDelete(m)} className="h-8 w-8 text-red-600">
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </div>

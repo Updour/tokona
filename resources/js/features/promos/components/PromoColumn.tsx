@@ -1,51 +1,23 @@
-import { router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Edit, Trash2, AlertTriangle } from 'lucide-react';
 import React from 'react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { formatDateTime } from '@/lib/helpers/date';
 import { formatRupiah } from '@/lib/helpers/format';
+import { formatDateTime } from '@/lib/helpers/date';
+import { usePromoStore } from '@/pages/promos/stores/usePromoStore';
 
 const ActionCell = ({ row, onEdit }: { row: any, onEdit: any }) => {
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+    const { openDelete } = usePromoStore();
     const promo = row.original;
-
-    const handleDelete = () => {
-        router.delete(`/promos/${promo.id}`, {
-            onSuccess: () => {
-                setIsDeleteDialogOpen(false);
-                toast.success('Promo berhasil dihapus!');
-            }
-        });
-    };
 
     return (
         <div className="text-right">
             <Button variant="ghost" size="icon" onClick={() => onEdit(promo)} className="text-blue-600 hover:text-blue-800 hover:bg-blue-50">
                 <Edit className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setIsDeleteDialogOpen(true)} className="text-red-600 hover:text-red-800 hover:bg-red-50">
+            <Button variant="ghost" size="icon" onClick={() => openDelete(promo)} className="text-red-600 hover:text-red-800 hover:bg-red-50">
                 <Trash2 className="h-4 w-4" />
             </Button>
-
-            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-red-600">
-                            <AlertTriangle className="h-5 w-5" /> Hapus Promo
-                        </DialogTitle>
-                        <DialogDescription className="py-4">
-                            Apakah Anda yakin ingin menghapus promo <strong>{promo.name}</strong>? Promo yang dihapus tidak akan berlaku lagi untuk transaksi.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
-                        <Button variant="destructive" onClick={handleDelete}>Ya, Hapus</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 };

@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Products extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'products';
 
@@ -126,7 +127,7 @@ class Products extends Model
             'branch:id,name,code',
             'images' => fn ($q) => $q
                 ->where('is_primary', true)
-                ->select('id', 'product_id', 'url', 'is_primary'),
+                ->select('id', 'product_id', 'url', 'path', 'is_primary'),
         ]);
     }
 

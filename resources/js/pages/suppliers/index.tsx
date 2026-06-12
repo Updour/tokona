@@ -5,20 +5,10 @@ import { Button } from '@/components/ui/button';
 import { SupplierFormDialog } from '@/features/suppliers/components/SupplierFormDialog';
 import { SupplierTable } from '@/features/suppliers/components/SupplierTable';
 import MainLayout from '@/layouts/app/app-main-layout';
+import { useSupplierStore } from '@/pages/suppliers/stores/useSupplierStore';
 
 export default function Index() {
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
-
-    const handleEdit = (supplier: any) => {
-        setSelectedSupplier(supplier);
-        setIsDialogOpen(true);
-    };
-
-    const handleAdd = () => {
-        setSelectedSupplier(null);
-        setIsDialogOpen(true);
-    };
+    const { openForm } = useSupplierStore();
 
     return (
         <MainLayout>
@@ -33,13 +23,9 @@ export default function Index() {
                 </div>
             </div>
 
-            <SupplierTable onEdit={handleEdit} onAddClick={handleAdd} />
+            <SupplierTable onEdit={(supplier) => openForm(supplier)} onAddClick={() => openForm()} />
 
-            <SupplierFormDialog 
-                open={isDialogOpen} 
-                onOpenChange={setIsDialogOpen} 
-                supplier={selectedSupplier}
-            />
+            <SupplierFormDialog />
         </MainLayout>
     );
 }

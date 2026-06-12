@@ -15,6 +15,7 @@ interface UsePosProps {
     transactions: any[];
     defaultSettings: any;
     filters: any;
+    loyaltySettings?: any;
 }
 
 export function usePos({
@@ -24,7 +25,8 @@ export function usePos({
     branches,
     transactions,
     defaultSettings,
-    filters
+    filters,
+    loyaltySettings
 }: UsePosProps) {
     const { auth } = usePage<any>().props;
     const isSuperAdmin = auth?.user?.is_super_admin || auth?.user?.role === 'super-admin';
@@ -203,6 +205,43 @@ export function usePos({
         posSettings
     });
 
+    // Keyboard Shortcuts (Hotkeys)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Ignore if modal is open (checking body overflow or a specific class could help, but for now just raw keys)
+            if (e.key === 'F2') {
+                e.preventDefault();
+                setActiveTab('cashier');
+                document.getElementById('pos-search-input')?.focus();
+            } else if (e.key === 'F4') {
+                e.preventDefault();
+                setActiveTab('cashier');
+                document.getElementById('pos-paid-amount-input')?.focus();
+            } else if (e.key === 'F8') {
+                e.preventDefault();
+                toast('Kosongkan keranjang belanja? (Shortcut F8)', {
+                    action: {
+                        label: 'Ya, Kosongkan',
+                        onClick: () => clearCart()
+                    },
+                    cancel: { label: 'Batal', onClick: () => {} }
+                });
+            } else if (e.key === 'F9') {
+                e.preventDefault();
+                // Toggle payment method
+                const methods = ['cash', 'transfer', 'debt'].filter(m => posSettings?.activeMethods?.[m]);
+                if (methods.length > 0) {
+                    const currentIndex = methods.indexOf(paymentMethod);
+                    const nextIndex = (currentIndex + 1) % methods.length;
+                    setPaymentMethod(methods[nextIndex] as any);
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [clearCart, paymentMethod, posSettings]);
+
     useEffect(() => {
         if (posSettings.activeMethods && !posSettings.activeMethods[paymentMethod]) {
             const activeKeys = Object.keys(posSettings.activeMethods).filter(k => posSettings.activeMethods[k]);
@@ -332,6 +371,13 @@ export function usePos({
 
             const invoiceNum = `INV-OFF/${new Date().getTime()}`;
             const customerObj = customers.find((c: any) => c.id === selectedCustomer);
+            
+            // Calculate Points Earned & Current Balance
+            const earnAmount = Math.max(1, loyaltySettings?.earn_amount || 10000);
+            const pointsEarned = customerObj ? Math.floor(cartTotal / earnAmount) : 0;
+            const roundingBonus = (paymentMethod === 'cash' && roundingDiff < 0) ? Math.floor(Math.abs(roundingDiff) / 100) : 0;
+            const totalPointsEarned = pointsEarned + roundingBonus;
+            const currentPointsBalance = customerObj ? (customerObj.points - redeemPoints + totalPointsEarned) : 0;
 
             setLastTransaction({
                 invoice_number: invoiceNum,
@@ -348,7 +394,9 @@ export function usePos({
                 change_amount: changeAmount,
                 payment_method: paymentMethod,
                 customer: customerObj ? customerObj.name : 'Pelanggan Umum',
-                cashier: auth?.user?.name || 'Kasir (Offline)'
+                cashier: auth?.user?.name || 'Kasir (Offline)',
+                earned_points: totalPointsEarned,
+                current_points: currentPointsBalance
             });
 
             clearCart();
@@ -368,6 +416,13 @@ export function usePos({
                 const invoiceNum = page.props.flash?.success?.split('Nomor Invoice: ')[1] || `INV/${new Date().getTime()}`;
                 const customerObj = customers.find((c: any) => c.id === selectedCustomer);
 
+                // Calculate Points Earned & Current Balance
+                const earnAmount = Math.max(1, loyaltySettings?.earn_amount || 10000);
+                const pointsEarned = customerObj ? Math.floor(cartTotal / earnAmount) : 0;
+                const roundingBonus = (paymentMethod === 'cash' && roundingDiff < 0) ? Math.floor(Math.abs(roundingDiff) / 100) : 0;
+                const totalPointsEarned = pointsEarned + roundingBonus;
+                const currentPointsBalance = customerObj ? (customerObj.points - redeemPoints + totalPointsEarned) : 0;
+
                 setLastTransaction({
                     invoice_number: invoiceNum,
                     date: new Date(),
@@ -383,7 +438,9 @@ export function usePos({
                     change_amount: changeAmount,
                     payment_method: paymentMethod,
                     customer: customerObj ? customerObj.name : 'Pelanggan Umum',
-                    cashier: auth?.user?.name || 'Kasir'
+                    cashier: auth?.user?.name || 'Kasir',
+                    earned_points: totalPointsEarned,
+                    current_points: currentPointsBalance
                 });
 
                 clearCart();
@@ -564,6 +621,7 @@ return;
         isOffline,
         pendingTransactions,
         isSyncing,
-        syncPendingTransactions
+        syncPendingTransactions,
+        loyaltySettings
     };
 }

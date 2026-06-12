@@ -28,6 +28,21 @@ class ExportController extends Controller
         return $this->exportService->exportSalesReportToExcel($request->all());
     }
 
+    public function productReport(Request $request)
+    {
+        return $this->exportService->exportProductReportToExcel($request->all());
+    }
+
+    public function stockReport(Request $request)
+    {
+        return $this->exportService->exportStockReportToExcel($request->all());
+    }
+
+    public function salesFieldReport(Request $request)
+    {
+        return $this->exportService->exportSalesFieldReportToExcel($request->all());
+    }
+
     public function inventory(Request $request)
     {
         return $this->exportService->exportInventoryToExcel($request->all());

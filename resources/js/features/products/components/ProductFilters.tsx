@@ -1,7 +1,8 @@
+import { formatNumber } from '@/lib/helpers/format';
 import { router } from '@inertiajs/react';
 import {
     Search, SlidersHorizontal, X, CalendarRange,
-    Building2, Tag, Layers, AlertTriangle, Plus, Download,
+    Building2, Tag, Layers, AlertTriangle, Plus, Download, UploadCloud
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import type {ProductCategory, ProductType, ProductBranch, ProductTenant} from '@/pages/products/types';
+import { useProductStore } from '@/pages/products/stores/useProductStore';
 
 interface ProductFiltersProps {
     filters: Record<string, any>;
@@ -60,6 +62,8 @@ export function ProductFilters({
         price_min: filters.price_min || '',
         price_max: filters.price_max || '',
     });
+
+    const openImport = useProductStore((state) => state.openImport);
 
     // Hitung berapa filter aktif (selain search)
     const activeFilterCount = [
@@ -315,8 +319,13 @@ export function ProductFilters({
 
                 {/* Info total */}
                 <span className="text-sm text-muted-foreground hidden sm:block">
-                    {totalResults.toLocaleString('id-ID')} produk
+                    {formatNumber(totalResults)} produk
                 </span>
+
+                {/* Import */}
+                <Button variant="outline" size="sm" onClick={() => openImport()} className="gap-1.5 border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+                    <UploadCloud className="h-4 w-4" /> Import Excel
+                </Button>
 
                 {/* Export */}
                 <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5">
@@ -335,65 +344,49 @@ export function ProductFilters({
                     {localFilters.category_id && (
                         <FilterChip
                             label={`Kategori: ${categories.find((c) => c.id === localFilters.category_id)?.name ?? '...'}`}
-                            onRemove={() => {
- updateLocal('category_id', ''); applyFilters({ category_id: undefined }); 
-}}
+                            onRemove={() => { updateLocal('category_id', ''); applyFilters({ category_id: undefined }); }}
                         />
                     )}
                     {localFilters.type_id && (
                         <FilterChip
                             label={`Tipe: ${types.find((t) => t.id === localFilters.type_id)?.name ?? '...'}`}
-                            onRemove={() => {
- updateLocal('type_id', ''); applyFilters({ type_id: undefined }); 
-}}
+                            onRemove={() => { updateLocal('type_id', ''); applyFilters({ type_id: undefined }); }}
                         />
                     )}
                     {localFilters.branch_id && (
                         <FilterChip
                             label={`Cabang: ${branches.find((b) => b.id === localFilters.branch_id)?.name ?? '...'}`}
-                            onRemove={() => {
- updateLocal('branch_id', ''); applyFilters({ branch_id: undefined }); 
-}}
+                            onRemove={() => { updateLocal('branch_id', ''); applyFilters({ branch_id: undefined }); }}
                         />
                     )}
                     {localFilters.tenant_id && tenants && (
                         <FilterChip
                             label={`Tenant: ${tenants.find((t) => t.id === localFilters.tenant_id)?.name ?? '...'}`}
-                            onRemove={() => {
- updateLocal('tenant_id', ''); applyFilters({ tenant_id: undefined }); 
-}}
+                            onRemove={() => { updateLocal('tenant_id', ''); applyFilters({ tenant_id: undefined }); }}
                         />
                     )}
                     {localFilters.is_active !== '' && (
                         <FilterChip
                             label={localFilters.is_active === 'true' || localFilters.is_active === true ? 'Status: Aktif' : 'Status: Nonaktif'}
-                            onRemove={() => {
- updateLocal('is_active', ''); applyFilters({ is_active: undefined }); 
-}}
+                            onRemove={() => { updateLocal('is_active', ''); applyFilters({ is_active: undefined }); }}
                         />
                     )}
                     {localFilters.low_stock && (
                         <FilterChip
                             label="Stok menipis"
-                            onRemove={() => {
- updateLocal('low_stock', false); applyFilters({ low_stock: undefined }); 
-}}
+                            onRemove={() => { updateLocal('low_stock', false); applyFilters({ low_stock: undefined }); }}
                         />
                     )}
                     {(localFilters.date_from || localFilters.date_to) && (
                         <FilterChip
                             label={`Tanggal: ${localFilters.date_from || '...'} → ${localFilters.date_to || '...'}`}
-                            onRemove={() => {
- updateLocal('date_from', ''); updateLocal('date_to', ''); applyFilters({ date_from: undefined, date_to: undefined }); 
-}}
+                            onRemove={() => { updateLocal('date_from', ''); updateLocal('date_to', ''); applyFilters({ date_from: undefined, date_to: undefined }); }}
                         />
                     )}
                     {(localFilters.price_min || localFilters.price_max) && (
                         <FilterChip
                             label={`Harga: Rp${localFilters.price_min || '0'} – Rp${localFilters.price_max || '∞'}`}
-                            onRemove={() => {
- updateLocal('price_min', ''); updateLocal('price_max', ''); applyFilters({ price_min: undefined, price_max: undefined }); 
-}}
+                            onRemove={() => { updateLocal('price_min', ''); updateLocal('price_max', ''); applyFilters({ price_min: undefined, price_max: undefined }); }}
                         />
                     )}
                 </div>

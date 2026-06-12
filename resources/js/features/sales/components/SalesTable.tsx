@@ -1,3 +1,4 @@
+import { formatRupiah } from '@/lib/helpers/format';
 import { 
     Users, UserPlus, Phone, Mail, Award, CheckCircle2, 
     TrendingUp, Building, Package, Pencil, Trash2
@@ -17,6 +18,7 @@ import { SalesEditDialog } from './SalesEditDialog';
 import { SalesFilters } from './SalesFilters';
 import { SalesPerformanceDialog } from './SalesPerformanceDialog';
 import { SalesStockDialog } from './SalesStockDialog';
+import { useSalesStore } from '../stores/useSalesStore';
 
 interface SalesTableProps {
     sales: {
@@ -35,12 +37,15 @@ interface SalesTableProps {
 }
 
 export function SalesTable({ sales, branches = [], products = [], filters = {} }: SalesTableProps) {
-    const [addOpen, setAddOpen] = useState(false);
-    const [editOpen, setEditOpen] = useState(false);
-    const [deleteOpen, setDeleteOpen] = useState(false);
-    const [stockOpen, setStockOpen] = useState(false);
-    const [performanceOpen, setPerformanceOpen] = useState(false);
-    const [selectedSales, setSelectedSales] = useState<SalesPerson | null>(null);
+    const {
+        selectedSales,
+        setSelectedSales,
+        openAdd,
+        openEdit,
+        openDelete,
+        openStock,
+        openPerformance
+    } = useSalesStore();
 
     // Keep selected sales synchronized with parent props on reload
     useEffect(() => {
@@ -51,27 +56,7 @@ export function SalesTable({ sales, branches = [], products = [], filters = {} }
                 setSelectedSales(latest);
             }
         }
-    }, [sales]);
-
-    const openStockManager = (item: SalesPerson) => {
-        setSelectedSales(item);
-        setStockOpen(true);
-    };
-
-    const openPerformanceManager = (item: SalesPerson) => {
-        setSelectedSales(item);
-        setPerformanceOpen(true);
-    };
-
-    const openEditManager = (item: SalesPerson) => {
-        setSelectedSales(item);
-        setEditOpen(true);
-    };
-
-    const openDeleteConfirmation = (item: SalesPerson) => {
-        setSelectedSales(item);
-        setDeleteOpen(true);
-    };
+    }, [sales, selectedSales, setSelectedSales]);
 
     return (
         <div className="flex-1 bg-background rounded-lg border shadow-sm p-4 w-full mt-6 space-y-4">
@@ -87,7 +72,7 @@ export function SalesTable({ sales, branches = [], products = [], filters = {} }
                 </div>
                 <div className="shrink-0 flex items-center pt-1">
                     <Button 
-                        onClick={() => setAddOpen(true)}
+                        onClick={() => openAdd()}
                         className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs gap-1.5 h-9 shadow-sm"
                     >
                         <UserPlus className="h-4 w-4" />
@@ -133,7 +118,7 @@ export function SalesTable({ sales, branches = [], products = [], filters = {} }
                                     <TableCell>
                                         <Badge variant="secondary" className="bg-indigo-50 text-indigo-750 font-black text-[10px] border border-indigo-100 px-2 py-0.5">
                                             <Award className="h-3 w-3 mr-1" />
-                                            {item.commission_type === 'percent' ? `${item.commission_value}%` : `Rp ${Number(item.commission_value).toLocaleString('id-ID')}`}
+                                            {item.commission_type === 'percent' ? `${item.commission_value}%` : `${formatRupiah(item.commission_value)}`}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
@@ -159,7 +144,7 @@ export function SalesTable({ sales, branches = [], products = [], filters = {} }
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Button
-                                                            onClick={() => openStockManager(item)}
+                                                            onClick={() => openStock(item)}
                                                             variant="outline"
                                                             size="sm"
                                                             className="h-8 text-xs font-black border-indigo-200 text-indigo-700 hover:bg-indigo-50 bg-white gap-1"
@@ -172,7 +157,7 @@ export function SalesTable({ sales, branches = [], products = [], filters = {} }
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Button
-                                                            onClick={() => openPerformanceManager(item)}
+                                                            onClick={() => openPerformance(item)}
                                                             variant="outline"
                                                             size="sm"
                                                             className="h-8 text-xs font-black border-slate-200 hover:bg-slate-100 bg-white"
@@ -185,7 +170,7 @@ export function SalesTable({ sales, branches = [], products = [], filters = {} }
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Button
-                                                            onClick={() => openEditManager(item)}
+                                                            onClick={() => openEdit(item)}
                                                             variant="ghost"
                                                             size="icon"
                                                             className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50"
@@ -198,7 +183,7 @@ export function SalesTable({ sales, branches = [], products = [], filters = {} }
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Button
-                                                            onClick={() => openDeleteConfirmation(item)}
+                                                            onClick={() => openDelete(item)}
                                                             variant="ghost"
                                                             size="icon"
                                                             className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
@@ -229,35 +214,21 @@ export function SalesTable({ sales, branches = [], products = [], filters = {} }
 
             {/* Unified & Modular Subcomponent Modals */}
             <SalesAddDialog 
-                open={addOpen} 
-                onOpenChange={setAddOpen} 
                 branches={branches} 
             />
 
             <SalesEditDialog 
-                open={editOpen} 
-                onOpenChange={setEditOpen} 
-                selectedSales={selectedSales} 
                 branches={branches} 
             />
 
             <SalesDeleteDialog 
-                open={deleteOpen} 
-                onOpenChange={setDeleteOpen} 
-                selectedSales={selectedSales} 
             />
 
             <SalesStockDialog 
-                open={stockOpen} 
-                onOpenChange={setStockOpen} 
-                selectedSales={selectedSales} 
                 products={products} 
             />
 
             <SalesPerformanceDialog 
-                open={performanceOpen} 
-                onOpenChange={setPerformanceOpen} 
-                selectedSales={selectedSales} 
             />
         </div>
     );

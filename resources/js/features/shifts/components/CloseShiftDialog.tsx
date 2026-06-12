@@ -8,27 +8,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { formatRupiah } from '@/lib/helpers/format';
-import type { Shift } from '../types';
+import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
 
-interface Props {
-    shift: Shift;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-}
+import { useShiftStore } from '@/pages/shifts/stores/useShiftStore';
 
-export function CloseShiftDialog({ shift, open, onOpenChange }: Props) {
+export function CloseShiftDialog() {
+    const { isCloseOpen, closeClose, selectedShift: shift } = useShiftStore();
     const form = useForm({ closing_balance: '', notes: '' });
+
+    if (!shift) return null;
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         form.put(`/shifts/${shift.id}/close`, {
-            onSuccess: () => onOpenChange(false),
+            onSuccess: () => closeClose(),
         });
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={isCloseOpen} onOpenChange={closeClose}>
             <DialogContent>
                 <form onSubmit={submit}>
                     <DialogHeader>
@@ -45,7 +43,7 @@ export function CloseShiftDialog({ shift, open, onOpenChange }: Props) {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Dibuka:</span>
-                                <span>{new Date(shift.opened_at).toLocaleString('id-ID')}</span>
+                                <span>{formatDateTime(shift.opened_at)}</span>
                             </div>
                         </div>
                         <div className="grid gap-2">

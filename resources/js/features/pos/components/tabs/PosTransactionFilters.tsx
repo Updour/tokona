@@ -1,3 +1,4 @@
+import { formatNumber } from '@/lib/helpers/format';
 import { Search, SlidersHorizontal, X, Coins, Receipt, CalendarRange, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -135,7 +136,7 @@ export function PosTransactionFilters({
                 <div className="flex-1" />
 
                 <span className="text-xs text-muted-foreground hidden sm:block">
-                    {filteredCount.toLocaleString('id-ID')} transaksi
+                    {formatNumber(filteredCount)} transaksi
                 </span>
 
                 <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5 h-9">

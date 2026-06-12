@@ -30,6 +30,32 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->reportable(function (\Throwable $e) {
+            try {
+                // Ignore common HTTP exceptions that are not critical system errors
+                if ($e instanceof \Illuminate\Validation\ValidationException || 
+                    $e instanceof \Illuminate\Auth\AuthenticationException ||
+                    $e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+                    return;
+                }
+
+                \App\Models\SystemLog::create([
+                    'tenant_id' => auth()->check() ? auth()->user()->tenant_id : null,
+                    'user_id' => auth()->id(),
+                    'level' => 'error',
+                    'message' => substr($e->getMessage(), 0, 5000), // Prevent very long messages
+                    'exception_class' => get_class($e),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => array_slice($e->getTrace(), 0, 10),
+                    'url' => request()->fullUrl(),
+                    'ip_address' => request()->ip(),
+                ]);
+            } catch (\Throwable $loggingException) {
+                // Ignore logging errors to prevent infinite loops
+            }
+        });
+
         $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
             if ($request->is('/dashboard') || $request->is('/')) {
                 return response()->json([

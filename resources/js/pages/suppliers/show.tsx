@@ -1,3 +1,4 @@
+import { formatRupiah } from '@/lib/helpers/format';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Building2, MapPin, Phone, Mail, FileText, Wallet, AlertCircle, CheckCircle2, CircleDashed } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -100,7 +101,7 @@ return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 bo
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Total Belanja (Sejarah)</p>
-                                    <h3 className="text-2xl font-black text-slate-800">Rp {Number(stats.total_belanja).toLocaleString('id-ID')}</h3>
+                                    <h3 className="text-2xl font-black text-slate-800">{formatRupiah(stats.total_belanja)}</h3>
                                     <p className="text-xs text-muted-foreground mt-1">Dari {stats.total_po} Transaksi PO</p>
                                 </div>
                             </CardContent>
@@ -113,7 +114,7 @@ return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 bo
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-red-600/80">Total Hutang Berjalan</p>
-                                    <h3 className="text-2xl font-black text-red-600">Rp {Number(stats.total_hutang).toLocaleString('id-ID')}</h3>
+                                    <h3 className="text-2xl font-black text-red-600">{formatRupiah(stats.total_hutang)}</h3>
                                     <p className="text-xs text-red-500/70 mt-1">Segera lunasi tagihan</p>
                                 </div>
                             </CardContent>
@@ -152,7 +153,7 @@ return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 bo
                                                 </TableCell>
                                                 <TableCell className="text-sm">{po.branch?.name || '-'}</TableCell>
                                                 <TableCell className="text-right font-semibold">
-                                                    Rp {Number(po.total_cost).toLocaleString('id-ID')}
+                                                    {formatRupiah(po.total_cost)}
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     {renderStatusBadge(po.status)}

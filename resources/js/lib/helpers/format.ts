@@ -64,3 +64,13 @@ return '-';
 export function getTodayDateString(): string {
     return new Date().toISOString().split('T')[0];
 }
+
+/**
+ * Format angka dengan separator ribuan standar Indonesia (Contoh: "1.500")
+ */
+export function formatNumber(amount: number | string | null | undefined): string {
+    if (amount === null || amount === undefined || amount === '') return '0';
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(num)) return '0';
+    return num.toLocaleString('id-ID');
+}

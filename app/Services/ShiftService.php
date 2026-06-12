@@ -7,11 +7,15 @@ use App\Models\Transaction;
 use App\Models\Expense;
 use App\Models\CashBook;
 use App\Models\Branch;
+use App\Services\AccountingService;
 use RuntimeException;
 use Illuminate\Support\Facades\DB;
 
 class ShiftService
 {
+    public function __construct(
+        private readonly AccountingService $accountingService
+    ) {}
     // =========================================================================
     // Query — data untuk halaman daftar shift
     // =========================================================================
@@ -147,6 +151,30 @@ class ShiftService
                 'note' => 'Selisih Kurang Setoran Shift Kasir: ' . auth()->user()->name,
                 'created_by' => auth()->id() ?? $shift->tenant_id,
             ]);
+        }
+
+        // AKUNTANSI: Double-Entry Journal untuk total penjualan selama shift ini
+        try {
+            // Kita harus memastikan default accounts sudah di-inisialisasi
+            $this->accountingService->initializeDefaultAccounts($shift->tenant_id, $shift->branch_id);
+
+            // Jurnal 1: Penjualan Tunai (Kas bertambah, Pendapatan bertambah)
+            if ($cashSales > 0) {
+                $this->accountingService->createJournal(
+                    $shift->tenant_id,
+                    $shift->branch_id,
+                    [
+                        ['account_code' => '1110', 'debit' => $cashSales, 'credit' => 0, 'description' => 'Kas dari Penjualan Tunai Shift'],
+                        ['account_code' => '4110', 'debit' => 0, 'credit' => $cashSales, 'description' => 'Pendapatan Penjualan Tunai Shift'],
+                    ],
+                    "Jurnal Tutup Shift Kasir: " . auth()->user()->name,
+                    'pos_shift',
+                    $shift->id
+                );
+            }
+        } catch (\Exception $e) {
+            // Log error tapi biarkan shift tertutup agar tidak memblokir operasional
+            \Illuminate\Support\Facades\Log::error('Gagal membuat jurnal shift: ' . $e->getMessage());
         }
 
         return $shift->fresh();

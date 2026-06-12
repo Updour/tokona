@@ -7,8 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { usePromoStore } from '@/pages/promos/stores/usePromoStore';
 
-export function PromoFormDialog({ open, onOpenChange, promo }: any) {
+export function PromoFormDialog() {
+    const { isFormOpen: open, closeForm, selectedPromo: promo } = usePromoStore();
     const isEditing = !!promo;
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
@@ -47,7 +49,7 @@ export function PromoFormDialog({ open, onOpenChange, promo }: any) {
 
     const handleClose = () => {
         reset();
-        onOpenChange(false);
+        closeForm();
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -69,7 +71,7 @@ export function PromoFormDialog({ open, onOpenChange, promo }: any) {
     };
 
     return (
-        <Dialog open={open} onOpenChange={(isOpen) => !isOpen ? handleClose() : onOpenChange(isOpen)}>
+        <Dialog open={open} onOpenChange={(isOpen) => !isOpen ? handleClose() : null}>
             <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{isEditing ? 'Edit Diskon' : 'Buat Diskon Baru'}</DialogTitle>

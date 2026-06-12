@@ -12,6 +12,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ProductsImport;
 
 class ProductController extends Controller
 {
@@ -50,10 +52,24 @@ class ProductController extends Controller
 
     public function destroy(Products $product): RedirectResponse
     {
+        $productClone = clone $product; // Clone before deletion to log properties if needed
         $name = $this->service->delete($product);
 
+        \App\Services\ActivityLogger::log('Hapus Data Penting', "Menghapus produk: {$name}", $productClone, ['product_name' => $name, 'base_cost' => $productClone->base_cost]);
+
         return redirect()->route('products.index')
-            ->with('success', "Produk \"{$name}\" berhasil dihapus.");
+            ->with('success', "Produk \"{$name}\" berhasil dinonaktifkan.");
+    }
+
+    public function restore(string $id): RedirectResponse
+    {
+        $name = $this->service->restore($id);
+        $product = Products::withTrashed()->find($id);
+
+        \App\Services\ActivityLogger::log('Restore Data', "Memulihkan produk: {$name}", $product, ['product_name' => $name]);
+
+        return redirect()->back()
+            ->with('success', "Produk \"{$name}\" berhasil dipulihkan.");
     }
 
     public function pricing(Request $request): Response
@@ -67,5 +83,18 @@ class ProductController extends Controller
 
         return redirect()->back()
             ->with('success', "Harga jual untuk {$count} produk berhasil dinaikkan!");
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv,xls|max:5120', // Maks 5MB
+        ]);
+
+        $tenantId = auth()->user()->isSuperAdmin() ? auth()->user()->tenant_id ?? 'guest' : auth()->user()->tenant_id;
+
+        Excel::import(new ProductsImport($tenantId), $request->file('file'));
+
+        return back()->with('success', 'Berhasil mengimpor data produk massal.');
     }
 }

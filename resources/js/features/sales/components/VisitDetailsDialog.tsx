@@ -1,3 +1,4 @@
+import { formatRupiah , formatDateTime} from '@/lib/helpers/format';
 import { Store, MapPin, ClipboardCheck, Eye, FileText, Calendar, User, Navigation, FileSpreadsheet } from 'lucide-react';
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -45,7 +46,7 @@ return null;
                                 <Calendar className="h-3.5 w-3.5 text-slate-400" /> Waktu Kunjungan
                             </div>
                             <p className="font-black text-slate-800 text-sm ml-5">
-                                {visit.visited_at ? new Date(visit.visited_at).toLocaleString('id-ID') : '-'}
+                                {visit.visited_at ? formatDateTime(visit.visited_at) : '-'}
                             </p>
                         </div>
                         <div className="space-y-2 col-span-2 border-t pt-2 mt-1">
@@ -93,14 +94,14 @@ return null;
                                             <TableRow key={it.id} className="text-xs">
                                                 <TableCell className="font-bold py-1.5">{it.product?.name ?? 'Produk'}</TableCell>
                                                 <TableCell className="text-center py-1.5 font-bold">{it.qty}</TableCell>
-                                                <TableCell className="text-right py-1.5">Rp {parseFloat(it.price).toLocaleString('id-ID')}</TableCell>
-                                                <TableCell className="text-right py-1.5 font-bold text-slate-800">Rp {parseFloat(it.subtotal).toLocaleString('id-ID')}</TableCell>
+                                                <TableCell className="text-right py-1.5">{formatRupiah(parseFloat(it.price))}</TableCell>
+                                                <TableCell className="text-right py-1.5 font-bold text-slate-800">{formatRupiah(parseFloat(it.subtotal))}</TableCell>
                                             </TableRow>
                                         ))}
                                         <TableRow className="bg-slate-50 font-black text-xs border-t">
                                             <TableCell colSpan={3} className="text-right py-2">Total Belanja</TableCell>
                                             <TableCell className="text-right py-2 text-indigo-650">
-                                                Rp {parseFloat(visit.sales_order.total_amount).toLocaleString('id-ID')}
+                                                {formatRupiah(parseFloat(visit.sales_order.total_amount))}
                                             </TableCell>
                                         </TableRow>
                                     </TableBody>

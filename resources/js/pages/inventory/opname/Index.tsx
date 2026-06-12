@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import MainLayout from '@/layouts/app/app-main-layout';
 import OpnameDialog from './components/OpnameDialog';
+import { useOpnameStore } from './stores/useOpnameStore';
 
 export default function OpnameIndex({ opnames, products, filters }: any) {
     const [search, setSearch] = useState(filters.search || '');
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const { openCreate } = useOpnameStore();
 
     return (
         <MainLayout>
@@ -28,7 +29,7 @@ export default function OpnameIndex({ opnames, products, filters }: any) {
                 </div>
                 <div className="flex items-center gap-3">
                     <Button 
-                        onClick={() => setIsDialogOpen(true)}
+                        onClick={() => openCreate()}
                         className="bg-indigo-650 hover:bg-indigo-700 text-white shadow-sm h-10 px-4 rounded-xl font-bold"
                     >
                         <Plus className="mr-2 w-4 h-4" /> Mulai Opname
@@ -90,11 +91,7 @@ export default function OpnameIndex({ opnames, products, filters }: any) {
                 </div>
             </div>
 
-            <OpnameDialog 
-                isOpen={isDialogOpen} 
-                onClose={() => setIsDialogOpen(false)} 
-                products={products} 
-            />
+            <OpnameDialog products={products} />
         </MainLayout>
     );
 }

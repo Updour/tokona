@@ -3,7 +3,7 @@ import { Eye, Printer, Wallet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatRupiah } from '@/lib/helpers/format';
+import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
 
 interface PosTransactionColumnProps {
     setSelectedDetailTransaction: (tx: any) => void;
@@ -25,7 +25,7 @@ export const getPosTransactionColumns = ({
         header: () => <div className="h-9 flex items-center py-1 text-xs">Tanggal & Waktu</div>,
         cell: ({ row }) => (
             <div className="font-mono text-[11px] text-slate-600 py-1">
-                {new Date(row.original.created_at).toLocaleString('id-ID')}
+                {formatDateTime(row.original.created_at)}
             </div>
         )
     },

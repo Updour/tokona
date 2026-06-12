@@ -13,35 +13,22 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useTypeStore } from '@/pages/product-types/stores/useTypeStore';
 
-interface ProductType {
-    id: string;
-    name: string;
-    description?: string | null;
-}
+export function TypeFormDialog() {
+    const { isFormOpen, selectedType, closeForm } = useTypeStore();
 
-interface TypeFormDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    type: ProductType | null;
-}
-
-export function TypeFormDialog({
-    open,
-    onOpenChange,
-    type,
-}: TypeFormDialogProps) {
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         name: '',
         description: '',
     });
 
     useEffect(() => {
-        if (open) {
-            if (type) {
+        if (isFormOpen) {
+            if (selectedType) {
                 setData({
-                    name: type.name,
-                    description: type.description ?? '',
+                    name: selectedType.name,
+                    description: selectedType.description ?? '',
                 });
             } else {
                 reset();
@@ -49,22 +36,22 @@ export function TypeFormDialog({
 
             clearErrors();
         }
-    }, [open, type]);
+    }, [isFormOpen, selectedType]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (type) {
-            put(`/product-types/${type.id}`, {
+        if (selectedType) {
+            put(`/product-types/${selectedType.id}`, {
                 onSuccess: () => {
-                    onOpenChange(false);
+                    closeForm();
                     reset();
                 },
             });
         } else {
             post('/product-types', {
                 onSuccess: () => {
-                    onOpenChange(false);
+                    closeForm();
                     reset();
                 },
             });
@@ -72,16 +59,16 @@ export function TypeFormDialog({
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={isFormOpen} onOpenChange={(open) => !open && closeForm()}>
             <DialogContent className="sm:max-w-[440px]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Layers className="h-4 w-4 text-primary" />
-                            {type ? 'Edit Tipe Produk' : 'Tambah Tipe Produk'}
+                            {selectedType ? 'Edit Tipe Produk' : 'Tambah Tipe Produk'}
                         </DialogTitle>
                         <DialogDescription>
-                            {type
+                            {selectedType
                                 ? 'Perbarui nama dan deskripsi tipe produk.'
                                 : 'Buat tipe baru untuk mengklasifikasikan produk Anda.'}
                         </DialogDescription>
@@ -114,11 +101,11 @@ export function TypeFormDialog({
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" type="button" onClick={() => onOpenChange(false)} disabled={processing}>
+                        <Button variant="outline" type="button" onClick={closeForm} disabled={processing}>
                             Batal
                         </Button>
                         <Button type="submit" disabled={processing}>
-                            {processing ? 'Menyimpan...' : type ? 'Simpan Perubahan' : 'Tambah Tipe'}
+                            {processing ? 'Menyimpan...' : selectedType ? 'Simpan Perubahan' : 'Tambah Tipe'}
                         </Button>
                     </DialogFooter>
                 </form>

@@ -1,3 +1,4 @@
+import { formatRupiah } from '@/lib/helpers/format';
 import { Head, router } from '@inertiajs/react';
 import { DollarSign, Percent, TrendingUp, Search, X, Edit, Check, Play, Sliders, Calculator, ShieldCheck, Tag } from 'lucide-react';
 import { useState } from 'react';
@@ -206,7 +207,7 @@ return acc;
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
                             <div className="text-2xl font-extrabold text-emerald-600">
-                                Rp {totalPotentialProfit.toLocaleString('id-ID')}
+                                {formatRupiah(totalPotentialProfit)}
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">Estimasi profit dari stok berjalan</p>
                         </CardContent>
@@ -219,7 +220,7 @@ return acc;
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
                             <div className="text-2xl font-extrabold text-indigo-600">
-                                Rp {totalInventoryValue.toLocaleString('id-ID')}
+                                {formatRupiah(totalInventoryValue)}
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">Total nilai aset modal di toko</p>
                         </CardContent>
@@ -329,7 +330,7 @@ return acc;
                                                             className="h-8 text-xs font-mono w-full"
                                                         />
                                                     ) : (
-                                                        <span className="font-mono text-xs">Rp {Number(p.base_cost).toLocaleString('id-ID')}</span>
+                                                        <span className="font-mono text-xs">{formatRupiah(p.base_cost)}</span>
                                                     )}
                                                 </TableCell>
 
@@ -342,7 +343,7 @@ return acc;
                                                             className="h-8 text-xs font-mono w-full"
                                                         />
                                                     ) : (
-                                                        <span className="font-mono text-xs font-bold text-slate-800">Rp {Number(p.sell_price).toLocaleString('id-ID')}</span>
+                                                        <span className="font-mono text-xs font-bold text-slate-800">{formatRupiah(p.sell_price)}</span>
                                                     )}
                                                 </TableCell>
 
@@ -350,7 +351,7 @@ return acc;
                                                     <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold border ${marginBadgeStyles}`}>
                                                         {marginPct.toFixed(0)}%
                                                     </span>
-                                                    <div className="text-[10px] text-muted-foreground mt-0.5 font-mono">Profit Rp {profit.toLocaleString('id-ID')}</div>
+                                                    <div className="text-[10px] text-muted-foreground mt-0.5 font-mono">Profit {formatRupiah(profit)}</div>
                                                 </TableCell>
 
                                                 <TableCell>
@@ -362,7 +363,7 @@ return acc;
                                                             className="h-8 text-xs font-mono w-full"
                                                         />
                                                     ) : (
-                                                        <span className="font-mono text-xs text-muted-foreground">Rp {Number(p.min_sell_price || p.sell_price).toLocaleString('id-ID')}</span>
+                                                        <span className="font-mono text-xs text-muted-foreground">{formatRupiah(p.min_sell_price || p.sell_price)}</span>
                                                     )}
                                                 </TableCell>
 

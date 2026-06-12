@@ -20,7 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { formatRupiah } from '@/lib/helpers/format';
+import { formatRupiah , formatNumber} from '@/lib/helpers/format';
 import { settle as consignmentsSettle } from '@/routes/consignments';
 import { useConsignmentStore } from '../stores/useConsignmentStore';
 
@@ -152,7 +152,7 @@ return;
                                     type="text" 
                                     className="font-mono text-right pl-8"
                                     placeholder="0"
-                                    value={data.total_discount === 0 ? '' : data.total_discount.toLocaleString('id-ID')} 
+                                    value={data.total_discount === 0 ? '' : formatNumber(data.total_discount)} 
                                     onChange={(e) => {
                                         const rawValue = e.target.value.replace(/[^0-9]/g, '');
                                         setData('total_discount', rawValue ? parseInt(rawValue, 10) : 0);

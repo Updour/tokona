@@ -34,7 +34,11 @@ class SupplierService
      */
     public function storeSupplier(array $data): Supplier
     {
-        $data['tenant_id'] = $data['tenant_id'] ?? auth()->user()->tenant_id;
+        $tenantId = $data['tenant_id'] ?? auth()->user()->tenant_id;
+        if (!$tenantId && auth()->user()->isSuperAdmin()) {
+            $tenantId = \App\Models\Tenants::first()->id ?? null;
+        }
+        $data['tenant_id'] = $tenantId;
         return Supplier::create($data);
     }
 

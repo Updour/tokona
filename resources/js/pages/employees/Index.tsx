@@ -1,9 +1,11 @@
 import { Head } from '@inertiajs/react';
 import { Users } from 'lucide-react';
 import { EmployeeFormDialog } from '@/features/employees/components/EmployeeFormDialog';
+import { EmployeeDetailSheet } from '@/features/employees/components/EmployeeDetailSheet';
+import { EmployeeDeleteDialog } from '@/features/employees/components/EmployeeDeleteDialog';
 import { EmployeeTable } from '@/features/employees/components/EmployeeTable';
 import MainLayout from '@/layouts/app/app-main-layout';
-import type {User, Role} from './types';
+import type {Employee, Role} from './types';
 
 interface IndexProps {
     users: any;
@@ -39,6 +41,8 @@ export default function Index({ users, filters, branches, roles, tenants = [] }:
                 roles={roles} 
                 tenants={tenants} 
             />
+            <EmployeeDetailSheet />
+            <EmployeeDeleteDialog />
         </MainLayout>
     );
 }

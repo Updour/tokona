@@ -1,5 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { TenantTable } from '@/features/tenants/components/TenantTable';
+import { TenantFormDialog } from '@/features/tenants/components/TenantFormDialog';
+import { TenantViewDialog } from '@/features/tenants/components/TenantViewDialog';
+import { TenantDeleteDialog } from '@/features/tenants/components/TenantDeleteDialog';
 import MainLayout from '@/layouts/app/app-main-layout';
 
 interface IndexProps {
@@ -25,6 +28,9 @@ export default function Index({ tenants, filters }: IndexProps) {
                 </div>
             </div>
 
-        </MainLayout >
+            <TenantFormDialog />
+            <TenantViewDialog />
+            <TenantDeleteDialog />
+        </MainLayout>
     );
 }

@@ -1,5 +1,5 @@
-import { useForm, router } from '@inertiajs/react';
-import lodash from 'lodash';
+import React, { useState } from 'react';
+import { router, usePage } from '@inertiajs/react';
 import { Trash2, Plus, Receipt, Save, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -8,113 +8,73 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-const { find, sumBy } = lodash;
-import { getTodayDateString } from '@/lib/helpers/date';
 import { formatRupiah } from '@/lib/helpers/format';
+import { usePurchaseStore } from '../stores/usePurchaseStore';
 
 export function PurchaseForm({ branches, products, suppliers }: { branches: any[], products: any[], suppliers: any[] }) {
-    const { data, setData, post, processing, errors } = useForm({
-        branch_id: '',
-        supplier_id: '',
-        invoice_number: '',
-        purchase_date: getTodayDateString(),
-        status: 'draft',
-        global_discount: 0,
-        items: [] as any[]
-    });
+    const { auth, errors: pageErrors } = usePage<any>().props;
+    const isSuperAdmin = auth?.user?.is_super_admin || auth?.user?.role === 'super-admin';
+    const [processing, setProcessing] = useState(false);
+    
+    // Zustand Store
+    const state = usePurchaseStore();
+    const { 
+        branch_id, supplier_id, invoice_number, purchase_date, status, global_discount, items,
+        setField, addItem, removeItem, updateItem, totalProductCost, totalBill
+    } = state;
 
     // Fix TypeScript 'any' type index error for nested errors
-    const formErrors = errors as Record<string, string>;
-
-    const addItem = () => {
-        setData('items', [...data.items, { product_id: '', qty: 1, unit_cost: 0, discount: 0 }]);
-    };
-
-    const removeItem = (index: number) => {
-        if (data.items.length === 1) {
-            toast.error('Minimal harus ada 1 barang dalam pembelian.');
-
-            return;
-        }
-
-        const newItems = [...data.items];
-        newItems.splice(index, 1);
-        setData('items', newItems);
-    };
-
-    const updateItem = (index: number, field: string, value: any) => {
-        const newItems = [...data.items];
-        newItems[index] = { ...newItems[index], [field]: value };
-
-        if (field === 'product_id') {
-            const existingIndex = newItems.findIndex((item, i) => item.product_id === value && i !== index);
-
-            if (existingIndex !== -1) {
-                newItems[existingIndex].qty += Number(newItems[index].qty || 1);
-                newItems.splice(index, 1);
-                toast.success('Produk sudah ada di keranjang. Jumlah (Qty) otomatis ditambahkan!');
-                setData('items', newItems);
-
-                return;
-            }
-
-            const selectedProduct = find(products, { id: value });
-
-            if (selectedProduct) {
-                newItems[index] = {
-                    ...newItems[index],
-                    product_id: value,
-                    unit_cost: Number(selectedProduct.base_cost) || 0,
-                    discount: 0
-                };
-            }
-        }
-
-        setData('items', newItems);
-    };
-
-    const totalBiayaProduk = sumBy(data.items, (item: any) => (Number(item.qty) * Number(item.unit_cost)) - Number(item.discount || 0));
-    const totalTagihan = totalBiayaProduk - Number(data.global_discount || 0);
+    const formErrors = pageErrors as Record<string, string>;
 
     const generateInvoice = () => {
-        if (!data.branch_id) {
+        if (!branch_id && !isSuperAdmin) {
             toast.error("Pilih cabang penerima terlebih dahulu!");
-
             return;
         }
 
-        const branch = branches.find(b => b.id === data.branch_id);
+        const branch = branches.find(b => b.id === branch_id);
         const branchCode = branch?.code || branch?.name?.substring(0, 3).toUpperCase() || 'CAB';
-        const dateStr = data.purchase_date.replace(/-/g, '');
+        const dateStr = purchase_date.replace(/-/g, '');
         const randomStr = Math.floor(1000 + Math.random() * 9000);
 
-        setData('invoice_number', `INV/${branchCode}/${dateStr}/${randomStr}`);
+        setField('invoice_number', `INV/${branchCode}/${dateStr}/${randomStr}`);
         toast.success("Nomor Invoice berhasil digenerate otomatis!");
     };
 
     const isFormValid = 
-        data.branch_id !== '' && 
-        data.supplier_id !== '' &&
-        data.invoice_number !== '' &&
-        data.purchase_date !== '' && 
-        data.status !== '' && 
-        data.items.length > 0 && 
-        data.items.every(item => item.product_id !== '' && item.qty > 0);
+        branch_id !== '' && 
+        purchase_date !== '' && 
+        status !== '' && 
+        items.length > 0 && 
+        items.every(item => item.product_id !== '' && item.qty > 0);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         
         if (!isFormValid) {
             toast.error("Formulir belum lengkap. Harap lengkapi semua data wajib (*).");
-
             return;
         }
 
-        post('/purchases', {
+        setProcessing(true);
+        router.post('/purchases', {
+            branch_id,
+            supplier_id,
+            invoice_number,
+            purchase_date,
+            status,
+            global_discount,
+            items: items as any[]
+        }, {
             onError: (err) => {
                 toast.error('Gagal menyimpan. Cek kembali form Anda.');
                 console.error(err);
-            }
+                setProcessing(false);
+            },
+            onSuccess: () => {
+                state.resetForm();
+            },
+            onFinish: () => setProcessing(false)
         });
     };
 
@@ -128,28 +88,29 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                     <CardContent className="p-6 space-y-4">
                         <div className="space-y-2">
                             <Label>Cabang Penerima <span className="text-red-500">*</span></Label>
-                            <Select value={data.branch_id} onValueChange={(val) => setData('branch_id', val)}>
-                                <SelectTrigger className={errors.branch_id ? 'border-red-500 w-full' : 'w-full'}>
+                            <Select value={branch_id} onValueChange={(val) => setField('branch_id', val)}>
+                                <SelectTrigger className={formErrors.branch_id ? 'border-red-500 w-full' : 'w-full'}>
                                     <SelectValue placeholder="Pilih Cabang" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {branches.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
-                            {errors.branch_id && <span className="text-xs text-red-500">{errors.branch_id}</span>}
+                            {formErrors.branch_id && <span className="text-xs text-red-500">{formErrors.branch_id}</span>}
                         </div>
 
                         <div className="space-y-2">
                             <Label>Supplier (Pemasok)</Label>
-                            <Select value={data.supplier_id} onValueChange={(val) => setData('supplier_id', val)}>
-                                <SelectTrigger className={errors.supplier_id ? 'border-red-500 w-full' : 'w-full'}>
+                            <Select value={supplier_id} onValueChange={(val) => setField('supplier_id', val)}>
+                                <SelectTrigger className={formErrors.supplier_id ? 'border-red-500 w-full' : 'w-full'}>
                                     <SelectValue placeholder="Pilih Supplier" />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="none">Tanpa Supplier</SelectItem>
                                     {suppliers.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
-                            {errors.supplier_id && <span className="text-xs text-red-500">{errors.supplier_id}</span>}
+                            {formErrors.supplier_id && <span className="text-xs text-red-500">{formErrors.supplier_id}</span>}
                         </div>
                     </CardContent>
                 </Card>
@@ -162,8 +123,8 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                             <div className="flex relative">
                                 <Input
                                     placeholder="Opsional (Mis: INV-001)"
-                                    value={data.invoice_number}
-                                    onChange={(e) => setData('invoice_number', e.target.value)}
+                                    value={invoice_number}
+                                    onChange={(e) => setField('invoice_number', e.target.value)}
                                     className="pr-10"
                                 />
                                 <Button
@@ -184,16 +145,16 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                                 <Label>Tanggal Beli <span className="text-red-500">*</span></Label>
                                 <Input
                                     type="date"
-                                    value={data.purchase_date}
-                                    onChange={(e) => setData('purchase_date', e.target.value)}
-                                    className={errors.purchase_date ? 'border-red-500' : ''}
+                                    value={purchase_date}
+                                    onChange={(e) => setField('purchase_date', e.target.value)}
+                                    className={formErrors.purchase_date ? 'border-red-500' : ''}
                                 />
-                                {errors.purchase_date && <span className="text-xs text-red-500">{errors.purchase_date}</span>}
+                                {formErrors.purchase_date && <span className="text-xs text-red-500">{formErrors.purchase_date}</span>}
                             </div>
 
                             <div className="space-y-2">
                                 <Label>Status <span className="text-red-500">*</span></Label>
-                                <Select value={data.status} onValueChange={(val) => setData('status', val)}>
+                                <Select value={status} onValueChange={(val) => setField('status', val)}>
                                     <SelectTrigger className="w-full">
                                         <SelectValue />
                                     </SelectTrigger>
@@ -233,14 +194,14 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {data.items.length === 0 && (
+                            {items.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={7} className="text-center p-8 text-muted-foreground italic">
                                         Keranjang masih kosong. Klik tombol "+ Tambah" di kiri atas untuk memulai.
                                     </TableCell>
                                 </TableRow>
                             )}
-                            {data.items.map((item, idx) => (
+                            {items.map((item, idx) => (
                                 <TableRow key={idx} className="hover:bg-muted/20">
                                     <TableCell className="align-top text-center px-2">
                                         <div className="h-10 flex items-center justify-center text-xs font-bold text-muted-foreground bg-muted/50 rounded-md border border-dashed">
@@ -248,7 +209,7 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                                         </div>
                                     </TableCell>
                                     <TableCell className="align-top">
-                                        <Select value={item.product_id} onValueChange={(val) => updateItem(idx, 'product_id', val)}>
+                                        <Select value={item.product_id} onValueChange={(val) => updateItem(idx, 'product_id', val, products)}>
                                             <SelectTrigger className={`w-full ${formErrors[`items.${idx}.product_id`] ? 'border-red-500 bg-red-50' : ''}`}>
                                                 <SelectValue placeholder="Cari Produk..." />
                                             </SelectTrigger>
@@ -267,7 +228,7 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                                         <Input
                                             type="number" min="1"
                                             value={item.qty}
-                                            onChange={(e) => updateItem(idx, 'qty', parseInt(e.target.value) || 1)}
+                                            onChange={(e) => updateItem(idx, 'qty', parseInt(e.target.value) || 1, products)}
                                             className={formErrors[`items.${idx}.qty`] ? 'border-red-500 bg-red-50' : ''}
                                         />
                                         {formErrors[`items.${idx}.qty`] && <span className="text-xs text-red-500 mt-1 block">{formErrors[`items.${idx}.qty`]}</span>}
@@ -279,7 +240,7 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                                             <Input
                                                 type="number" min="0" step="any"
                                                 value={item.unit_cost}
-                                                onChange={(e) => updateItem(idx, 'unit_cost', parseFloat(e.target.value) || 0)}
+                                                onChange={(e) => updateItem(idx, 'unit_cost', parseFloat(e.target.value) || 0, products)}
                                                 className={`pl-8 ${formErrors[`items.${idx}.unit_cost`] ? 'border-red-500 bg-red-50' : ''}`}
                                             />
                                         </div>
@@ -291,7 +252,7 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                                             <Input
                                                 type="number" min="0" step="any"
                                                 value={item.discount || ''}
-                                                onChange={(e) => updateItem(idx, 'discount', parseFloat(e.target.value) || 0)}
+                                                onChange={(e) => updateItem(idx, 'discount', parseFloat(e.target.value) || 0, products)}
                                                 className={`pl-8 ${formErrors[`items.${idx}.discount`] ? 'border-red-500 bg-red-50' : ''}`}
                                                 placeholder="Opsional"
                                             />
@@ -308,7 +269,13 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                                         <Button
                                             type="button" variant="ghost" size="icon"
                                             className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                            onClick={() => removeItem(idx)}
+                                            onClick={() => {
+                                                if (items.length <= 1) {
+                                                    toast.error('Minimal harus ada 1 barang dalam pembelian.');
+                                                    return;
+                                                }
+                                                removeItem(idx);
+                                            }}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -327,7 +294,7 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                 <div className="flex flex-col items-end w-full border-b pb-6 gap-4">
                     <div className="flex items-center justify-end gap-4 w-full text-muted-foreground text-sm font-medium">
                         <span>Total Nilai Barang:</span>
-                        <span className="text-base">{formatRupiah(totalBiayaProduk)}</span>
+                        <span className="text-base">{formatRupiah(totalProductCost())}</span>
                     </div>
 
                     <div className="flex items-center justify-end gap-4 w-full">
@@ -336,8 +303,8 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                             <span className="absolute left-3 top-2.5 text-muted-foreground text-sm font-semibold">Rp</span>
                             <Input
                                 type="number" min="0" step="any"
-                                value={data.global_discount || ''}
-                                onChange={(e) => setData('global_discount', parseFloat(e.target.value) || 0)}
+                                value={global_discount || ''}
+                                onChange={(e) => setField('global_discount', parseFloat(e.target.value) || 0)}
                                 className="pl-8 text-right font-bold text-red-500"
                                 placeholder="0"
                             />
@@ -346,7 +313,7 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
 
                     <div className="flex flex-col items-end mt-4 pt-4 border-t border-dashed border-muted-foreground/30 w-full sm:w-1/2">
                         <span className="text-muted-foreground text-sm font-semibold tracking-widest uppercase mb-1">Total Tagihan Bersih</span>
-                        <span className="text-4xl font-extrabold text-primary">{formatRupiah(totalTagihan)}</span>
+                        <span className="text-4xl font-extrabold text-primary">{formatRupiah(totalBill())}</span>
                     </div>
                 </div>
 

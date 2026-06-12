@@ -2,55 +2,32 @@ import { router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Edit, Trash2, AlertTriangle } from 'lucide-react';
 import React from 'react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { formatDateTime, formatTimeAgo } from '@/lib/helpers/date';
 import { formatRupiah } from '@/lib/helpers/format';
+import { formatDateTime, formatTimeAgo } from '@/lib/helpers/date';
+import { Eye } from 'lucide-react';
+import { useCustomerStore } from '@/pages/customers/stores/useCustomerStore';
 
-const ActionCell = ({ row, onEdit }: { row: any, onEdit: any }) => {
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+const ActionCell = ({ row, onEdit, onView }: { row: any, onEdit: any, onView: any }) => {
+    const { openDelete } = useCustomerStore();
     const customer = row.original;
 
-    const handleDelete = () => {
-        router.delete(`/customers/${customer.id}`, {
-            onSuccess: () => {
-                setIsDeleteDialogOpen(false);
-                toast.success('Pelanggan berhasil dihapus!');
-            }
-        });
-    };
-
     return (
-        <div className="text-right">
+        <div className="text-right flex items-center justify-end">
+            <Button variant="ghost" size="icon" onClick={() => onView(customer)} className="text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50">
+                <Eye className="h-4 w-4" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => onEdit(customer)} className="text-blue-600 hover:text-blue-800 hover:bg-blue-50">
                 <Edit className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setIsDeleteDialogOpen(true)} className="text-red-600 hover:text-red-800 hover:bg-red-50">
+            <Button variant="ghost" size="icon" onClick={() => openDelete(customer)} className="text-red-600 hover:text-red-800 hover:bg-red-50">
                 <Trash2 className="h-4 w-4" />
             </Button>
-
-            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-red-600">
-                            <AlertTriangle className="h-5 w-5" /> Hapus Pelanggan
-                        </DialogTitle>
-                        <DialogDescription className="py-4">
-                            Apakah Anda yakin ingin menghapus data pelanggan <strong>{customer.name}</strong>? Tindakan ini tidak dapat dibatalkan.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
-                        <Button variant="destructive" onClick={handleDelete}>Ya, Hapus</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 };
 
-export const getCustomerColumns = (onEdit: (c: any) => void): ColumnDef<any>[] => [
+export const getCustomerColumns = (onEdit: (c: any) => void, onView: (c: any) => void): ColumnDef<any>[] => [
     {
         accessorKey: 'name',
         header: 'Nama Pelanggan',
@@ -130,6 +107,6 @@ export const getCustomerColumns = (onEdit: (c: any) => void): ColumnDef<any>[] =
     {
         id: 'actions',
         header: () => <div className="text-right">Aksi</div>,
-        cell: ({ row }) => <ActionCell row={row} onEdit={onEdit} />,
+        cell: ({ row }) => <ActionCell row={row} onEdit={onEdit} onView={onView} />,
     },
 ];

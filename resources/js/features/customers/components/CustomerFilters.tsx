@@ -1,3 +1,4 @@
+import { formatNumber } from '@/lib/helpers/format';
 import { router } from '@inertiajs/react';
 import { Search, SlidersHorizontal, X, Plus, Download, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -140,7 +141,7 @@ export function CustomerFilters({ filters, totalResults, onAddClick, onExport }:
                 <div className="flex-1" />
 
                 <span className="text-sm text-muted-foreground hidden sm:block">
-                    {totalResults.toLocaleString('id-ID')} pelanggan
+                    {formatNumber(totalResults)} pelanggan
                 </span>
 
                 <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5 h-9">

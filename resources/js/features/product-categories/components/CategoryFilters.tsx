@@ -1,3 +1,4 @@
+import { formatNumber } from '@/lib/helpers/format';
 import { router } from '@inertiajs/react';
 import { Search, SlidersHorizontal, X, ArrowDownAZ, ArrowUpZA, Clock, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -173,7 +174,7 @@ return 'Terlama';
                 <div className="flex-1" />
                 
                 <span className="text-xs text-muted-foreground hidden sm:block">
-                    {totalResults.toLocaleString('id-ID')} kategori
+                    {formatNumber(totalResults)} kategori
                 </span>
 
                 {hasPermission('products.create') && (

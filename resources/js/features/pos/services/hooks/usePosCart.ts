@@ -1,18 +1,22 @@
-import { useState, useMemo } from 'react';
+import { formatNumber } from '@/lib/helpers/format';
+import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
+import { useLoyaltyStore } from '../../stores/useLoyaltyStore';
 
 interface UsePosCartProps {
     products: any[];
     customers: any[];
     promos: any[];
     posSettings: any;
+    loyaltySettings?: any;
 }
 
 export function usePosCart({
     products,
     customers,
     promos,
-    posSettings
+    posSettings,
+    loyaltySettings
 }: UsePosCartProps) {
     const [cart, setCart] = useState<any[]>([]);
     const [selectedCustomer, setSelectedCustomer] = useState('umum');
@@ -24,8 +28,15 @@ export function usePosCart({
     const [paidAmountInput, setPaidAmountInput] = useState<string>('');
     const [manualDiscount, setManualDiscount] = useState<number>(0);
     const [manualDiscountInput, setManualDiscountInput] = useState<string>('');
-    const [redeemPoints, setRedeemPoints] = useState<number>(0);
-    const [redeemPointsInput, setRedeemPointsInput] = useState<string>('');
+
+    const { redeemPoints, redeemPointsInput, setRedeemPoints, setRedeemPointsInput, clearRedeem } = useLoyaltyStore();
+
+    // Pastikan poin tersetel ulang kalau pembeli di-clear
+    useEffect(() => {
+        if (!selectedCustomer) {
+            clearRedeem();
+        }
+    }, [selectedCustomer, clearRedeem]);
 
     const handleAddToCart = (product: any) => {
         const existing = cart.find(item => item.id === product.id);
@@ -167,8 +178,10 @@ return null;
             }
         }
 
-        return promoDiscount + manualDiscount + redeemPoints;
-    }, [activePromoObj, cartSubtotal, manualDiscount, redeemPoints]);
+        const pointDiscount = redeemPoints * (loyaltySettings?.redeem_rate || 1);
+
+        return promoDiscount + manualDiscount + pointDiscount;
+    }, [activePromoObj, cartSubtotal, manualDiscount, redeemPoints, loyaltySettings]);
 
     const cartTax = useMemo(() => {
         if (!posSettings.taxEnabled) {
@@ -236,7 +249,7 @@ return 0;
         if (cleanVal === '') {
             setPaidAmountInput('');
         } else {
-            setPaidAmountInput(numericValue.toLocaleString('id-ID'));
+            setPaidAmountInput(formatNumber(numericValue));
         }
     };
 
@@ -264,13 +277,13 @@ return 0;
 
         if (parsed > cartSubtotal) {
             toast.error('Diskon tidak boleh melebihi subtotal belanja!');
-            setManualDiscountInput(cartSubtotal.toLocaleString('id-ID'));
+            setManualDiscountInput(formatNumber(cartSubtotal));
             setManualDiscount(cartSubtotal);
 
             return;
         }
 
-        setManualDiscountInput(parsed.toLocaleString('id-ID'));
+        setManualDiscountInput(formatNumber(parsed));
         setManualDiscount(parsed);
     };
 
@@ -286,32 +299,37 @@ return 0;
 
         const parsed = parseInt(cleanVal);
 
-        if (parsed > cartSubtotal) {
-            toast.error('Redeem Poin tidak boleh melebihi subtotal belanja!');
-            setRedeemPointsInput(cartSubtotal.toLocaleString('id-ID'));
-            setRedeemPoints(cartSubtotal);
+        const customerObj = customers.find((c: any) => c.id === selectedCustomer);
+        const maxPoints = customerObj ? customerObj.points : 0;
+        const maxRedeemAmount = maxPoints * (loyaltySettings?.redeem_rate || 1);
+        
+        // Poin yang mau di-redeem dikalikan rate tidak boleh melebihi subtotal
+        if ((parsed * (loyaltySettings?.redeem_rate || 1)) > cartSubtotal) {
+            toast.error('Diskon Tukar Poin tidak boleh melebihi subtotal belanja!');
+            
+            // Hitung maks poin yang bisa ditukar agar pas subtotal
+            const maxPointsForSubtotal = Math.floor(cartSubtotal / (loyaltySettings?.redeem_rate || 1));
+            setRedeemPointsInput(formatNumber(maxPointsForSubtotal));
+            setRedeemPoints(maxPointsForSubtotal);
 
             return;
         }
 
-        const customerObj = customers.find((c: any) => c.id === selectedCustomer);
-        const maxPoints = customerObj ? customerObj.points : 0;
-
         if (parsed > maxPoints) {
             toast.error(`Poin pelanggan tidak mencukupi. Sisa poin: ${maxPoints}`);
-            setRedeemPointsInput(maxPoints.toLocaleString('id-ID'));
+            setRedeemPointsInput(formatNumber(maxPoints));
             setRedeemPoints(maxPoints);
 
             return;
         }
 
-        setRedeemPointsInput(parsed.toLocaleString('id-ID'));
+        setRedeemPointsInput(formatNumber(parsed));
         setRedeemPoints(parsed);
     };
 
     const setQuickCash = (amount: number) => {
         setPaidAmount(amount);
-        setPaidAmountInput(amount.toLocaleString('id-ID'));
+        setPaidAmountInput(formatNumber(amount));
     };
 
     const clearCart = () => {
@@ -325,8 +343,7 @@ return 0;
         setSplitTransferInput('');
         setManualDiscount(0);
         setManualDiscountInput('');
-        setRedeemPoints(0);
-        setRedeemPointsInput('');
+        clearRedeem();
     };
 
     return {

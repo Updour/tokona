@@ -1,6 +1,7 @@
 import { usePage, router } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
 import { Edit, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
@@ -14,9 +15,13 @@ export function SupplierTable({ onEdit, onAddClick }: { onEdit: (supplier: any) 
     const { suppliers, filters } = props;
 
     const destroy = (id: string) => {
-        if (confirm('Yakin ingin menghapus supplier ini?')) {
-            router.delete(`/suppliers/${id}`);
-        }
+        toast('Yakin ingin menghapus supplier ini?', {
+            action: {
+                label: 'Ya, Hapus',
+                onClick: () => router.delete(`/suppliers/${id}`)
+            },
+            cancel: { label: 'Batal', onClick: () => {} }
+        });
     };
 
     return (

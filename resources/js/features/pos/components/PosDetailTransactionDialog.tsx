@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatRupiah } from '@/lib/helpers/format';
+import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
 
 interface PosDetailTransactionDialogProps {
     open: boolean;
@@ -60,7 +60,7 @@ export function PosDetailTransactionDialog({
                             <div className="space-y-1.5 border-b md:border-b-0 md:border-r border-slate-200 pb-3 md:pb-0 md:pr-4">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">WAKTU & KASIR</span>
                                 <div className="space-y-0.5">
-                                    <p className="font-bold text-slate-800">Tanggal: {new Date(selectedDetailTransaction.created_at).toLocaleString('id-ID')}</p>
+                                    <p className="font-bold text-slate-800">Tanggal: {formatDateTime(selectedDetailTransaction.created_at)}</p>
                                     <p className="text-slate-650 font-semibold">Kasir: {selectedDetailTransaction.creator?.name || 'Kasir Default'}</p>
                                     <p className="text-slate-500 text-[10px]">ID Kasir: {selectedDetailTransaction.creator?.id?.slice(0, 8) || '-'}</p>
                                 </div>

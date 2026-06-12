@@ -8,6 +8,7 @@ interface TenantState {
     isFormOpen: boolean;
     isViewOpen: boolean;
     selectedTenant: Tenant | null;
+    isDeleteOpen: boolean;
     address: {
         city: string;
         province: string;
@@ -20,10 +21,12 @@ interface TenantState {
 interface TenantActions {
     openForm: (tenant?: any) => void;
     openView: (tenant?: any) => void;
+    openDelete: (tenant: any) => void;
     closeForm: () => void;
     setSelectedRowIds: (ids: Record<string, boolean>) => void;
     resetStore: () => void;
     closeView: () => void;
+    closeDelete: () => void;
 }
 
 type TenantStore = TenantState & TenantActions;
@@ -36,6 +39,7 @@ const initialValues: TenantState = {
         address_text: '',
     },
     isViewOpen: false,
+    isDeleteOpen: false,
     selectedTenant: null,
     selectedRowIds: {},
 };
@@ -49,6 +53,8 @@ export const useTenantStore = create<TenantStore>((set) => ({
     resetStore: () => set(initialValues),
     openView: (tenant) => set({ isViewOpen: true, selectedTenant: tenant }),
     closeView: () => set({ isViewOpen: false, selectedTenant: null }),
+    openDelete: (tenant) => set({ isDeleteOpen: true, selectedTenant: tenant }),
+    closeDelete: () => set({ isDeleteOpen: false, selectedTenant: null }),
 }));
 
 export { Tenant };

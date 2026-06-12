@@ -38,6 +38,13 @@ class ProductImage extends Model
         return $this->belongsTo(Products::class, 'product_id');
     }
 
+    // ─── Accessors ────────────────────────────────────────────────────────────
+
+    public function getUrlAttribute($value)
+    {
+        return $this->path ? asset('storage/' . $this->path) : $value;
+    }
+
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**

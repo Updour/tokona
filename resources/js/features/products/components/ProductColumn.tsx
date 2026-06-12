@@ -4,177 +4,31 @@ import { MoreHorizontal, ArrowUpDown, Edit, Trash, ImageOff, PackagePlus, Eye, B
 import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogClose,
-} from '@/components/ui/dialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from '@/components/ui/sheet';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { formatRupiah } from '@/lib/helpers/format';
 import { useProductStore  } from '@/pages/products/stores/useProductStore';
 import type {Product} from '@/pages/products/stores/useProductStore';
-import { destroy as productsDestroy } from '@/routes/products';
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatRupiah, formatNumber } from '@/lib/helpers/format';
 
 const ActionsCell = ({ product }: { product: Product }) => {
-    const openForm = useProductStore((state) => state.openForm);
-    const openRestock = useProductStore((state) => state.openRestock);
-
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-    const [isDeleting, setIsDeleting] = React.useState(false);
-    const [isDetailOpen, setIsDetailOpen] = React.useState(false);
-
-    const handleDelete = () => {
-        setIsDeleting(true);
-        router.delete(productsDestroy(product.id).url, {
-            preserveScroll: true,
-            onSuccess: () => setIsDeleteDialogOpen(false),
-            onFinish: () => setIsDeleting(false),
-        });
-    };
+    const { openForm, openRestock, openDetail, openDelete } = useProductStore();
 
     return (
         <TooltipProvider>
             <div className="flex items-center gap-1">
                 {/* Detail button */}
-                <Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <SheetTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
-                                >
-                                    <Eye className="h-4 w-4" />
-                                </Button>
-                            </SheetTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>Detail Produk</TooltipContent>
-                    </Tooltip>
-
-                    <SheetContent className="w-[400px] sm:w-[540px] sm:max-w-md p-0 flex flex-col">
-                        <SheetHeader className="px-6 py-4 border-b">
-                            <SheetTitle className="text-xl">{product.name}</SheetTitle>
-                            <SheetDescription className="flex items-center gap-2">
-                                <Badge variant={product.is_active ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
-                                    {product.is_active ? 'Active' : 'Inactive'}
-                                </Badge>
-                                <span className="font-mono text-xs">{product.sku || '-'}</span>
-                            </SheetDescription>
-                        </SheetHeader>
-                        
-                        <div className="flex-1 overflow-y-auto">
-                            <div className="px-6 py-4 space-y-6">
-                                {/* Gambar Produk */}
-                                <div className="space-y-2">
-                                    <h4 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground"><ImageOff className="h-4 w-4" /> Galeri Produk</h4>
-                                    {product.images && product.images.length > 0 ? (
-                                        <div className="flex gap-2 overflow-x-auto pb-2">
-                                            {product.images.sort((a, b) => a.sort_order - b.sort_order).map((img, idx) => (
-                                                <div key={img.id} className="h-24 w-24 shrink-0 rounded-md border bg-muted overflow-hidden relative">
-                                                    <img src={img.url} alt={`Gambar ${idx}`} className="h-full w-full object-cover" />
-                                                    {img.is_primary && <Badge className="absolute top-1 left-1 text-[8px] px-1 py-0 border-0 bg-yellow-500">Utama</Badge>}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="h-24 rounded-md border border-dashed flex flex-col items-center justify-center text-muted-foreground bg-muted/30">
-                                            <ImageOff className="h-5 w-5 mb-1 opacity-50" />
-                                            <span className="text-xs">Tidak ada gambar</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <Separator />
-
-                                {/* Informasi Dasar */}
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div className="space-y-1">
-                                        <span className="text-muted-foreground text-xs flex items-center gap-1.5"><Barcode className="h-3.5 w-3.5" /> Barcode</span>
-                                        <p className="font-medium font-mono">{product.barcode || '-'}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-muted-foreground text-xs flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" /> Kategori</span>
-                                        <p className="font-medium">{product.category?.name || '-'}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-muted-foreground text-xs flex items-center gap-1.5"><Tags className="h-3.5 w-3.5" /> Tipe Produk</span>
-                                        <p className="font-medium">{product.type?.name || '-'}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-muted-foreground text-xs flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> Supplier</span>
-                                        <p className="font-medium">{product.source || '-'}</p>
-                                    </div>
-                                </div>
-
-                                <Separator />
-
-                                {/* Harga & Stok */}
-                                <div className="grid grid-cols-2 gap-4 text-sm bg-muted/40 p-4 rounded-lg border">
-                                    <div className="space-y-1">
-                                        <span className="text-muted-foreground text-xs">Harga Jual</span>
-                                        <p className="font-bold text-base text-primary">{formatRupiah(Number(product.sell_price))}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-muted-foreground text-xs">HPP (Modal)</span>
-                                        <p className="font-medium">{formatRupiah(Number(product.base_cost))}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-muted-foreground text-xs">Sisa Stok</span>
-                                        <p className={`font-bold ${Number(product.current_stock) <= 5 ? 'text-destructive' : 'text-green-600'}`}>
-                                            {Number(product.current_stock ?? 0).toLocaleString('id-ID')}
-                                        </p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-muted-foreground text-xs">Cabang</span>
-                                        <p className="font-medium flex items-center gap-1"><MapPin className="h-3 w-3" /> {product.branch?.name || '-'}</p>
-                                    </div>
-                                </div>
-
-                                {/* Deskripsi */}
-                                {product.description && (
-                                    <>
-                                        <Separator />
-                                        <div className="space-y-2">
-                                            <h4 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground"><AlignLeft className="h-4 w-4" /> Deskripsi</h4>
-                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                                                {product.description}
-                                            </p>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </SheetContent>
-                </Sheet>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
+                            onClick={() => openDetail(product)}
+                        >
+                            <Eye className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Detail Produk</TooltipContent>
+                </Tooltip>
 
                 {/* Edit button */}
                 <Tooltip>
@@ -208,49 +62,20 @@ const ActionsCell = ({ product }: { product: Product }) => {
                     </Tooltip>
                 )}
 
-                {/* Delete with confirmation dialog */}
-                <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <DialogTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
-                                >
-                                    <Trash className="h-4 w-4" />
-                                </Button>
-                            </DialogTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>Hapus Produk</TooltipContent>
-                    </Tooltip>
-
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Hapus Produk</DialogTitle>
-                            <DialogDescription>
-                                Apakah Anda yakin ingin menghapus produk{' '}
-                                <strong className="text-foreground">"{product.name}"</strong>?
-                                Tindakan ini tidak dapat dibatalkan.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter className="mt-2">
-                            <DialogClose asChild>
-                                <Button variant="outline" type="button">
-                                    Batal
-                                </Button>
-                            </DialogClose>
-                            <Button
-                                variant="destructive"
-                                type="button"
-                                disabled={isDeleting}
-                                onClick={handleDelete}
-                            >
-                                {isDeleting ? 'Menghapus...' : 'Ya, Hapus Produk'}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                {/* Delete button */}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
+                            onClick={() => openDelete(product)}
+                        >
+                            <Trash className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Hapus Produk</TooltipContent>
+                </Tooltip>
             </div>
         </TooltipProvider>
     );
@@ -401,7 +226,7 @@ export const columns: ColumnDef<Product>[] = [
             return (
                 <div className="flex flex-col gap-0.5">
                     <span className={`text-sm font-medium ${colorClass}`}>
-                        {stock.toLocaleString('id-ID')}{label}
+                        {formatNumber(stock)}{label}
                     </span>
                     {stock <= 5 && stock > 0 && (
                         <span className="text-xs text-amber-500">Segera restock</span>

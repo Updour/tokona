@@ -4,22 +4,14 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { CustomerFormDialog } from '@/features/customers/components/CustomerFormDialog';
+import { CustomerDetailDialog } from '@/features/customers/components/CustomerDetailDialog';
+import { CustomerDeleteDialog } from '@/features/customers/components/CustomerDeleteDialog';
 import { CustomerTable } from '@/features/customers/components/CustomerTable';
 import MainLayout from '@/layouts/app/app-main-layout';
+import { useCustomerStore } from '@/pages/customers/stores/useCustomerStore';
 
 export default function Index({ customers }: any) {
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [selectedCustomer, setSelectedCustomer] = useState(null);
-
-    const handleAdd = () => {
-        setSelectedCustomer(null);
-        setIsDialogOpen(true);
-    };
-
-    const handleEdit = (customer: any) => {
-        setSelectedCustomer(customer);
-        setIsDialogOpen(true);
-    };
+    const { openForm, openDetail } = useCustomerStore();
 
     return (
         <MainLayout>
@@ -38,15 +30,14 @@ export default function Index({ customers }: any) {
 
                 <CustomerTable 
                     customers={customers} 
-                    onEdit={handleEdit} 
-                    onAddClick={handleAdd} 
+                    onEdit={(c: any) => openForm(c)} 
+                    onView={(c: any) => openDetail(c)}
+                    onAddClick={() => openForm()} 
                 />
 
-                <CustomerFormDialog 
-                    open={isDialogOpen} 
-                    onOpenChange={setIsDialogOpen} 
-                    customer={selectedCustomer} 
-                />
+                <CustomerFormDialog />
+                <CustomerDetailDialog />
+                <CustomerDeleteDialog />
             </div>
         </MainLayout>
     );

@@ -105,6 +105,9 @@ class PosService
             ->latest('opened_at')
             ->first();
 
+        $tenant = \App\Models\Tenants::find($tenantId);
+        $loyaltySettings = $tenant ? $tenant->getLoyaltySettings() : ['earn_amount' => 10000, 'redeem_rate' => 1];
+
         return [
             'products' => $products,
             'customers' => $customers,
@@ -114,6 +117,7 @@ class PosService
             'defaultSettings' => $defaultSettings,
             'activeShift' => $activeShift,
             'filters' => $filters,
+            'loyaltySettings' => $loyaltySettings,
         ];
     }
 
@@ -247,8 +251,11 @@ class PosService
                     $customer->increment('debt_balance', $transaction->total);
                 }
 
-                // 2. Loyalty points: Berikan 1 poin setiap kelipatan Rp 10.000 belanja
-                $pointsEarned = (int) floor($transaction->total / 10000);
+                // 2. Loyalty points: Berikan poin berdasarkan kelipatan belanja sesuai setting
+                $tenant = \App\Models\Tenants::find($tenantId);
+                $loyaltySettings = $tenant ? $tenant->getLoyaltySettings() : ['earn_amount' => 10000];
+                $earnAmount = max(1, (int) $loyaltySettings['earn_amount']);
+                $pointsEarned = (int) floor($transaction->total / $earnAmount);
 
                 // 3. Bonus Poin Pembulatan: Jika pembulatan tunai menyebabkan toko "menyerap" kekurangan
                 //    (rounding_diff < 0, artinya pelanggan membayar lebih sedikit), uang receh yang
@@ -293,6 +300,13 @@ class PosService
                     ]);
                 }
             }
+
+            \App\Services\ActivityLogger::log(
+                'Transaksi POS', 
+                "Melakukan checkout penjualan POS: {$invoiceNumber} senilai " . number_format($transaction->total, 0, ',', '.'),
+                $transaction,
+                ['payment_method' => $data['payment_method'], 'total' => $transaction->total]
+            );
 
             return $transaction;
         });

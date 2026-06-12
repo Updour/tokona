@@ -1,3 +1,4 @@
+import { formatNumber } from '@/lib/helpers/format';
 import { router } from '@inertiajs/react';
 import { Search, SlidersHorizontal, X, Plus, Filter, Tag } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -154,7 +155,7 @@ export function PromoFilters({ filters, totalResults, onAddClick }: PromoFilters
                 <div className="flex-1" />
 
                 <span className="text-sm text-muted-foreground hidden sm:block">
-                    {totalResults.toLocaleString('id-ID')} promo
+                    {formatNumber(totalResults)} promo
                 </span>
 
                 <Button size="sm" onClick={onAddClick} className="gap-1.5 h-9">

@@ -11,6 +11,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\MarketingController;
 
 use App\Http\Controllers\Products\PosController;
 use App\Http\Controllers\Products\ProductController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Products\ProductRestockController;
 use App\Http\Controllers\Products\ProductTypeController;
 
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\BranchTransferController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PurchaseReturnController;
 use App\Http\Controllers\SupplierController;
@@ -56,6 +58,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::controller(ExportController::class)->prefix('export')->name('export.')->group(function () {
         Route::get('/transactions', 'transactions')->name('transactions');
         Route::get('/sales-report', 'salesReport')->name('sales-report');
+        Route::get('/product-report', 'productReport')->name('product-report');
+        Route::get('/stock-report', 'stockReport')->name('stock-report');
+        Route::get('/sales-field-report', 'salesFieldReport')->name('sales-field-report');
         Route::get('/invoice/{transaction}', 'invoice')->name('invoice');
         Route::get('/inventory', 'inventory')->name('inventory');
     });
@@ -96,6 +101,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::controller(ProductController::class)->prefix('products')->name('products.')->group(function () {
         Route::get('pricing', 'pricing')->name('pricing');
         Route::post('bulk-markup', 'bulkMarkup')->name('bulk-markup');
+        Route::post('import', 'import')->name('import');
+        Route::post('{id}/restore', 'restore')->name('restore');
     });
     Route::resource('products', ProductController::class)->except(['create', 'edit', 'show']);
 
@@ -131,6 +138,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::get('inventory/low-stock', [InventoryController::class, 'lowStock'])->name('inventory.low-stock');
 
+    // ── Transfer Antar Cabang ──────────────────────────────────────────────
+    Route::controller(BranchTransferController::class)->prefix('inventory/transfers')->name('transfers.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::put('/{transfer}/ship', 'ship')->name('ship');
+        Route::put('/{transfer}/receive', 'receive')->name('receive');
+    });
+
     // ── Stock Opname ───────────────────────────────────────────────────────
     Route::controller(OpnameController::class)->prefix('inventory/opname')->name('opname.')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -160,10 +175,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/clock-out', 'clockOut')->name('clockOut');
     });
 
+    // ── Penggajian (Payroll) ────────────────────────────────────────────────
+    Route::controller(\App\Http\Controllers\PayrollController::class)->prefix('hris/payrolls')->name('payrolls.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/generate', 'generate')->name('generate');
+        Route::post('/bulk-generate', 'bulkGenerate')->name('bulk-generate');
+        Route::put('/{payroll}/paid', 'markAsPaid')->name('paid');
+        Route::get('/{payroll}/print', 'print')->name('print');
+    });
+
+    Route::resource('hris/payroll-components', \App\Http\Controllers\PayrollComponentController::class)
+        ->except(['create', 'edit', 'show']);
+
+    // ── Gaji Karyawan (Salaries) ────────────────────────────────────────────
+    Route::controller(\App\Http\Controllers\EmployeeSalaryController::class)->prefix('hris/salaries')->name('salaries.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::put('/{user}', 'update')->name('update');
+    });
+
 
     // ── CRM & Marketing ──────────────────────────────────────────────────
     Route::get('membership', [CustomerController::class, 'membership'])->name('customers.membership');
+    Route::post('customers/{id}/restore', [CustomerController::class, 'restore'])->name('customers.restore');
     Route::resource('customers', CustomerController::class);
+
+    Route::controller(MarketingController::class)->prefix('business')->group(function () {
+        Route::get('marketing', 'index')->name('marketing.index');
+        Route::get('marketing/create', 'create')->name('marketing.create');
+        Route::post('marketing', 'store')->name('marketing.store');
+        Route::get('marketing/{campaign}', 'show')->name('marketing.show');
+        Route::post('marketing/{campaign}/progress', 'updateProgress')->name('marketing.progress');
+    });
 
     Route::get('vouchers', [PromoController::class, 'vouchers'])->name('promos.vouchers');
     Route::resource('promos', PromoController::class);
@@ -179,8 +221,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('cash-books/{cashBook}', 'destroyCashBook')->name('finance.cash-books.destroy');
     });
 
+    Route::controller(\App\Http\Controllers\AccountingController::class)->prefix('finance/accounting')->name('finance.accounting.')->group(function () {
+        Route::get('journals', 'journals')->name('journals');
+        Route::post('journals', 'storeJournal')->name('journals.store');
+        Route::delete('journals/{journal}', 'destroyJournal')->name('journals.destroy');
+    });
+
     Route::get('business/reports', [ReportController::class, 'index'])->name('business.reports');
     Route::resource('expenses', ExpenseController::class);
+
+    // ── Audit & System Logs ────────────────────────────────────────────────
+    Route::controller(\App\Http\Controllers\AuditLogController::class)->prefix('audit')->name('audit.')->group(function () {
+        Route::get('activity-logs', 'activityLogs')->name('activity-logs');
+        Route::get('system-logs', 'systemLogs')->name('system-logs');
+        Route::get('stock-anomalies', 'stockAudit')->name('stock-anomalies');
+        Route::post('stock-anomalies/negative-stock/{product}/resolve', 'resolveNegativeStock')->name('resolve-negative-stock');
+        Route::post('stock-anomalies/transfer-mismatch/{transfer}/resolve', 'resolveTransferMismatch')->name('resolve-transfer-mismatch');
+    });
 
     // ── Super Admin Dedicated Hrefs ──────────────────────────────────────────
     Route::prefix('superadmin')->name('superadmin.')->group(function () {

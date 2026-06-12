@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import { Clock } from 'lucide-react';
 import { OpenShiftDialog } from '@/features/shifts/components/OpenShiftDialog';
 import { ShiftTable } from '@/features/shifts/components/ShiftTable';
+import { CloseShiftDialog } from '@/features/shifts/components/CloseShiftDialog';
 import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function ShiftsIndexPage({ shifts, filters }: { shifts: any; filters: any }) {
@@ -24,6 +25,8 @@ export default function ShiftsIndexPage({ shifts, filters }: { shifts: any; filt
             <div className="flex-1 bg-background rounded-lg border shadow-sm p-4 w-full">
                 <ShiftTable shifts={shifts} filters={filters} />
             </div>
+
+            <CloseShiftDialog />
         </MainLayout>
     );
 }

@@ -35,9 +35,14 @@ class ProductTypeController extends Controller
 
     public function store(StoreProductTypeRequest $request): RedirectResponse
     {
+        $tenantId = auth()->user()->tenant_id;
+        if (!$tenantId && auth()->user()->isSuperAdmin()) {
+            $tenantId = \App\Models\Tenants::first()->id ?? null;
+        }
+
         ProductType::create(array_merge(
             $request->validated(),
-            ['tenant_id' => auth()->user()->tenant_id]
+            ['tenant_id' => $tenantId]
         ));
 
         return redirect()->route('product-types.index')

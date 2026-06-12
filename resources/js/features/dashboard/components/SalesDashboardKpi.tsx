@@ -1,6 +1,6 @@
 import { MapPin, ShoppingCart, TrendingUp, Percent } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { formatRupiah } from '@/lib/helpers/format';
+import { formatRupiah , formatNumber} from '@/lib/helpers/format';
 
 interface Props {
     kpi: {
@@ -19,7 +19,7 @@ const CARDS = [
         icon: MapPin,
         color: 'text-indigo-600',
         bg: 'bg-indigo-50',
-        format: (v: number) => v.toLocaleString('id-ID'),
+        format: (v: number) => formatNumber(v),
         sub: (kpi: Props['kpi']) => `${kpi.ordered_visits} berhasil order`,
     },
     {
@@ -28,7 +28,7 @@ const CARDS = [
         icon: ShoppingCart,
         color: 'text-emerald-600',
         bg: 'bg-emerald-50',
-        format: (v: number) => v.toLocaleString('id-ID'),
+        format: (v: number) => formatNumber(v),
         sub: () => 'Total transaksi lapangan',
     },
     {

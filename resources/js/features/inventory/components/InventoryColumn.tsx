@@ -2,7 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, ArrowDownRight, ArrowUpRight, RefreshCcw, Wrench } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatDate } from '@/lib/helpers/format';
+import { formatDate, formatNumber } from '@/lib/helpers/format';
 
 export const columns: ColumnDef<any>[] = [
     {
@@ -104,7 +104,7 @@ return <span className="text-xs text-muted-foreground">Produk dihapus</span>;
             
             return (
                 <span className={`font-bold text-base ${colorClass}`}>
-                    {prefix}{Math.abs(qty).toLocaleString('id-ID')}
+                    {prefix}{formatNumber(Math.abs(qty))}
                 </span>
             );
         },

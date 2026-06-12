@@ -1,3 +1,4 @@
+import { formatNumber } from '@/lib/helpers/format';
 import { router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -70,7 +71,7 @@ export function DataTablePagination({ data, itemName = 'data', filters = {} }: P
 
                 <span className="hidden sm:inline-block border-l pl-4 border-slate-200">
                     {data?.from && data?.to
-                        ? `Menampilkan ${data.from}–${data.to} dari ${data.total.toLocaleString('id-ID')} ${itemName}`
+                        ? `Menampilkan ${data.from}–${data.to} dari ${formatNumber(data.total)} ${itemName}`
                         : `${data?.total || 0} ${itemName}`}
                 </span>
             </div>

@@ -25,6 +25,15 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // ── Audit Trail: Activity Logger untuk Login & Logout ──
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Login::class, function ($event) {
+            \App\Services\ActivityLogger::log('login', 'Karyawan berhasil masuk (login) ke sistem.');
+        });
+        
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Logout::class, function ($event) {
+            \App\Services\ActivityLogger::log('logout', 'Karyawan keluar (logout) dari sistem.');
+        });
     }
 
     /**

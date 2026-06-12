@@ -4,21 +4,21 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { PromoFormDialog } from '@/features/promos/components/PromoFormDialog';
+import { PromoDeleteDialog } from '@/features/promos/components/PromoDeleteDialog';
 import { PromoTable } from '@/features/promos/components/PromoTable';
 import MainLayout from '@/layouts/app/app-main-layout';
 
+import { usePromoStore } from '@/pages/promos/stores/usePromoStore';
+
 export default function Index({ promos }: any) {
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [selectedPromo, setSelectedPromo] = useState(null);
+    const { openForm } = usePromoStore();
 
     const handleAdd = () => {
-        setSelectedPromo(null);
-        setIsDialogOpen(true);
+        openForm();
     };
 
     const handleEdit = (promo: any) => {
-        setSelectedPromo(promo);
-        setIsDialogOpen(true);
+        openForm(promo);
     };
 
     return (
@@ -42,11 +42,9 @@ export default function Index({ promos }: any) {
                     onAddClick={handleAdd}
                 />
 
-                <PromoFormDialog 
-                    open={isDialogOpen} 
-                    onOpenChange={setIsDialogOpen} 
-                    promo={selectedPromo} 
-                />
+                <PromoFormDialog />
+
+                <PromoDeleteDialog />
             </div>
         </MainLayout>
     );

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import MainLayout from '@/layouts/app/app-main-layout';
-import { formatRupiah } from '@/lib/helpers/format';
+import { formatRupiah , formatDateTime} from '@/lib/helpers/format';
 
 export default function AccountingReports({ ledger, balanceSheet, cashFlow, branches, filters }: any) {
     const [startDate, setStartDate] = useState(filters.start_date || '');
@@ -31,7 +31,7 @@ export default function AccountingReports({ ledger, balanceSheet, cashFlow, bran
             filename = `Buku_Besar_Mutasi_${new Date().toISOString().split('T')[0]}.csv`;
             headers = ['Tanggal', 'Jenis', 'Kategori', 'Keterangan', 'Cabang', 'Debit (Masuk)', 'Kredit (Keluar)', 'Saldo Berjalan'];
             rows = ledger.map((item: any) => [
-                new Date(item.date).toLocaleString('id-ID'),
+                formatDateTime(item.date),
                 item.type,
                 item.category,
                 item.description,
@@ -224,13 +224,7 @@ export default function AccountingReports({ ledger, balanceSheet, cashFlow, bran
                                         {ledger.map((item: any, idx: number) => (
                                             <TableRow key={idx} className="hover:bg-slate-50/40">
                                                 <TableCell className="font-mono text-[11px] text-slate-500">
-                                                    {new Date(item.date).toLocaleString('id-ID', {
-                                                        year: 'numeric',
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit'
-                                                    })}
+                                                    {formatDateTime(item.date)}
                                                 </TableCell>
                                                 <TableCell>
                                                     <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${item.type === 'Buku Kas' ? 'bg-indigo-50 text-indigo-700' :

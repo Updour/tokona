@@ -7,14 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useSupplierStore } from '@/pages/suppliers/stores/useSupplierStore';
 
-interface Props {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    supplier?: any;
-}
-
-export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
+export function SupplierFormDialog() {
+    const { isFormOpen, selectedSupplier: supplier, closeForm } = useSupplierStore();
     const { data, setData, post, put, processing, reset, clearErrors, errors } = useForm({
         name: '',
         contact_person: '',
@@ -25,7 +21,7 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
     });
 
     useEffect(() => {
-        if (open) {
+        if (isFormOpen) {
             clearErrors();
 
             if (supplier) {
@@ -41,7 +37,7 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
                 reset();
             }
         }
-    }, [open, supplier]);
+    }, [isFormOpen, supplier]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,7 +46,7 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
             put(`/suppliers/${supplier.id}`, {
                 onSuccess: () => {
                     toast.success('Data supplier berhasil diperbarui!');
-                    onOpenChange(false);
+                    closeForm();
                 }
             });
         } else {
@@ -58,14 +54,14 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
                 onSuccess: () => {
                     toast.success('Data supplier berhasil disimpan!');
                     reset();
-                    onOpenChange(false);
+                    closeForm();
                 }
             });
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={isFormOpen} onOpenChange={(open) => !open && closeForm()}>
             <DialogContent className="sm:max-w-[425px]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
@@ -112,7 +108,7 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: Props) {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                        <Button type="button" variant="outline" onClick={closeForm}>
                             Batal
                         </Button>
                         <Button type="submit" disabled={processing}>

@@ -32,8 +32,21 @@ class CustomerController extends Controller
 
     public function destroy(Customer $customer)
     {
+        $customerClone = clone $customer;
         $this->customerService->delete($customer);
-        return back()->with('success', 'Data Pelanggan berhasil dihapus!');
+
+        \App\Services\ActivityLogger::log('Hapus Data Penting', "Menghapus pelanggan: {$customerClone->name}", $customerClone, ['customer_name' => $customerClone->name]);
+
+        return back()->with('success', 'Data Pelanggan berhasil dinonaktifkan!');
+    }
+
+    public function restore(string $id)
+    {
+        $customer = $this->customerService->restore($id);
+
+        \App\Services\ActivityLogger::log('Restore Data', "Memulihkan pelanggan: {$customer->name}", $customer, ['customer_name' => $customer->name]);
+
+        return back()->with('success', 'Data Pelanggan berhasil dipulihkan!');
     }
 
     public function membership(Request $request)

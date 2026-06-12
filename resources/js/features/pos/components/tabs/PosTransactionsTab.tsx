@@ -1,3 +1,4 @@
+import { formatNumber, formatDateTime } from '@/lib/helpers/format';
 import {
     flexRender,
     getCoreRowModel,
@@ -104,7 +105,7 @@ return;
 }
 
         const rows = filteredTransactions.map((tx) => ({
-            Tanggal: new Date(tx.created_at).toLocaleString('id-ID'),
+            Tanggal: formatDateTime(tx.created_at),
             'No Faktur': tx.invoice_number,
             Pelanggan: tx.customer?.name ?? 'Pelanggan Umum',
             'Metode Pembayaran': tx.payment_method === 'cash' ? 'Tunai' : tx.payment_method === 'transfer' ? 'Transfer' : tx.payment_method === 'split' ? 'Split' : 'Hutang',
@@ -211,7 +212,7 @@ return;
                             </Select>
                         </div>
                         <span className="hidden sm:inline-block border-l pl-4 border-slate-200 font-medium">
-                            Menampilkan {(page - 1) * perPage + 1}–{Math.min(page * perPage, filteredTransactions.length)} dari {filteredTransactions.length.toLocaleString('id-ID')} transaksi
+                            Menampilkan {(page - 1) * perPage + 1}–{Math.min(page * perPage, filteredTransactions.length)} dari {formatNumber(filteredTransactions.length)} transaksi
                         </span>
                     </div>
                     <div className="flex gap-1.5 items-center flex-wrap">

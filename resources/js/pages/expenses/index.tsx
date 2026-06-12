@@ -16,6 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import MainLayout from '@/layouts/app/app-main-layout';
 import { formatRupiah, formatDate } from '@/lib/helpers/format';
+import { useExpenseStore } from './stores/useExpenseStore';
+import { ExpenseFormDialog, expenseCategories } from './components/ExpenseFormDialog';
 
 export default function Expenses({ expenses, branches, stats, filters }: any) {
     const [search, setSearch] = useState(filters.search || '');
@@ -25,29 +27,10 @@ export default function Expenses({ expenses, branches, stats, filters }: any) {
     const [endDate, setEndDate] = useState(filters.end_date || '');
     const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-    // State untuk form dialog
-    const [isOpen, setIsOpen] = useState(false);
-    const [editingExpense, setEditingExpense] = useState<any>(null);
-    const [formData, setFormData] = useState({
-        branch_id: '',
-        title: '',
-        amount: '',
-        category: 'operasional',
-        note: '',
-        expense_date: new Date().toISOString().split('T')[0]
-    });
-
-    const categories = [
-        { value: 'utilitas', label: 'Utilitas & Tagihan (Listrik/Air)', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-        { value: 'sewa', label: 'Sewa Tempat / Ruko', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-        { value: 'gaji', label: 'Gaji Karyawan & Staff', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-        { value: 'pemasaran', label: 'Pemasaran & Iklan', color: 'bg-rose-50 text-rose-700 border-rose-200' },
-        { value: 'operasional', label: 'Operasional Toko', color: 'bg-teal-50 text-teal-700 border-teal-200' },
-        { value: 'lainnya', label: 'Lain-lain', color: 'bg-slate-50 text-slate-700 border-slate-200' },
-    ];
+    const { openForm } = useExpenseStore();
 
     const getCategoryBadge = (catVal: string) => {
-        const cat = categories.find(c => c.value === catVal);
+        const cat = expenseCategories.find(c => c.value === catVal);
 
         return cat ? (
             <Badge variant="outline" className={`${cat.color} text-[10px] uppercase font-bold tracking-wider py-0.5`}>
@@ -125,65 +108,29 @@ return;
     };
 
     const handleAdd = () => {
-        setEditingExpense(null);
-        setFormData({
-            branch_id: branches[0]?.id || '',
-            title: '',
-            amount: '',
-            category: 'operasional',
-            note: '',
-            expense_date: new Date().toISOString().split('T')[0]
-        });
-        setIsOpen(true);
+        openForm();
     };
 
     const handleEdit = (exp: any) => {
-        setEditingExpense(exp);
-        setFormData({
-            branch_id: exp.branch_id,
-            title: exp.title,
-            amount: String(Number(exp.amount)),
-            category: exp.category,
-            note: exp.note || '',
-            expense_date: exp.expense_date ? exp.expense_date.split('T')[0] : new Date().toISOString().split('T')[0]
-        });
-        setIsOpen(true);
+        openForm(exp);
     };
 
     const handleDelete = (exp: any) => {
-        if (confirm(`Apakah Anda yakin ingin menghapus catatan pengeluaran "${exp.title}"?`)) {
-            router.delete(`/expenses/${exp.id}`, {
-                onSuccess: () => toast.success('Catatan pengeluaran berhasil dihapus!'),
-                preserveScroll: true
-            });
-        }
+        toast(`Apakah Anda yakin ingin menghapus catatan pengeluaran "${exp.title}"?`, {
+            action: {
+                label: 'Ya, Hapus',
+                onClick: () => {
+                    router.delete(`/expenses/${exp.id}`, {
+                        onSuccess: () => toast.success('Catatan pengeluaran berhasil dihapus!'),
+                        preserveScroll: true
+                    });
+                }
+            },
+            cancel: { label: 'Batal', onClick: () => {} }
+        });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
 
-        if (!formData.title || !formData.amount || !formData.branch_id) {
-            toast.error('Harap isi semua kolom wajib!');
-
-            return;
-        }
-
-        if (editingExpense) {
-            router.put(`/expenses/${editingExpense.id}`, formData, {
-                onSuccess: () => {
-                    setIsOpen(false);
-                    toast.success('Catatan pengeluaran berhasil diperbarui!');
-                }
-            });
-        } else {
-            router.post('/expenses', formData, {
-                onSuccess: () => {
-                    setIsOpen(false);
-                    toast.success('Pengeluaran baru berhasil dicatat!');
-                }
-            });
-        }
-    };
 
     return (
         <MainLayout>
@@ -244,7 +191,7 @@ return;
                                     (() => {
                                         const entries = Object.entries(stats.by_category || {});
                                         const largest = entries.reduce((prev: any, current: any) => (prev[1] > current[1]) ? prev : current);
-                                        const catName = categories.find(c => c.value === largest[0])?.label.split(' ')[0] || largest[0];
+                                        const catName = expenseCategories.find(c => c.value === largest[0])?.label.split(' ')[0] || largest[0];
 
                                         return `${catName} (${formatRupiah(largest[1] as number)})`;
                                     })()
@@ -318,7 +265,7 @@ return;
                                         <SelectTrigger className="h-9 text-sm w-full"><SelectValue placeholder="Semua Kategori" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="ALL">Semua Kategori</SelectItem>
-                                            {categories.map((c) => (
+                                            {expenseCategories.map((c) => (
                                                 <SelectItem key={c.value} value={c.value}>{c.label.split(' ')[0]}</SelectItem>
                                             ))}
                                         </SelectContent>
@@ -451,114 +398,7 @@ return;
                 </div>
             </div>
 
-            {/* Dialog Form Tambah / Edit Pengeluaran */}
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="sm:max-w-[420px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Landmark className="h-5 w-5 text-primary" />
-                            {editingExpense ? 'Ubah Catatan Pengeluaran' : 'Catat Pengeluaran Baru'}
-                        </DialogTitle>
-                        <DialogDescription>
-                            Pastikan data pengeluaran diisi dengan benar agar pembukuan kas & laporan laba rugi terhitung akurat.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <form onSubmit={handleSubmit} className="space-y-4 py-2">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="branch_id">Cabang Toko <span className="text-red-500">*</span></Label>
-                            <Select
-                                value={formData.branch_id}
-                                onValueChange={(val) => setFormData({ ...formData, branch_id: val })}
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Pilih Cabang" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {branches?.map((b: any) => (
-                                        <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label htmlFor="category">Kategori Pengeluaran <span className="text-red-500">*</span></Label>
-                            <Select
-                                value={formData.category}
-                                onValueChange={(val) => setFormData({ ...formData, category: val })}
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categories.map((c) => (
-                                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label htmlFor="title">Deskripsi Singkat <span className="text-red-500">*</span></Label>
-                            <Input
-                                id="title"
-                                placeholder="Contoh: Bayar air PAM Mei, Pembelian ATK"
-                                value={formData.title}
-                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <Label htmlFor="amount">Jumlah Uang (Rp) <span className="text-red-500">*</span></Label>
-                                <Input
-                                    id="amount"
-                                    type="number"
-                                    min="0"
-                                    placeholder="Nominal"
-                                    value={formData.amount}
-                                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="expense_date">Tanggal Pengeluaran <span className="text-red-500">*</span></Label>
-                                <Input
-                                    id="expense_date"
-                                    type="date"
-                                    value={formData.expense_date}
-                                    onChange={(e) => setFormData({ ...formData, expense_date: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label htmlFor="note">Catatan / Keterangan (Opsional)</Label>
-                            <Textarea
-                                id="note"
-                                placeholder="Tambahkan informasi pelengkap di sini..."
-                                value={formData.note}
-                                onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                                className="h-20"
-                            />
-                        </div>
-
-                        <div className="flex gap-2 p-2.5 rounded-lg bg-slate-50 text-[10px] text-muted-foreground border">
-                            <Info className="h-4 w-4 shrink-0 text-slate-400" />
-                            <span>
-                                Pengeluaran yang dicatat di sini otomatis akan memotong saldo kas toko serta diperhitungkan di dalam laporan Laba Rugi akhir.
-                            </span>
-                        </div>
-
-                        <DialogFooter className="pt-4">
-                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Batal</Button>
-                            <Button type="submit" className="bg-primary">
-                                {editingExpense ? 'Simpan Perubahan' : 'Catat Pengeluaran'}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+            <ExpenseFormDialog branches={branches} />
         </MainLayout>
     );
 }

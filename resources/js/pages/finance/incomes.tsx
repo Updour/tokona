@@ -16,6 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea';
 import MainLayout from '@/layouts/app/app-main-layout';
 import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
+import { useIncomeStore } from './stores/useIncomeStore';
+import { IncomeFormDialog, incomeCategories } from './components/IncomeFormDialog';
 
 export default function Incomes({ incomes, branches, stats, filters }: any) {
     const [search, setSearch] = useState(filters.search || '');
@@ -32,24 +34,12 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
         endDate !== ''
     ].filter(Boolean).length;
 
-    // Dialog state
-    const [isOpen, setIsOpen] = useState(false);
-    const [formData, setFormData] = useState({
-        branch_id: '',
-        amount: '',
-        category: 'lainnya',
-        note: ''
-    });
+    const { openForm } = useIncomeStore();
 
-    const categories = [
-        { value: 'penjualan', label: 'Penjualan POS / Kasir', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-        { value: 'modal', label: 'Suntikan Modal Usaha', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-        { value: 'piutang_lunas', label: 'Pelunasan Piutang Pelanggan', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-        { value: 'lainnya', label: 'Pemasukan Lainnya', color: 'bg-slate-50 text-slate-700 border-slate-200' },
-    ];
+
 
     const getCategoryBadge = (catVal: string) => {
-        const cat = categories.find(c => c.value === catVal);
+        const cat = incomeCategories.find(c => c.value === catVal);
 
         return cat ? (
             <Badge variant="outline" className={`${cat.color} text-[10px] uppercase font-bold tracking-wider py-0.5`}>
@@ -93,40 +83,25 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
     };
 
     const handleAdd = () => {
-        setFormData({
-            branch_id: branches[0]?.id || '',
-            amount: '',
-            category: 'lainnya',
-            note: ''
-        });
-        setIsOpen(true);
+        openForm();
     };
 
     const handleDelete = (inc: any) => {
-        if (confirm(`Apakah Anda yakin ingin menghapus catatan pemasukan "${inc.note}"?`)) {
-            router.delete(`/cash-books/${inc.id}`, {
-                onSuccess: () => toast.success('Catatan pemasukan berhasil dihapus!'),
-                preserveScroll: true
-            });
-        }
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!formData.amount || !formData.note || !formData.branch_id) {
-            toast.error('Harap isi semua kolom wajib!');
-
-            return;
-        }
-
-        router.post('/incomes', formData, {
-            onSuccess: () => {
-                setIsOpen(false);
-                toast.success('Pemasukan baru berhasil dicatat!');
-            }
+        toast(`Apakah Anda yakin ingin menghapus catatan pemasukan "${inc.note}"?`, {
+            action: {
+                label: 'Ya, Hapus',
+                onClick: () => {
+                    router.delete(`/cash-books/${inc.id}`, {
+                        onSuccess: () => toast.success('Catatan pemasukan berhasil dihapus!'),
+                        preserveScroll: true
+                    });
+                }
+            },
+            cancel: { label: 'Batal', onClick: () => {} }
         });
     };
+
+
 
     return (
         <MainLayout>
@@ -237,7 +212,7 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
                                             <SelectTrigger className="h-9 text-sm w-full"><SelectValue placeholder="Semua Kategori" /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="ALL">Semua Kategori</SelectItem>
-                                                {categories.map((c) => <SelectItem key={c.value} value={c.value}>{c.label.split(' ')[0]}</SelectItem>)}
+                                                {incomeCategories.map((c) => <SelectItem key={c.value} value={c.value}>{c.label.split(' ')[0]}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -282,7 +257,7 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
                             )}
                             {(categoryFilter !== 'ALL' && categoryFilter !== '') && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium">
-                                    Kategori: {categories.find((c) => c.value === categoryFilter)?.label.split(' ')[0] ?? '...'}
+                                    Kategori: {incomeCategories.find((c) => c.value === categoryFilter)?.label.split(' ')[0] ?? '...'}
                                     <button onClick={() => {
  setCategoryFilter('ALL'); applyFilters(search, branchFilter, 'ALL', startDate, endDate); 
 }} className="hover:text-destructive ml-0.5">
@@ -369,92 +344,7 @@ export default function Incomes({ incomes, branches, stats, filters }: any) {
                 </div>
             </div>
 
-            {/* Dialog Form Tambah Pemasukan */}
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="sm:max-w-[420px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Landmark className="h-5 w-5 text-primaty-600" /> Catat Pemasukan Manual
-                        </DialogTitle>
-                        <DialogDescription>
-                            Gunakan ini untuk mencatat kas masuk non-penjualan seperti suntikan modal pemegang saham atau pelunasan hutang pihak ketiga.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <form onSubmit={handleSubmit} className="space-y-4 py-2">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="branch_id">Cabang Penerima <span className="text-red-500">*</span></Label>
-                            <Select
-                                value={formData.branch_id}
-                                onValueChange={(val) => setFormData({ ...formData, branch_id: val })}
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Pilih Cabang" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {branches?.map((b: any) => (
-                                        <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label htmlFor="category">Kategori Pemasukan <span className="text-red-500">*</span></Label>
-                            <Select
-                                value={formData.category}
-                                onValueChange={(val) => setFormData({ ...formData, category: val })}
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categories.filter(c => c.value !== 'penjualan').map((c) => (
-                                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label htmlFor="amount">Jumlah Uang Masuk (Rp) <span className="text-red-500">*</span></Label>
-                            <Input
-                                id="amount"
-                                type="number"
-                                min="0"
-                                placeholder="Nominal Rp"
-                                value={formData.amount}
-                                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label htmlFor="note">Keterangan / Sumber Dana <span className="text-red-500">*</span></Label>
-                            <Textarea
-                                id="note"
-                                placeholder="Contoh: Suntikan Modal Owner untuk beli kulkas baru"
-                                value={formData.note}
-                                onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                                className="h-20"
-                            />
-                        </div>
-
-                        <div className="flex gap-2 p-2.5 rounded-lg bg-emerald-50 text-[10px] text-emerald-800 border border-emerald-100">
-                            <Info className="h-4 w-4 shrink-0 text-emerald-500" />
-                            <span>
-                                Setoran kas masuk manual ini otomatis akan menambah total saldo rekening dan kas cabang toko yang dipilih.
-                            </span>
-                        </div>
-
-                        <DialogFooter className="pt-4">
-                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Batal</Button>
-                            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                                Simpan Pemasukan
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+            <IncomeFormDialog branches={branches} />
         </MainLayout>
     );
 }

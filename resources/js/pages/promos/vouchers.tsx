@@ -1,3 +1,4 @@
+import { formatRupiah } from '@/lib/helpers/format';
 import { Head, router } from '@inertiajs/react';
 import { Megaphone, Plus, Search, X, Copy, Ticket, Check, Scissors, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -9,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PromoFormDialog } from '@/features/promos/components/PromoFormDialog';
+import { usePromoStore } from '@/pages/promos/stores/usePromoStore';
 import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Vouchers({ vouchers, stats, filters }: any) {
@@ -17,10 +19,7 @@ export default function Vouchers({ vouchers, stats, filters }: any) {
     
     // Copy state tracker
     const [copiedId, setCopiedId] = useState<string | null>(null);
-
-    // Dialog state
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [selectedPromo, setSelectedPromo] = useState<any>(null);
+    const { openForm } = usePromoStore();
 
     const applyFilters = (s = search, status = statusFilter) => {
         router.get('/vouchers', {
@@ -50,13 +49,11 @@ export default function Vouchers({ vouchers, stats, filters }: any) {
     };
 
     const handleAdd = () => {
-        setSelectedPromo(null);
-        setIsDialogOpen(true);
+        openForm();
     };
 
     const handleEdit = (promo: any) => {
-        setSelectedPromo(promo);
-        setIsDialogOpen(true);
+        openForm(promo);
     };
 
     const handleCopy = (id: string, code: string) => {
@@ -175,7 +172,7 @@ export default function Vouchers({ vouchers, stats, filters }: any) {
                         vouchers.data.map((v: any) => {
                             const cleanCode = v.name.replace(/\s+/g, '').toUpperCase();
                             const isPercentage = v.type === 'percentage';
-                            const formattedValue = isPercentage ? `${Number(v.value)}%` : `Rp ${Number(v.value).toLocaleString('id-ID')}`;
+                            const formattedValue = isPercentage ? `${Number(v.value)}%` : `${formatRupiah(v.value)}`;
 
                             return (
                                 <div 
@@ -196,7 +193,7 @@ export default function Vouchers({ vouchers, stats, filters }: any) {
                                                     {v.is_active ? 'READY USE' : 'EXPIRED'}
                                                 </Badge>
                                                 <p className="text-xs text-muted-foreground mt-1">
-                                                    {v.min_amount > 0 ? `Min. Belanja Rp ${Number(v.min_amount).toLocaleString('id-ID')}` : 'Tanpa Min. Belanja'}
+                                                    {v.min_amount > 0 ? `Min. Belanja ${formatRupiah(v.min_amount)}` : 'Tanpa Min. Belanja'}
                                                 </p>
                                             </div>
                                             <div className={`p-2 rounded-lg ${v.is_active ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-400'}`}>
@@ -283,11 +280,7 @@ export default function Vouchers({ vouchers, stats, filters }: any) {
             </div>
 
             {/* Form Dialog Vouchers (Reused Promo Dialog) */}
-            <PromoFormDialog 
-                open={isDialogOpen} 
-                onOpenChange={setIsDialogOpen} 
-                promo={selectedPromo} 
-            />
+            <PromoFormDialog />
         </MainLayout>
     );
 }

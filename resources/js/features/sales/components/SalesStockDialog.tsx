@@ -1,5 +1,6 @@
 import { useForm, router } from '@inertiajs/react';
 import { Package, PlusCircle, AlertCircle, ArrowDownToLine } from 'lucide-react';
+import { toast } from 'sonner';
 import React, { useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,15 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Spinner } from '@/components/ui/spinner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { SalesPerson } from '../types';
+import { useSalesStore } from '../stores/useSalesStore';
 
 interface SalesStockDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    selectedSales: SalesPerson | null;
     products: any[];
 }
 
-export function SalesStockDialog({ open, onOpenChange, selectedSales, products = [] }: SalesStockDialogProps) {
+export function SalesStockDialog({ products = [] }: SalesStockDialogProps) {
+    const { isStockOpen, closeStock, selectedSales } = useSalesStore();
     const stockForm = useForm({
         sales_person_id: '',
         product_id: '',
@@ -29,7 +29,7 @@ export function SalesStockDialog({ open, onOpenChange, selectedSales, products =
         if (selectedSales) {
             stockForm.setData('sales_person_id', selectedSales.id);
         }
-    }, [selectedSales]);
+    }, [selectedSales, isStockOpen]);
 
     const handleLoadStock = (e: React.FormEvent) => {
         e.preventDefault();
@@ -41,26 +41,31 @@ export function SalesStockDialog({ open, onOpenChange, selectedSales, products =
     };
 
     const [isUnloading, setIsUnloading] = React.useState(false);
-
     const handleUnloadStock = () => {
         if (!selectedSales) {
-return;
-}
+            return;
+        }
 
-        if (!confirm('Anda yakin ingin menarik semua sisa barang muatan di kendaraan sales ini kembali ke gudang?')) {
-return;
-}
-        
-        setIsUnloading(true);
-        router.post('/sales/unload-stock', {
-            sales_person_id: selectedSales.id
-        }, {
-            onFinish: () => setIsUnloading(false)
+        toast('Tarik semua sisa barang muatan di kendaraan sales ini kembali ke gudang?', {
+            action: {
+                label: 'Ya, Tarik',
+                onClick: () => {
+                    router.post('/sales/unload-stock', {
+                        sales_person_id: selectedSales.id
+                    }, {
+                        preserveScroll: true,
+                        onSuccess: () => {
+                            toast.success('Sisa barang berhasil ditarik kembali ke gudang');
+                        }
+                    });
+                }
+            },
+            cancel: { label: 'Batal', onClick: () => {} }
         });
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={isStockOpen} onOpenChange={(open) => !open && closeStock()}>
             <DialogContent className="w-[96vw] max-w-5xl sm:max-w-5xl h-[90vh] md:h-[85vh] rounded-2xl p-6 md:p-8 border-slate-100 shadow-2xl flex flex-col justify-between overflow-hidden">
                 <DialogHeader className="pb-4 border-b border-slate-100 shrink-0">
                     <DialogTitle className="flex items-center gap-2.5 text-indigo-650 text-xl font-black">

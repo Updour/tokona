@@ -15,7 +15,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 
 
-#[Fillable(['id', 'name', 'email', 'email_verified_at', 'password', 'tenant_id', 'branch_id', 'phone', 'avatar', 'status', 'last_login_at', 'remember_token'])]
+#[Fillable(['id', 'name', 'email', 'email_verified_at', 'password', 'tenant_id', 'branch_id',
+        'nip',
+        'position',
+        'employment_status',
+        'join_date', 'phone', 'avatar', 'status', 'last_login_at', 'remember_token'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -78,5 +82,10 @@ class User extends Authenticatable
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class, 'branch_id');
+    }
+
+    public function employeeSalary()
+    {
+        return $this->hasOne(EmployeeSalary::class, 'user_id');
     }
 }

@@ -1,0 +1,103 @@
+resources/js/features/customers/components/CustomerColumn.tsx(18,17): error TS2304: Cannot find name 'setIsDeleteDialogOpen'.
+resources/js/features/customers/components/CustomerColumn.tsx(97,123): error TS2304: Cannot find name 'formatDateTime'.
+resources/js/features/customers/components/CustomerColumn.tsx(98,80): error TS2304: Cannot find name 'formatTimeAgo'.
+resources/js/features/customers/components/CustomerColumn.tsx(109,32): error TS2304: Cannot find name 'formatDateTime'.
+resources/js/features/customers/components/CustomerColumn.tsx(110,56): error TS2304: Cannot find name 'formatTimeAgo'.
+resources/js/features/customers/components/CustomerDetailDialog.tsx(82,108): error TS2339: Property 'points' does not exist on type 'Customer'.
+resources/js/features/customers/components/CustomerDetailDialog.tsx(106,68): error TS2339: Property 'debt_balance' does not exist on type 'Customer'.
+resources/js/features/customers/components/CustomerDetailDialog.tsx(109,91): error TS2339: Property 'max_debt_limit' does not exist on type 'Customer'.
+resources/js/features/customers/components/CustomerDetailDialog.tsx(121,63): error TS2339: Property 'last_transaction_at' does not exist on type 'Customer'.
+resources/js/features/customers/components/CustomerDetailDialog.tsx(123,86): error TS2339: Property 'last_transaction_at' does not exist on type 'Customer'.
+resources/js/features/customers/components/CustomerDetailDialog.tsx(124,151): error TS2339: Property 'last_transaction_at' does not exist on type 'Customer'.
+resources/js/features/customers/components/CustomerDetailDialog.tsx(132,63): error TS2339: Property 'created_at' does not exist on type 'Customer'.
+resources/js/features/customers/components/CustomerDetailDialog.tsx(132,108): error TS2339: Property 'created_at' does not exist on type 'Customer'.
+resources/js/features/customers/components/CustomerDetailDialog.tsx(140,39): error TS2339: Property 'notes' does not exist on type 'Customer'.
+resources/js/features/customers/components/CustomerDetailDialog.tsx(146,51): error TS2339: Property 'notes' does not exist on type 'Customer'.
+resources/js/features/employees/components/EmployeeColumns.tsx(8,14): error TS2305: Module '"@/pages/employees/types"' has no exported member 'Employee'.
+resources/js/features/employees/components/EmployeeColumns.tsx(143,18): error TS2304: Cannot find name 'TooltipProvider'.
+resources/js/features/employees/components/EmployeeColumns.tsx(146,26): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/employees/components/EmployeeColumns.tsx(147,30): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/employees/components/EmployeeColumns.tsx(156,31): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/employees/components/EmployeeColumns.tsx(157,30): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/employees/components/EmployeeColumns.tsx(157,62): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/employees/components/EmployeeColumns.tsx(158,27): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/employees/components/EmployeeColumns.tsx(161,26): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/employees/components/EmployeeColumns.tsx(162,30): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/employees/components/EmployeeColumns.tsx(171,31): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/employees/components/EmployeeColumns.tsx(172,30): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/employees/components/EmployeeColumns.tsx(172,60): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/employees/components/EmployeeColumns.tsx(173,27): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/employees/components/EmployeeColumns.tsx(176,26): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/employees/components/EmployeeColumns.tsx(177,30): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/employees/components/EmployeeColumns.tsx(186,31): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/employees/components/EmployeeColumns.tsx(187,30): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/employees/components/EmployeeColumns.tsx(187,61): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/employees/components/EmployeeColumns.tsx(188,27): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/employees/components/EmployeeColumns.tsx(190,19): error TS2304: Cannot find name 'TooltipProvider'.
+resources/js/features/employees/components/EmployeeTable.tsx(19,15): error TS2305: Module '"@/pages/employees/types"' has no exported member 'Employee'.
+resources/js/features/pos/components/tabs/PosTransactionsTab.tsx(215,151): error TS2339: Property 'formatNumber' does not exist on type 'any[]'.
+resources/js/features/products/components/ProductColumn.tsx(4,13): error TS2300: Duplicate identifier 'React'.
+resources/js/features/products/components/ProductColumn.tsx(9,13): error TS2300: Duplicate identifier 'React'.
+resources/js/features/products/components/ProductColumn.tsx(16,10): error TS2304: Cannot find name 'TooltipProvider'.
+resources/js/features/products/components/ProductColumn.tsx(19,18): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/products/components/ProductColumn.tsx(20,22): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/products/components/ProductColumn.tsx(29,23): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/products/components/ProductColumn.tsx(30,22): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/products/components/ProductColumn.tsx(30,52): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/products/components/ProductColumn.tsx(31,19): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/products/components/ProductColumn.tsx(34,18): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/products/components/ProductColumn.tsx(35,22): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/products/components/ProductColumn.tsx(44,23): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/products/components/ProductColumn.tsx(45,22): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/products/components/ProductColumn.tsx(45,50): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/products/components/ProductColumn.tsx(46,19): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/products/components/ProductColumn.tsx(50,22): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/products/components/ProductColumn.tsx(51,26): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/products/components/ProductColumn.tsx(60,27): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/products/components/ProductColumn.tsx(61,26): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/products/components/ProductColumn.tsx(61,54): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/products/components/ProductColumn.tsx(62,23): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/products/components/ProductColumn.tsx(66,18): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/products/components/ProductColumn.tsx(67,22): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/products/components/ProductColumn.tsx(76,23): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/products/components/ProductColumn.tsx(77,22): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/products/components/ProductColumn.tsx(77,51): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/products/components/ProductColumn.tsx(78,19): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/products/components/ProductColumn.tsx(80,11): error TS2304: Cannot find name 'TooltipProvider'.
+resources/js/features/products/components/ProductColumn.tsx(183,62): error TS2304: Cannot find name 'formatRupiah'.
+resources/js/features/products/components/ProductColumn.tsx(186,36): error TS2304: Cannot find name 'formatRupiah'.
+resources/js/features/products/components/ProductColumn.tsx(229,26): error TS2304: Cannot find name 'formatNumber'.
+resources/js/features/shifts/components/ShiftTable.tsx(84,42): error TS2304: Cannot find name 'total'.
+resources/js/features/tenants/components/TenantColumn.tsx(9,10): error TS2300: Duplicate identifier 'Button'.
+resources/js/features/tenants/components/TenantColumn.tsx(10,10): error TS2300: Duplicate identifier 'Button'.
+resources/js/features/tenants/components/TenantColumn.tsx(59,52): error TS2339: Property 'logo_url' does not exist on type 'Tenant'.
+resources/js/features/users/components/UserColumns.tsx(143,18): error TS2304: Cannot find name 'TooltipProvider'.
+resources/js/features/users/components/UserColumns.tsx(146,26): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/users/components/UserColumns.tsx(147,30): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/users/components/UserColumns.tsx(156,31): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/users/components/UserColumns.tsx(157,30): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/users/components/UserColumns.tsx(157,58): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/users/components/UserColumns.tsx(158,27): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/users/components/UserColumns.tsx(161,26): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/users/components/UserColumns.tsx(162,30): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/users/components/UserColumns.tsx(171,31): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/users/components/UserColumns.tsx(172,30): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/users/components/UserColumns.tsx(172,56): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/users/components/UserColumns.tsx(173,27): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/users/components/UserColumns.tsx(176,26): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/users/components/UserColumns.tsx(177,30): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/users/components/UserColumns.tsx(186,31): error TS2304: Cannot find name 'TooltipTrigger'.
+resources/js/features/users/components/UserColumns.tsx(187,30): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/users/components/UserColumns.tsx(187,57): error TS2304: Cannot find name 'TooltipContent'.
+resources/js/features/users/components/UserColumns.tsx(188,27): error TS2304: Cannot find name 'Tooltip'.
+resources/js/features/users/components/UserColumns.tsx(190,19): error TS2304: Cannot find name 'TooltipProvider'.
+resources/js/features/users/components/UserDetailSheet.tsx(43,43): error TS2339: Property 'last_login_at' does not exist on type 'User'.
+resources/js/features/users/components/UserDetailSheet.tsx(43,79): error TS2339: Property 'last_login_at' does not exist on type 'User'.
+resources/js/layouts/auth/auth-card-layout.tsx(11,10): error TS2305: Module '"@/routes"' has no exported member 'home'.
+resources/js/layouts/auth/auth-simple-layout.tsx(3,10): error TS2305: Module '"@/routes"' has no exported member 'home'.
+resources/js/layouts/auth/auth-split-layout.tsx(3,10): error TS2305: Module '"@/routes"' has no exported member 'home'.
+resources/js/pages/employees/Index.tsx(8,14): error TS2305: Module '"./types"' has no exported member 'Employee'.
+resources/js/pages/employees/stores/useEmployeeStore.ts(4,14): error TS2305: Module '"../types"' has no exported member 'Employee'.
+resources/js/pages/products/Index.tsx(2,30): error TS2307: Cannot find module '@/features/products/components/ProductTable' or its corresponding type declarations.
+resources/js/pages/products/Index.tsx(27,17): error TS2322: Type '{ categories: any; types: any; suppliers: any; branches: any; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'categories' does not exist on type 'IntrinsicAttributes'.

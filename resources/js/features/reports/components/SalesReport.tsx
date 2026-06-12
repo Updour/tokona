@@ -17,6 +17,7 @@ interface SalesReportProps {
         daily_sales: any;
         all_daily_sales: any[];
         payment_methods: any[];
+        top_employees?: any[];
     };
 }
 
@@ -211,6 +212,43 @@ export default function SalesReport({ salesSummary }: SalesReportProps) {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Top Employees (Kasir Ter-Rajin) */}
+            {salesSummary.top_employees && salesSummary.top_employees.length > 0 && (
+                <div className="mt-6">
+                    <Card className="border border-slate-200/80 shadow-sm bg-white">
+                        <CardHeader className="p-4 border-b">
+                            <CardTitle className="text-sm font-black text-slate-800">Peringkat Kasir Ter-Rajin (Top Employees)</CardTitle>
+                            <CardDescription className="text-xs">Berdasarkan jumlah transaksi dan omset yang dicapai.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader className="bg-slate-50">
+                                    <TableRow>
+                                        <TableHead className="font-bold text-slate-700 h-9">Nama Karyawan</TableHead>
+                                        <TableHead className="font-bold text-slate-700 text-center h-9">Faktur Selesai</TableHead>
+                                        <TableHead className="font-bold text-slate-700 text-right pr-4 h-9">Omset Masuk (IDR)</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody className="text-xs">
+                                    {salesSummary.top_employees.map((emp: any, idx: number) => (
+                                        <TableRow key={idx} className="hover:bg-slate-50/40">
+                                            <TableCell className="font-bold text-slate-800 flex items-center gap-2">
+                                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-100 text-indigo-650 text-[10px]">
+                                                    {idx + 1}
+                                                </span>
+                                                {emp.name}
+                                            </TableCell>
+                                            <TableCell className="text-center font-bold text-slate-650">{emp.tx_count} tx</TableCell>
+                                            <TableCell className="text-right font-mono font-black text-emerald-650 pr-4">{formatRupiah(emp.total_revenue)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }

@@ -8,15 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import type { SalesPerson } from '../types';
+import { useSalesStore } from '../stores/useSalesStore';
 
 interface SalesEditDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    selectedSales: SalesPerson | null;
     branches: any[];
 }
 
-export function SalesEditDialog({ open, onOpenChange, selectedSales, branches = [] }: SalesEditDialogProps) {
+export function SalesEditDialog({ branches = [] }: SalesEditDialogProps) {
+    const { isEditOpen, closeEdit, selectedSales } = useSalesStore();
     const editForm = useForm({
         branch_id: '',
         name: '',
@@ -37,7 +36,7 @@ export function SalesEditDialog({ open, onOpenChange, selectedSales, branches = 
                 commission_value: String(selectedSales.commission_value || '0'),
             });
         }
-    }, [selectedSales, open]);
+    }, [selectedSales, isEditOpen]);
 
     const handleEditSales = (e: React.FormEvent) => {
         e.preventDefault();
@@ -48,13 +47,13 @@ return;
 
         editForm.put(`/sales/update/${selectedSales.id}`, {
             onSuccess: () => {
-                onOpenChange(false);
+                closeEdit();
             },
         });
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={isEditOpen} onOpenChange={(open) => !open && closeEdit()}>
             <DialogContent className="w-[96vw] max-w-lg sm:max-w-lg rounded-2xl p-6 border-slate-100 shadow-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-indigo-655 font-black text-lg">

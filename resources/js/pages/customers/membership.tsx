@@ -1,3 +1,4 @@
+import { formatNumber } from '@/lib/helpers/format';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Users, Award, Shield, Search, X, Edit2, Sparkles, Star, Gem, Crown } from 'lucide-react';
 import { useState } from 'react';
@@ -185,7 +186,7 @@ export default function Membership({ members, stats, filters }: any) {
                                 <div className="text-right space-y-0.5">
                                     <p className="text-[9px] opacity-40">LOYALTY POINTS</p>
                                     <p className={`text-base font-bold ${activeStyles.color}`}>
-                                        {(activeMember?.points || 0).toLocaleString('id-ID')} PTS
+                                        {formatNumber(activeMember?.points)} PTS
                                     </p>
                                 </div>
                             </div>
@@ -200,7 +201,7 @@ export default function Membership({ members, stats, filters }: any) {
                                 <Users className="h-4 w-4 text-slate-500" />
                             </CardHeader>
                             <CardContent className="p-4 pt-0">
-                                <div className="text-2xl font-bold">{(stats.total || 0).toLocaleString('id-ID')}</div>
+                                <div className="text-2xl font-bold">{formatNumber(stats.total)}</div>
                                 <p className="text-xs text-muted-foreground mt-1">Terdaftar di sistem CRM</p>
                             </CardContent>
                         </Card>
@@ -250,7 +251,7 @@ export default function Membership({ members, stats, filters }: any) {
                                 <Award className="h-4 w-4 text-primary" />
                             </CardHeader>
                             <CardContent className="p-4 pt-0">
-                                <div className="text-2xl font-bold text-primary">{(stats.points || 0).toLocaleString('id-ID')}</div>
+                                <div className="text-2xl font-bold text-primary">{formatNumber(stats.points)}</div>
                                 <p className="text-xs text-muted-foreground mt-1">Total poin beredar</p>
                             </CardContent>
                         </Card>
@@ -340,7 +341,7 @@ export default function Membership({ members, stats, filters }: any) {
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="font-bold font-mono text-sm text-primary">
-                                                    {(m.points || 0).toLocaleString('id-ID')} Pts
+                                                    {formatNumber(m.points)} Pts
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge variant={m.is_active ? 'default' : 'secondary'} className="text-[10px] px-2 py-0">

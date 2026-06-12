@@ -16,7 +16,11 @@ class CustomerService
 
     public function create(array $data): Customer
     {
-        $data['tenant_id'] = $data['tenant_id'] ?? auth()->user()->tenant_id;
+        $tenantId = $data['tenant_id'] ?? auth()->user()->tenant_id;
+        if (!$tenantId && auth()->user()->isSuperAdmin()) {
+            $tenantId = \App\Models\Tenants::first()->id ?? null;
+        }
+        $data['tenant_id'] = $tenantId;
         return Customer::create($data);
     }
 
@@ -29,6 +33,13 @@ class CustomerService
     public function delete(Customer $customer): void
     {
         $customer->delete();
+    }
+
+    public function restore(string $id): Customer
+    {
+        $customer = Customer::withTrashed()->findOrFail($id);
+        $customer->restore();
+        return $customer;
     }
 
     /** Mendapatkan data lengkap dan statistik untuk halaman membership pelanggan */

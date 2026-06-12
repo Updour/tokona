@@ -29,6 +29,24 @@ class ExportService
         return Excel::download(new SalesReportExport($filters), $filename);
     }
 
+    public function exportProductReportToExcel(array $filters): BinaryFileResponse
+    {
+        $filename = 'laporan-performa-produk-' . now()->format('YmdHis') . '.xlsx';
+        return Excel::download(new \App\Exports\ProductPerformanceExport($filters), $filename);
+    }
+
+    public function exportStockReportToExcel(array $filters): BinaryFileResponse
+    {
+        $filename = 'laporan-valuasi-stok-' . now()->format('YmdHis') . '.xlsx';
+        return Excel::download(new \App\Exports\StockValuationExport($filters), $filename);
+    }
+
+    public function exportSalesFieldReportToExcel(array $filters): BinaryFileResponse
+    {
+        $filename = 'laporan-sales-lapangan-' . now()->format('YmdHis') . '.xlsx';
+        return Excel::download(new \App\Exports\SalesFieldExport($filters), $filename);
+    }
+
     public function exportInventoryToExcel(array $filters): BinaryFileResponse
     {
         $filename = 'riwayat-mutasi-stok-' . now()->format('YmdHis') . '.xlsx';

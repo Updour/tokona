@@ -7,14 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useSalesStore } from '../stores/useSalesStore';
 
 interface SalesAddDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
     branches: any[];
 }
 
-export function SalesAddDialog({ open, onOpenChange, branches = [] }: SalesAddDialogProps) {
+export function SalesAddDialog({ branches = [] }: SalesAddDialogProps) {
+    const { isAddOpen, closeAdd } = useSalesStore();
     const addForm = useForm({
         branch_id: '',
         name: '',
@@ -28,14 +28,14 @@ export function SalesAddDialog({ open, onOpenChange, branches = [] }: SalesAddDi
         e.preventDefault();
         addForm.post('/sales/store', {
             onSuccess: () => {
-                onOpenChange(false);
+                closeAdd();
                 addForm.reset();
             },
         });
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={isAddOpen} onOpenChange={(open) => !open && closeAdd()}>
             <DialogContent className="w-[96vw] max-w-lg sm:max-w-lg rounded-2xl p-6 border-slate-100 shadow-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-indigo-650 text-lg font-black">

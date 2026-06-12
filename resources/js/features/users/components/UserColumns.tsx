@@ -1,45 +1,12 @@
+import { formatDateTime } from '@/lib/helpers/format';
 import { router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { MoreHorizontal, ArrowUpDown, Edit, Trash, Store, Shield, Eye, Calendar, Clock, UserCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogClose,
-} from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from '@/components/ui/sheet';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUserStore } from '@/pages/users/stores/useUserStore';
 import type {User} from '@/pages/users/types';
-import { destroy as usersDestroy } from '@/routes/users';
 import * as React from 'react';
 
 export const columns: ColumnDef<User>[] = [
@@ -171,83 +138,25 @@ export const columns: ColumnDef<User>[] = [
         id: 'actions',
         cell: ({ row }) => {
             const user = row.original;
-            const openForm = useUserStore((state) => state.openForm);
-            
-            const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-            const [isDeleting, setIsDeleting] = React.useState(false);
-            const [isDetailOpen, setIsDetailOpen] = React.useState(false);
-
-            const handleDelete = () => {
-                setIsDeleting(true);
-                router.delete(usersDestroy(user.id).url, {
-                    preserveScroll: true,
-                    onSuccess: () => setIsDeleteDialogOpen(false),
-                    onFinish: () => setIsDeleting(false),
-                });
-            };
+            const { openForm, openDetail, openDelete } = useUserStore();
 
             return (
                 <TooltipProvider>
                     <div className="flex items-center gap-1">
                         {/* Detail button */}
-                        <Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <SheetTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
-                                        >
-                                            <Eye className="h-4 w-4" />
-                                        </Button>
-                                    </SheetTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>Detail Akun</TooltipContent>
-                            </Tooltip>
-
-                            <SheetContent className="w-[400px] sm:w-[540px] p-0 flex flex-col">
-                                <SheetHeader className="px-6 py-4 border-b">
-                                    <SheetTitle className="text-xl">{user.name}</SheetTitle>
-                                    <SheetDescription className="flex items-center gap-2 mt-1">
-                                        <Badge variant={user.status === 'active' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
-                                            {user.status === 'active' ? 'Aktif' : 'Nonaktif'}
-                                        </Badge>
-                                        <span className="font-mono text-xs">{user.email}</span>
-                                    </SheetDescription>
-                                </SheetHeader>
-                                
-                                <div className="flex-1 overflow-y-auto">
-                                    <div className="px-6 py-4 space-y-6">
-                                        <div className="grid gap-4 text-sm bg-muted/30 p-4 rounded-lg border">
-                                            <div className="space-y-1">
-                                                <span className="text-muted-foreground text-xs flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> Tanggal Registrasi</span>
-                                                <p className="font-medium">
-                                                    {user.created_at ? new Date(user.created_at).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
-                                                </p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <span className="text-muted-foreground text-xs flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> Login Terakhir</span>
-                                                <p className="font-medium">
-                                                    {user.last_login_at ? new Date(user.last_login_at).toLocaleString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Belum pernah login'}
-                                                </p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <span className="text-muted-foreground text-xs flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5" /> Akses</span>
-                                                <p className="font-medium capitalize">{user.roles?.[0]?.name || 'Belum diatur'}</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <span className="text-muted-foreground text-xs flex items-center gap-1.5"><Store className="h-3.5 w-3.5" /> Penugasan</span>
-                                                <p className="font-medium">
-                                                    {user.tenant ? user.tenant.name : 'Sistem Global'}
-                                                    {user.branch ? ` - ${user.branch.name}` : ''}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </SheetContent>
-                        </Sheet>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
+                                    onClick={() => openDetail(user)}
+                                >
+                                    <Eye className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Detail Akun</TooltipContent>
+                        </Tooltip>
 
                         {/* Edit button */}
                         <Tooltip>
@@ -264,49 +173,20 @@ export const columns: ColumnDef<User>[] = [
                             <TooltipContent>Edit Akun</TooltipContent>
                         </Tooltip>
 
-                        {/* Delete with confirmation dialog */}
-                        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <DialogTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
-                                        >
-                                            <Trash className="h-4 w-4" />
-                                        </Button>
-                                    </DialogTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>Hapus Akun</TooltipContent>
-                            </Tooltip>
-
-                            <DialogContent className="sm:max-w-md">
-                                <DialogHeader>
-                                    <DialogTitle>Hapus Akun User</DialogTitle>
-                                    <DialogDescription>
-                                        Apakah Anda yakin ingin menghapus akun{' '}
-                                        <strong className="text-foreground">"{user.name}"</strong>?
-                                        Tindakan ini tidak dapat dibatalkan.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <DialogFooter className="mt-2">
-                                    <DialogClose asChild>
-                                        <Button variant="outline" type="button">
-                                            Batal
-                                        </Button>
-                                    </DialogClose>
-                                    <Button
-                                        variant="destructive"
-                                        type="button"
-                                        disabled={isDeleting}
-                                        onClick={handleDelete}
-                                    >
-                                        {isDeleting ? 'Menghapus...' : 'Ya, Hapus Akun'}
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
+                        {/* Delete button */}
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
+                                    onClick={() => openDelete(user)}
+                                >
+                                    <Trash className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Hapus Akun</TooltipContent>
+                        </Tooltip>
                     </div>
                 </TooltipProvider>
             );
