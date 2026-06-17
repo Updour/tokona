@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use App\Models\Tenants;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -15,3 +16,15 @@ Schedule::command('model:prune', [
         \App\Models\ActivityLog::class,
     ]
 ])->daily();
+
+// Otomatis menonaktifkan (suspend) tenant/toko yang masa aktifnya sudah kedaluwarsa
+Schedule::call(function () {
+    $expiredCount = Tenants::where('status', 'active')
+        ->whereNotNull('expires_at')
+        ->where('expires_at', '<', now())
+        ->update(['status' => 'suspended']);
+
+    if ($expiredCount > 0) {
+        \Illuminate\Support\Facades\Log::info("Sistem telah otomatis menonaktifkan {$expiredCount} tenant karena masa aktifnya habis.");
+    }
+})->dailyAt('00:05')->name('suspend-expired-tenants')->withoutOverlapping();
