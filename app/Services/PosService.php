@@ -44,10 +44,10 @@ class PosService
                     'image' => $p->images->first()?->url ?? null,
                     'category' => $p->category?->name ?? 'Tanpa Kategori',
                 ];
-            });
+            })->values()->toArray();
 
         // Daftar pelanggan untuk member checkout
-        $customers = Customer::orderBy('name')->get();
+        $customers = Customer::orderBy('name')->get()->toArray();
 
         // Daftar promo/voucher aktif saat ini
         $promos = Promo::where('is_active', true)
@@ -59,18 +59,18 @@ class PosService
                 $q->whereNull('end_date')
                   ->orWhere('end_date', '>=', now());
             })
-            ->get();
+            ->get()->toArray();
 
         // Cabang aktif saat ini (cabang user atau semua jika super admin)
         $branches = $user->isSuperAdmin()
-            ? Branch::orderBy('name')->get()
-            : Branch::where('id', $user->branch_id)->get();
+            ? Branch::orderBy('name')->get()->toArray()
+            : Branch::where('id', $user->branch_id)->get()->toArray();
 
         // Riwayat transaksi penjualan terbaru
         $transactions = Transaction::with(['customer', 'items.product', 'creator'])
             ->orderByDesc('created_at')
             ->take(50)
-            ->get();
+            ->get()->toArray();
 
         $currentBranch = Branch::find($user->branch_id);
         $defaultSettings = $currentBranch ? $currentBranch->pos_settings : null;
