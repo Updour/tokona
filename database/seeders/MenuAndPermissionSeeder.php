@@ -244,6 +244,7 @@ class MenuAndPermissionSeeder extends Seeder
                     ['title' => 'Daftar transaksi', 'href' => '/pos?tab=transactions', 'permission_key' => 'pos.index', 'order' => 2],
                     ['title' => 'Retur penjualan', 'href' => '/pos?tab=returns', 'permission_key' => 'pos.index', 'order' => 3],
                     ['title' => 'Shift Kasir', 'href' => '/shifts', 'permission_key' => 'pos.index', 'order' => 4],
+                    ['title' => 'Setting Printer Thermal', 'href' => '/pos/printer', 'permission_key' => 'pos.index', 'order' => 5],
                 ]
             ],
             // Parent: Canvas Sales
@@ -254,6 +255,18 @@ class MenuAndPermissionSeeder extends Seeder
                 'permission_key' => 'sales.index', // Menggunakan permission sales agar tim sales bisa mengaksesnya
                 'order' => 3,
                 'children' => []
+            ],
+            // Parent: Produk Digital
+            [
+                'title' => 'Pulsa & PPOB',
+                'href' => '#',
+                'icon' => 'Smartphone',
+                'permission_key' => 'pos.index',
+                'order' => 3,
+                'children' => [
+                    ['title' => 'Jual Pulsa', 'href' => '/ppob/pulsa', 'permission_key' => 'pos.index', 'order' => 1],
+                    ['title' => 'Pengaturan Integrasi', 'href' => '/ppob/settings', 'permission_key' => 'pos.index', 'order' => 2],
+                ]
             ],
             // Parent: Produk
             [

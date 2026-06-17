@@ -105,6 +105,12 @@ class PosService
             ->latest('opened_at')
             ->first();
 
+        $tenantId = $user->tenant_id ?? ($currentBranch ? $currentBranch->tenant_id : null);
+        if (empty($tenantId)) {
+            $fallbackBranch = Branch::first();
+            $tenantId = $fallbackBranch ? $fallbackBranch->tenant_id : null;
+        }
+
         $tenant = \App\Models\Tenants::find($tenantId);
         $loyaltySettings = $tenant ? $tenant->getLoyaltySettings() : ['earn_amount' => 10000, 'redeem_rate' => 1];
 

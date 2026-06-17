@@ -91,6 +91,17 @@ export function PosCartSidebar({
     const currentPoints = selectedCustomerObj?.points || 0;
     const maxRedeemAmount = currentPoints * (loyaltySettings?.redeem_rate || 1);
 
+    const isPaymentValid = () => {
+        if (paymentMethod === 'debt') return true;
+        if (paymentMethod === 'split') {
+            const splitCash = parseFloat(splitCashInput) || 0;
+            const splitTransfer = parseFloat(splitTransferInput) || 0;
+            return (splitCash + splitTransfer) >= cartTotal;
+        }
+        const parsedPaidAmount = parseFloat(paidAmountInput.replace(/[^0-9]/g, '')) || 0;
+        return parsedPaidAmount >= cartTotal;
+    };
+
     return (
         <div className="xl:col-span-5 flex flex-col bg-white rounded-2xl border shadow-md overflow-hidden h-full">
             {/* Header Keranjang */}
@@ -319,12 +330,12 @@ export function PosCartSidebar({
                         <div className="grid grid-cols-3 gap-2">
                             {['cash', 'transfer', 'debt', 'split'].map((method) => {
                                 if (method === 'split' && (!posSettings.activeMethods?.cash || !posSettings.activeMethods?.transfer)) {
-return null;
-}
+                                    return null;
+                                }
 
                                 if (method !== 'split' && posSettings.activeMethods && !posSettings.activeMethods[method]) {
-return null;
-}
+                                    return null;
+                                }
 
                                 const isSelected = paymentMethod === method;
                                 const labels: any = {
@@ -432,8 +443,8 @@ return null;
                 {/* Fast Checkout CTA footer */}
                 <Button
                     onClick={handleCheckout}
-                    disabled={cart.length === 0 || isSubmitting}
-                    className="w-full h-14 bg-slate-900 hover:bg-slate-950 text-white font-black text-base gap-2 rounded-xl shadow-lg transition-all active:scale-[0.98] shrink-0"
+                    disabled={cart.length === 0 || isSubmitting || !isPaymentValid()}
+                    className="w-full h-14 bg-slate-900 hover:bg-slate-950 text-white font-black text-base gap-2 rounded-xl shadow-lg transition-all active:scale-[0.98] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isSubmitting ? 'Memproses Checkout...' : 'PROSES TRANSAKSI (F4)'}
                 </Button>

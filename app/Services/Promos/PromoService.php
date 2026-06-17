@@ -16,7 +16,13 @@ class PromoService
 
     public function create(array $data): Promo
     {
-        $data['tenant_id'] = $data['tenant_id'] ?? auth()->user()->tenant_id;
+        $tenantId = $data['tenant_id'] ?? auth()->user()->tenant_id;
+        
+        if (empty($tenantId) && auth()->user()->isSuperAdmin()) {
+            $tenantId = \App\Models\Tenants::first()->id;
+        }
+        
+        $data['tenant_id'] = $tenantId;
         return Promo::create($data);
     }
 

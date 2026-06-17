@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type {ProductImage} from '@/pages/products/types';
+import { compressImage } from '@/lib/helpers/image-compression';
 
 interface Props {
     productId: string;
@@ -17,28 +18,40 @@ export function ProductImageUploader({ productId, images }: Props) {
     const [dragOverId, setDragOverId] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
 
         if (!files || files.length === 0) {
-return;
-}
-
-        const formData = new FormData();
-        Array.from(files).forEach((file) => formData.append('images[]', file));
+            return;
+        }
 
         setUploading(true);
-        router.post(`/products/${productId}/images`, formData, {
-            forceFormData: true,
-            preserveScroll: true,
-            onFinish: () => {
-                setUploading(false);
+        
+        try {
+            // Kompres semua gambar secara paralel sebelum di-upload
+            const compressedFiles = await Promise.all(
+                Array.from(files).map(file => compressImage(file))
+            );
 
-                if (inputRef.current) {
-inputRef.current.value = '';
-}
-            },
-        });
+            const formData = new FormData();
+            compressedFiles.forEach((file) => formData.append('images[]', file));
+
+            router.post(`/products/${productId}/images`, formData, {
+                forceFormData: true,
+                preserveScroll: true,
+                onFinish: () => {
+                    setUploading(false);
+
+                    if (inputRef.current) {
+                        inputRef.current.value = '';
+                    }
+                },
+            });
+        } catch (error) {
+            console.error('Image compression failed', error);
+            setUploading(false);
+            toast.error('Gagal memproses gambar');
+        }
     };
 
     const handleSetPrimary = (imageId: string) => {

@@ -86,8 +86,24 @@ export function ProductImportDialog({ open, onOpenChange }: ProductImportDialogP
                 onOpenChange(false);
             },
             onError: (errors) => {
+                const rowErrors = Object.keys(errors)
+                    .filter(k => k !== 'file')
+                    .map(k => errors[k]);
+
+                let description: React.ReactNode = errors.file || 'Terjadi kesalahan saat memproses file.';
+                
+                if (rowErrors.length > 0) {
+                    description = (
+                        <div className="flex flex-col gap-1 mt-1 max-h-[150px] overflow-y-auto">
+                            {rowErrors.map((err, idx) => (
+                                <span key={idx} className="text-xs text-red-600 leading-tight border-b border-red-100 pb-1 last:border-0">• {err}</span>
+                            ))}
+                        </div>
+                    );
+                }
+
                 toast.error('Gagal Mengimpor', {
-                    description: errors.file || 'Terjadi kesalahan saat memproses file.'
+                    description: description
                 });
             },
             onFinish: () => {
@@ -97,8 +113,8 @@ export function ProductImportDialog({ open, onOpenChange }: ProductImportDialogP
     };
 
     const downloadTemplate = () => {
-        const headers = ['nama_produk', 'sku', 'kategori', 'harga_modal', 'harga_jual'];
-        const csvContent = "\uFEFF" + headers.join(';') + '\n' + 'Contoh Baju;SKU-001;Pakaian;50000;100000\n';
+        const headers = ['nama_produk', 'kategori', 'tipe_produk', 'stok', 'harga_modal', 'harga_jual'];
+        const csvContent = "\uFEFF" + headers.join(';') + '\n' + 'CONTOH BAJU;Pakaian;Barang;50;50000;100000\n';
         
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -112,7 +128,7 @@ export function ProductImportDialog({ open, onOpenChange }: ProductImportDialogP
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-xl font-black text-slate-800">
                         <FileSpreadsheet className="h-5 w-5 text-indigo-650" />
@@ -126,11 +142,48 @@ export function ProductImportDialog({ open, onOpenChange }: ProductImportDialogP
                 <div className="space-y-4 py-2">
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-3">
                         <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                        <div className="text-xs text-amber-800 space-y-1">
-                            <p className="font-bold">Pastikan format file Anda benar!</p>
-                            <p>Kolom yang wajib ada: <span className="font-mono bg-amber-100 px-1 rounded">nama_produk</span>, <span className="font-mono bg-amber-100 px-1 rounded">sku</span>, <span className="font-mono bg-amber-100 px-1 rounded">kategori</span>, <span className="font-mono bg-amber-100 px-1 rounded">harga_modal</span>, <span className="font-mono bg-amber-100 px-1 rounded">harga_jual</span>.</p>
-                            <button onClick={downloadTemplate} className="text-indigo-650 font-bold flex items-center gap-1 hover:underline mt-1">
-                                <Download className="h-3 w-3" /> Download Template CSV
+                        <div className="text-xs text-amber-800 space-y-2 w-full">
+                            <div>
+                                <p className="font-bold">Peraturan Import Data!</p>
+                                <p>Pastikan file Anda memiliki *Header* (Baris ke-1) persis seperti tabel di bawah. <strong className="text-red-600">Nama Produk tidak boleh duplikat</strong>. Nama produk akan otomatis diubah menjadi <strong>HURUF BESAR (UPPERCASE)</strong>.</p>
+                            </div>
+                            
+                            {/* Visual Preview Table */}
+                            <div className="overflow-hidden border border-amber-200 rounded-md bg-white">
+                                <table className="w-full text-left text-[10px]">
+                                    <thead className="bg-amber-100 border-b border-amber-200 font-mono">
+                                        <tr>
+                                            <th className="p-1.5 border-r border-amber-200">nama_produk</th>
+                                            <th className="p-1.5 border-r border-amber-200">kategori</th>
+                                            <th className="p-1.5 border-r border-amber-200">tipe_produk</th>
+                                            <th className="p-1.5 border-r border-amber-200">stok</th>
+                                            <th className="p-1.5 border-r border-amber-200">harga_modal</th>
+                                            <th className="p-1.5">harga_jual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-slate-600 font-mono">
+                                        <tr>
+                                            <td className="p-1.5 border-r border-amber-100">BAJU KOKO M</td>
+                                            <td className="p-1.5 border-r border-amber-100">Pakaian</td>
+                                            <td className="p-1.5 border-r border-amber-100">Barang</td>
+                                            <td className="p-1.5 border-r border-amber-100">50</td>
+                                            <td className="p-1.5 border-r border-amber-100">50000</td>
+                                            <td className="p-1.5">100000</td>
+                                        </tr>
+                                        <tr className="bg-amber-50/30">
+                                            <td className="p-1.5 border-r border-amber-100">CELANA JEANS</td>
+                                            <td className="p-1.5 border-r border-amber-100">Celana</td>
+                                            <td className="p-1.5 border-r border-amber-100">Barang</td>
+                                            <td className="p-1.5 border-r border-amber-100">20</td>
+                                            <td className="p-1.5 border-r border-amber-100">80000</td>
+                                            <td className="p-1.5">150000</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <button onClick={downloadTemplate} className="text-indigo-650 font-bold flex items-center gap-1 hover:underline mt-1 bg-white px-2 py-1.5 border border-indigo-200 rounded-md shadow-sm transition-all hover:bg-indigo-50">
+                                <Download className="h-3.5 w-3.5" /> Download Template CSV
                             </button>
                         </div>
                     </div>
@@ -191,7 +244,7 @@ export function ProductImportDialog({ open, onOpenChange }: ProductImportDialogP
                     <Button 
                         onClick={handleUpload} 
                         disabled={!file || isUploading}
-                        className="bg-indigo-650 hover:bg-indigo-700 text-white font-bold"
+                        className="bg-slate-900 hover:bg-slate-950 text-white font-bold"
                     >
                         {isUploading ? 'Memproses...' : 'Mulai Import'}
                     </Button>

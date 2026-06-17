@@ -31,6 +31,7 @@ import { useProductStore } from '@/pages/products/stores/useProductStore';
 import type {ProductCategory, ProductType, ProductBranch, ProductTenant} from '@/pages/products/types';
 import { store as productsStore, update as productsUpdate } from '@/routes/products';
 import { ProductImageUploader } from './ProductImageUploader';
+import { compressImage } from '@/lib/helpers/image-compression';
 
 // ─── Komponen pembantu ────────────────────────────────────────────────────────
 
@@ -505,9 +506,21 @@ export function ProductFormDialog() {
                                         type="file"
                                         multiple
                                         accept="image/jpeg,image/png,image/webp"
-                                        onChange={(e) => {
-                                            if (e.target.files) {
-                                                setData('images', Array.from(e.target.files));
+                                        onChange={async (e) => {
+                                            if (e.target.files && e.target.files.length > 0) {
+                                                const originalFiles = Array.from(e.target.files);
+                                                
+                                                // Karena proses kompresi asinkron, kita proses sekaligus dengan Promise.all
+                                                const compressedFiles = await Promise.all(
+                                                    originalFiles.map(file => compressImage(file))
+                                                );
+                                                
+                                                // Gabungkan dengan gambar yang sudah dipilih sebelumnya (maksimal 10 gambar)
+                                                const newImages = [...data.images, ...compressedFiles].slice(0, 10);
+                                                setData('images', newImages);
+                                                
+                                                // Reset nilai input agar bisa memilih file yang sama lagi jika dihapus
+                                                e.target.value = '';
                                             }
                                         }}
                                         className="cursor-pointer"

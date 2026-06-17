@@ -21,6 +21,7 @@ interface PosProductsGridProps {
     setPosSettings: (s: any) => void;
     handleSaveSettingsToDb: () => void;
     isSavingDb: boolean;
+    cart: any[];
 }
 
 export function PosProductsGrid({
@@ -35,7 +36,8 @@ export function PosProductsGrid({
     posSettings,
     setPosSettings,
     handleSaveSettingsToDb,
-    isSavingDb
+    isSavingDb,
+    cart
 }: PosProductsGridProps) {
     return (
         <div className="xl:col-span-7 flex flex-col gap-4 h-full min-w-0">
@@ -236,12 +238,14 @@ export function PosProductsGrid({
                     filteredProducts.map((p: any) => {
                         const isLowStock = p.track_stock && p.current_stock <= 5 && p.current_stock > 0;
                         const isOutOfStock = p.track_stock && p.current_stock <= 0;
+                        const cartItem = cart.find((item) => item.id === p.id);
+                        const cartQty = cartItem ? cartItem.qty : 0;
 
                         return (
                             <div
                                 key={p.id}
                                 onClick={() => !isOutOfStock && handleAddToCart(p)}
-                                className={`group relative flex flex-col bg-white rounded-xl border overflow-hidden cursor-pointer transition-all hover:shadow-md hover:border-indigo-400 h-fit ${isOutOfStock ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''
+                                className={`group relative flex flex-col bg-white rounded-xl border overflow-hidden cursor-pointer transition-all hover:shadow-md hover:border-indigo-400 h-fit ${isOutOfStock ? 'opacity-60 cursor-not-allowed bg-slate-50 grayscale' : ''
                                     }`}
                             >
                                 {/* Foto / Visual Ringan */}
@@ -254,6 +258,13 @@ export function PosProductsGrid({
                                         />
                                     ) : (
                                         <ShoppingCart className="h-8 w-8 text-slate-300/70 group-hover:rotate-12 transition-transform" />
+                                    )}
+
+                                    {/* Badge Cart Qty (Jika sudah ada di keranjang) */}
+                                    {cartQty > 0 && (
+                                        <div className="absolute top-1.5 left-1.5 flex items-center justify-center min-w-[28px] h-6 px-1.5 bg-indigo-600 text-white rounded-md shadow-sm animate-in zoom-in duration-200 z-10 border border-white/20">
+                                            <span className="text-[11px] font-black tracking-tight">{cartQty}x</span>
+                                        </div>
                                     )}
 
                                     {/* Tag Stok */}

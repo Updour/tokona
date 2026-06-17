@@ -33,7 +33,7 @@ class ReportService
         if (auth()->check() && !auth()->user()->isSuperAdmin()) {
             $branchesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
-        $branches = $branchesQuery->get();
+        $branches = $branchesQuery->get()->toArray();
 
         $tenantId = auth()->check() ? auth()->user()->tenant_id : 'guest';
         $page = (int) ($filters['page'] ?? 1);
@@ -124,13 +124,13 @@ class ReportService
         $page = (int) ($filters['page'] ?? 1);
         $perPage = (int) ($filters['per_page'] ?? 15);
         $collection = collect(array_reverse($dailySales)); // Urutan terbaru di atas
-        $paginatedDailySales = new LengthAwarePaginator(
+        $paginatedDailySales = (new LengthAwarePaginator(
             $collection->forPage($page, $perPage)->values(),
             $collection->count(),
             $perPage,
             $page,
             ['path' => url()->current(), 'query' => request()->query()]
-        );
+        ))->toArray();
 
         // Persentase Kontribusi Metode Pembayaran
         $paymentMethods = $salesQuery->clone()
@@ -149,7 +149,7 @@ class ReportService
                     'amount' => (float) $item->total_amount,
                     'count' => $item->count
                 ];
-            });
+            })->values()->toArray();
 
         // Top Employees (Kasir Ter-Rajin)
         $topEmployees = $salesQuery->clone()
@@ -166,7 +166,7 @@ class ReportService
                     'tx_count' => (int) $item->tx_count,
                     'total_revenue' => (float) $item->total_revenue,
                 ];
-            });
+            })->values()->toArray();
 
         // ── B. LAPORAN PERFORMA PRODUK (PRODUCT SALES ANALYSIS) ───────────────
         $itemsQuery = TransactionItem::whereHas('transaction', function ($q) use ($startDate, $endDate, $branchId) {
@@ -198,7 +198,7 @@ class ReportService
                     'revenue' => $revenue,
                     'profit' => $profit
                 ];
-            });
+            })->values()->toArray();
 
         // ── C. LAPORAN STOK & INVENTORI (VALUATION & STOCK ALERTS) ────────────
         // Agregasi Subquery Stock Movements agar kompatibel dengan PostgreSQL & MySQL
@@ -263,7 +263,7 @@ class ReportService
                     'price' => (float) $p->sell_price,
                     'base_cost' => (float) $p->base_cost,
                 ];
-            });
+            })->values()->toArray();
 
         // ── D. LAPORAN SALES LAPANGAN (FIELD SALES REPORT) ───────────────────
         $visitsQuery = SalesVisit::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
@@ -397,7 +397,7 @@ class ReportService
         if (auth()->check() && !auth()->user()->isSuperAdmin()) {
             $branchesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
-        $branches = $branchesQuery->get();
+        $branches = $branchesQuery->get()->toArray();
 
         $tenantId = auth()->check() ? auth()->user()->tenant_id : 'guest';
         $cacheKey = "sales_dashboard_{$tenantId}_{$branchId}_{$startDate}_{$endDate}";
@@ -432,7 +432,7 @@ class ReportService
             )
             ->groupBy(DB::raw('DATE(created_at)'))
             ->orderBy('date')
-            ->get();
+            ->get()->toArray();
 
         // Leaderboard dengan konversi rate
         $leaderboard = SalesPerson::orderBy('name')->get()

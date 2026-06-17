@@ -39,6 +39,13 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\SalesController;
 
+use \App\Http\Controllers\AttendanceController;
+use \App\Http\Controllers\PayrollController;
+use \App\Http\Controllers\PayrollComponentController;
+use \App\Http\Controllers\EmployeeSalaryController;
+use \App\Http\Controllers\AccountingController;
+use \App\Http\Controllers\AuditLogController;
+
 Route::redirect('/', '/login');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -65,7 +72,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/inventory', 'inventory')->name('inventory');
     });
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
     Route::get('dashboard/sales', [DashboardController::class, 'sales'])->name('dashboard.sales');
+
     Route::inertia('subscription-expired', 'SubscriptionExpired')->name('subscription.expired');
     // ── Canvas Mobile Sales ────────────────────────────────────────────────
     Route::controller(CanvasSalesController::class)->prefix('canvas')->name('canvas.')->group(function () {
@@ -168,7 +177,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ── Absensi Pegawai (Attendances) ──────────────────────────────────────
-    Route::controller(\App\Http\Controllers\AttendanceController::class)->prefix('attendances')->name('attendances.')->group(function () {
+    Route::controller(AttendanceController::class)->prefix('attendances')->name('attendances.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/export', 'export')->name('export');
         Route::post('/clock-in', 'clockIn')->name('clockIn');
@@ -176,7 +185,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ── Penggajian (Payroll) ────────────────────────────────────────────────
-    Route::controller(\App\Http\Controllers\PayrollController::class)->prefix('hris/payrolls')->name('payrolls.')->group(function () {
+    Route::controller(PayrollController::class)->prefix('hris/payrolls')->name('payrolls.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/generate', 'generate')->name('generate');
         Route::post('/bulk-generate', 'bulkGenerate')->name('bulk-generate');
@@ -184,11 +193,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{payroll}/print', 'print')->name('print');
     });
 
-    Route::resource('hris/payroll-components', \App\Http\Controllers\PayrollComponentController::class)
+    Route::resource('hris/payroll-components', PayrollComponentController::class)
         ->except(['create', 'edit', 'show']);
 
     // ── Gaji Karyawan (Salaries) ────────────────────────────────────────────
-    Route::controller(\App\Http\Controllers\EmployeeSalaryController::class)->prefix('hris/salaries')->name('salaries.')->group(function () {
+    Route::controller(EmployeeSalaryController::class)->prefix('hris/salaries')->name('salaries.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::put('/{user}', 'update')->name('update');
     });
@@ -221,7 +230,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('cash-books/{cashBook}', 'destroyCashBook')->name('finance.cash-books.destroy');
     });
 
-    Route::controller(\App\Http\Controllers\AccountingController::class)->prefix('finance/accounting')->name('finance.accounting.')->group(function () {
+    Route::controller(AccountingController::class)->prefix('finance/accounting')->name('finance.accounting.')->group(function () {
         Route::get('journals', 'journals')->name('journals');
         Route::post('journals', 'storeJournal')->name('journals.store');
         Route::delete('journals/{journal}', 'destroyJournal')->name('journals.destroy');
@@ -231,7 +240,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('expenses', ExpenseController::class);
 
     // ── Audit & System Logs ────────────────────────────────────────────────
-    Route::controller(\App\Http\Controllers\AuditLogController::class)->prefix('audit')->name('audit.')->group(function () {
+    Route::controller(AuditLogController::class)->prefix('audit')->name('audit.')->group(function () {
         Route::get('activity-logs', 'activityLogs')->name('activity-logs');
         Route::get('system-logs', 'systemLogs')->name('system-logs');
         Route::get('stock-anomalies', 'stockAudit')->name('stock-anomalies');
@@ -248,6 +257,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
         Route::resource('menus', MenuController::class)->except(['create', 'edit', 'show']);
     });
+    
+    // ── Coming Soon / Fitur Dalam Pengembangan ────────────────────────────
+    Route::inertia('/ppob/pulsa', 'ComingSoon', [
+        'title' => 'Penjualan Pulsa (Digiflazz)', 
+        'description' => 'Fitur penjualan pulsa dan produk PPOB terintegrasi dengan Digiflazz sedang dalam tahap pengembangan. Segera Hadir!'
+    ])->name('ppob.pulsa');
+    
+    Route::inertia('/ppob/settings', 'ComingSoon', [
+        'title' => 'Pengaturan Integrasi PPOB', 
+        'description' => 'Halaman pengaturan kunci API dan margin profit untuk produk digital sedang dikerjakan.'
+    ])->name('ppob.settings');
+    
+    Route::inertia('/pos/printer', 'ComingSoon', [
+        'title' => 'Pengaturan Printer Thermal', 
+        'description' => 'Pengaturan koneksi printer kasir via USB/Bluetooth (ESC/POS) sedang disiapkan.'
+    ])->name('pos.printer');
 });
 
 require __DIR__ . '/settings.php';

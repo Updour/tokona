@@ -91,9 +91,13 @@ class ProductController extends Controller
             'file' => 'required|mimes:xlsx,csv,xls|max:5120', // Maks 5MB
         ]);
 
-        $tenantId = auth()->user()->isSuperAdmin() ? auth()->user()->tenant_id ?? 'guest' : auth()->user()->tenant_id;
+        $user = auth()->user();
+        
+        // Dapatkan Tenant & Branch (Untuk Super Admin, fallback ke cabang pertama di sistem)
+        $tenantId = $user->tenant_id ?? \App\Models\Tenants::first()->id;
+        $branchId = $user->branch_id ?? \App\Models\Branch::where('tenant_id', $tenantId)->first()->id;
 
-        Excel::import(new ProductsImport($tenantId), $request->file('file'));
+        Excel::import(new ProductsImport($tenantId, $branchId), $request->file('file'));
 
         return back()->with('success', 'Berhasil mengimpor data produk massal.');
     }

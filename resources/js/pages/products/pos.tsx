@@ -145,6 +145,7 @@ export default function Pos({ products, customers, promos, branches, transaction
                                 setPosSettings={pos.setPosSettings}
                                 handleSaveSettingsToDb={pos.handleSaveSettingsToDb}
                                 isSavingDb={pos.isSavingDb}
+                                cart={pos.cart}
                             />
 
                             <PosCartSidebar
