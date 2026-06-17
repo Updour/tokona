@@ -52,17 +52,34 @@ export const columns: ColumnDef<Tenant>[] = [
                 <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
         ),
-        cell: ({ row }) => (
-            <div className="flex items-center gap-3">
-                <Avatar className="h-9 w-9 border border-border/50 shadow-sm">
-                    <AvatarImage src={row.original.logo_url} alt={row.original.name} className="object-cover" />
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
-                        {row.original.name.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                </Avatar>
-                <span className="font-medium">{row.original.name}</span>
-            </div>
-        ),
+        cell: ({ row }) => {
+            const expiresAt = row.original.expires_at;
+            const isExpired = expiresAt ? new Date(expiresAt) < new Date() : false;
+
+            return (
+                <div className="flex items-center gap-3">
+                    <Avatar className={`h-9 w-9 border shadow-sm ${isExpired ? 'border-red-500/50 opacity-80' : 'border-border/50'}`}>
+                        <AvatarImage src={row.original.logo_url} alt={row.original.name} className="object-cover" />
+                        <AvatarFallback className={`font-semibold text-xs ${isExpired ? 'bg-red-50 text-red-600' : 'bg-primary/10 text-primary'}`}>
+                            {row.original.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                            <span className={`font-bold ${isExpired ? 'text-red-600' : 'text-slate-900'}`}>
+                                {row.original.name}
+                            </span>
+                            {isExpired && (
+                                <Badge variant="destructive" className="h-5 px-1.5 text-[10px] font-bold">EXPIRED</Badge>
+                            )}
+                        </div>
+                        {isExpired && (
+                            <span className="text-[10px] text-red-500 font-medium leading-none mt-0.5">Toko sudah tidak aktif</span>
+                        )}
+                    </div>
+                </div>
+            );
+        },
     },
     {
         accessorKey: 'slug',
