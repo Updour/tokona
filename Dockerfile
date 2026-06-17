@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libicu-dev \
+    libzip-dev \
     zip \
     unzip \
     libpq-dev
@@ -20,7 +21,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 
 # Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd intl
+    && docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd intl zip
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -42,6 +43,8 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 # Port binding will be handled by start.sh at runtime
 
 # Build Application
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_MEMORY_LIMIT=-1
 RUN composer install --no-dev --optimize-autoloader || composer update --no-dev --optimize-autoloader
 RUN npm install --no-package-lock && npm run build
 
