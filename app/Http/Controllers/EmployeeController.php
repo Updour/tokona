@@ -148,7 +148,7 @@ class EmployeeController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateUserRequest $request, User $user)
+    public function update(UpdateUserRequest $request, User $employee)
     {
         $validated = $request->validated();
 
@@ -159,13 +159,13 @@ class EmployeeController extends Controller
         }
 
         // Update the user
-        $user->update($validated);
+        $employee->update($validated);
 
         // Adjust role_id to target tenant if Super Admin
         $roleId = $validated['role_id'];
         if (auth()->user()->isSuperAdmin() && isset($validated['tenant_id'])) {
             $selectedRole = Role::find($roleId);
-            $targetTenantId = $validated['tenant_id'] ?? $user->tenant_id;
+            $targetTenantId = $validated['tenant_id'] ?? $employee->tenant_id;
             if ($selectedRole && $selectedRole->tenant_id !== $targetTenantId) {
                 $targetRole = Role::where('name', $selectedRole->name)
                     ->where('tenant_id', $targetTenantId)
@@ -177,11 +177,11 @@ class EmployeeController extends Controller
         }
 
         // Sync the role
-        $user->roles()->sync([$roleId]);
+        $employee->roles()->sync([$roleId]);
 
         // Save Basic Salary if provided
         if (isset($validated['basic_salary'])) {
-            app(\App\Services\EmployeeSalaryService::class)->setSalary($user->id, [
+            app(\App\Services\EmployeeSalaryService::class)->setSalary($employee->id, [
                 'basic_salary' => $validated['basic_salary']
             ]);
         }
@@ -192,14 +192,14 @@ class EmployeeController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $user)
+    public function destroy(User $employee)
     {
         // Protect against deleting yourself
-        if (auth()->id() === $user->id) {
+        if (auth()->id() === $employee->id) {
             return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
 
-        $user->delete();
+        $employee->delete();
 
         return redirect()->route('employees.index')->with('success', 'Karyawan berhasil dihapus.');
     }

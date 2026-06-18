@@ -17,7 +17,7 @@ class UpdateUserRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users')->ignore($this->user)],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users')->ignore($this->employee)],
             'password' => ['nullable', Password::defaults()],
             'phone' => ['nullable', 'string', 'max:20'],
             'status' => ['required', 'string', Rule::in(['active', 'inactive'])],
