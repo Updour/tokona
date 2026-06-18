@@ -346,6 +346,8 @@ class MenuAndPermissionSeeder extends Seeder
                     ['title' => 'Laporan laba rugi', 'href' => '/profit-loss', 'permission_key' => 'finance.index', 'order' => 3],
                     ['title' => 'Kas & saldo', 'href' => '/cash-books', 'permission_key' => 'finance.index', 'order' => 4],
                     ['title' => 'Laporan akuntansi', 'href' => '/accounting/reports', 'permission_key' => 'finance.index', 'order' => 5],
+                    ['title' => 'Hutang & Piutang', 'href' => '/debts-receivables', 'permission_key' => 'finance.index', 'order' => 6],
+                    ['title' => 'Jurnal Akuntansi', 'href' => '/finance/accounting/journals', 'permission_key' => 'finance.index', 'order' => 7],
                 ]
             ],
             // Parent: Laporan

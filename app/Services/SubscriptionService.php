@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Tenants;
-use App\Models\Product;
+use App\Models\Products;
 use App\Models\User;
 use App\Models\Branch; // or TenantLocations
 
@@ -41,7 +41,7 @@ class SubscriptionService
     public function canAddBranch(Tenants $tenant): bool
     {
         $limits = $this->getLimits($tenant->plan);
-        $currentCount = $tenant->location()->count(); // Using location relation or locations
+        $currentCount = Branch::where('tenant_id', $tenant->id)->count();
         return $currentCount < $limits['branches'];
     }
 
@@ -53,7 +53,7 @@ class SubscriptionService
         $limits = $this->getLimits($tenant->plan);
         
         // Count products for this tenant
-        $currentCount = Product::where('tenant_id', $tenant->id)->count();
+        $currentCount = Products::where('tenant_id', $tenant->id)->count();
         return $currentCount < $limits['products'];
     }
 
