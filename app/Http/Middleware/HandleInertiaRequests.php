@@ -122,6 +122,11 @@ class HandleInertiaRequests extends Middleware
                         if (!$enableAttendance && $child->title === 'Absensi Pegawai') {
                             continue;
                         }
+                    } else {
+                        // Khusus Super Admin: Sembunyikan menu Role & permission agar khusus untuk Owner saja
+                        if ($child->title === 'Role & permission') {
+                            continue;
+                        }
                     }
                     $filteredChildren[] = [
                         'title' => $child->title,
@@ -152,7 +157,7 @@ class HandleInertiaRequests extends Middleware
                     'expires_at' => $activeTenant->expires_at ? $activeTenant->expires_at->toIso8601String() : null,
                     'limits' => $limits,
                     'usage' => [
-                        'branches' => $activeTenant->location()->count(),
+                        'branches' => \App\Models\Branch::where('tenant_id', $activeTenant->id)->count(),
                         'products' => \App\Models\Products::where('tenant_id', $activeTenant->id)->count(),
                         'users' => \App\Models\User::where('tenant_id', $activeTenant->id)->count(),
                     ],

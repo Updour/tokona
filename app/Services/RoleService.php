@@ -20,10 +20,14 @@ class RoleService
         }
 
         // Scoped by tenant
-        $roles = Role::where('tenant_id', $tenantId)
-            ->with('permissions')
-            ->orderBy('name')
-            ->get();
+        $rolesQuery = Role::where('tenant_id', $tenantId)
+            ->with('permissions');
+
+        if (!auth()->user()->isSuperAdmin()) {
+            $rolesQuery->where('name', '!=', 'super-admin');
+        }
+
+        $roles = $rolesQuery->orderBy('name')->get();
 
         // Get all available permissions grouped by module for the UI
         $permissionsQuery = Permission::orderBy('module')->orderBy('name');

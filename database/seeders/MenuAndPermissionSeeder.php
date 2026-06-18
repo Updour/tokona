@@ -375,6 +375,7 @@ class MenuAndPermissionSeeder extends Seeder
                     ['title' => 'Daftar karyawan', 'href' => '/employees', 'permission_key' => 'users.index', 'order' => 1],
                     ['title' => 'Role & permission', 'href' => '/roles', 'permission_key' => 'roles.index', 'order' => 2],
                     ['title' => 'Absensi karyawan', 'href' => '/attendances', 'permission_key' => 'users.index', 'order' => 3],
+                    ['title' => 'Penggajian (Payroll)', 'href' => '/hris/payrolls', 'permission_key' => 'users.index', 'order' => 4],
                 ]
             ],
             // Parent: Toko
