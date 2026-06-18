@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Wallet, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSalaryStore } from '../stores/useSalaryStore';
+import { formatRupiah } from '@/lib/helpers/format';
 
 export default function SetSalaryDialog() {
     const { isSetSalaryOpen: isOpen, closeSetSalary: onClose, selectedEmployee: employee } = useSalaryStore();
@@ -55,16 +56,14 @@ export default function SetSalaryDialog() {
                             Gaji Pokok (Basic Salary) <span className="text-destructive">*</span>
                         </Label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">Rp</span>
                             <Input
                                 id="basic_salary"
-                                type="number"
+                                type="text"
                                 required
-                                min="0"
-                                className="pl-10 font-mono"
-                                placeholder="0"
-                                value={data.basic_salary}
-                                onChange={(e) => setData('basic_salary', e.target.value)}
+                                className="font-mono"
+                                placeholder="Rp 0"
+                                value={data.basic_salary ? formatRupiah(data.basic_salary) : ''}
+                                onChange={(e) => setData('basic_salary', e.target.value.replace(/\D/g, ''))}
                                 disabled={processing}
                             />
                         </div>
@@ -72,7 +71,7 @@ export default function SetSalaryDialog() {
                             <p className="text-sm text-destructive mt-1">{errors.basic_salary}</p>
                         )}
                         <p className="text-xs text-muted-foreground">
-                            Format angka tanpa titik atau koma (misal: 5000000 untuk 5 Juta).
+                            Format angka akan disesuaikan otomatis (contoh ketik 5000000 jadi Rp 5.000.000).
                         </p>
                     </div>
 

@@ -314,6 +314,17 @@ class PosService
                 ['payment_method' => $data['payment_method'], 'total' => $transaction->total]
             );
 
+            // [Langkah 2: Dual-Mode Accounting]
+            // Jika mode Akuntansi Baku aktif, cetak Jurnal Entry secara otomatis
+            $tenantObj = \App\Models\Tenants::find($tenantId);
+            if ($tenantObj) {
+                $accountingSettings = $tenantObj->getAccountingSettings();
+                if ($accountingSettings['enable_advanced_accounting']) {
+                    $accountingService = app(\App\Services\AccountingService::class);
+                    $accountingService->generatePosJournal($transaction);
+                }
+            }
+
             return $transaction;
         });
     }
@@ -446,6 +457,16 @@ class PosService
                 'note' => "Pelunasan Piutang ({$data['payment_method']}) - Invoice: {$transaction->invoice_number}",
                 'created_by' => $user->id,
             ]);
+
+            // [Langkah 2: Dual-Mode Accounting]
+            $tenantObj = \App\Models\Tenants::find($tenantId);
+            if ($tenantObj) {
+                $accountingSettings = $tenantObj->getAccountingSettings();
+                if ($accountingSettings['enable_advanced_accounting']) {
+                    $accountingService = app(\App\Services\AccountingService::class);
+                    $accountingService->generatePosPaymentJournal($transaction, $amountPaid);
+                }
+            }
         });
     }
 

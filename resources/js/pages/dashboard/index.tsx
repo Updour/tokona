@@ -8,6 +8,7 @@ import { DashboardSalesLeaderboard } from '@/features/dashboard/components/Dashb
 import { DashboardStats } from '@/features/dashboard/components/DashboardStats';
 import { DashboardStockAlerts } from '@/features/dashboard/components/DashboardStockAlerts';
 import { DashboardTopProducts } from '@/features/dashboard/components/DashboardTopProducts';
+import { DashboardRecentTransactions } from '@/features/dashboard/components/DashboardRecentTransactions';
 import MainLayout from '@/layouts/app/app-main-layout';
 
 export default function Dashboard({ branches, filters, salesSummary, productPerformance, stockReport, salesFieldReport, attendanceReport }: any) {
@@ -38,6 +39,7 @@ export default function Dashboard({ branches, filters, salesSummary, productPerf
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     <DashboardTopProducts topProducts={productPerformance.top_products} />
+                    <DashboardRecentTransactions transactions={salesSummary.recent_transactions || []} />
                     <DashboardSalesLeaderboard leaderboard={salesFieldReport?.leaderboard || []} />
                 </div>
             </div>

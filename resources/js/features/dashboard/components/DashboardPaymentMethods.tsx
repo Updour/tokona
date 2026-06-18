@@ -1,5 +1,6 @@
 import { CreditCard } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { formatRupiah } from '@/lib/helpers/format';
 
 interface DashboardPaymentMethodsProps {
     paymentMethods: any[];
@@ -28,6 +29,7 @@ export function DashboardPaymentMethods({ paymentMethods, totalSales }: Dashboar
                                     <div className="flex items-center gap-1.5 text-slate-800">
                                         <CreditCard className="h-3.5 w-3.5 text-indigo-650" />
                                         <span className="font-bold">{item.label}</span>
+                                        <span className="text-slate-500 font-normal">({formatRupiah(item.amount)})</span>
                                     </div>
                                     <span className="font-mono font-black text-slate-800">{percentage}%</span>
                                 </div>

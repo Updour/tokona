@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEmployeeStore } from '@/pages/employees/stores/useEmployeeStore';
 import { store as employeesStore, update as employeesUpdate } from '@/routes/employees';
+import { formatRupiah } from '@/lib/helpers/format';
 
 interface EmployeeFormDialogProps {
     branches: any[];
@@ -248,10 +249,10 @@ export function EmployeeFormDialog({ branches, roles, tenants = [] }: EmployeeFo
                                 <Label htmlFor="basic_salary" className="text-sm font-semibold">Gaji Pokok (Rp)</Label>
                                 <Input
                                     id="basic_salary"
-                                    type="number"
-                                    value={data.basic_salary}
-                                    onChange={(e) => setData('basic_salary', e.target.value)}
-                                    placeholder="Contoh: 3000000"
+                                    type="text"
+                                    value={data.basic_salary ? formatRupiah(data.basic_salary) : ''}
+                                    onChange={(e) => setData('basic_salary', e.target.value.replace(/\D/g, ''))}
+                                    placeholder="Rp 0"
                                     className={errors.basic_salary ? 'border-red-500' : ''}
                                 />
                                 {errors.basic_salary && <span className="text-xs text-red-500 font-medium">{errors.basic_salary}</span>}

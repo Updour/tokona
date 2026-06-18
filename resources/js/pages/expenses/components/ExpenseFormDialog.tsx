@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useExpenseStore } from '../stores/useExpenseStore';
+import { formatRupiah } from '@/lib/helpers/format';
 
 interface Props {
     branches: any[];
@@ -150,11 +151,10 @@ export function ExpenseFormDialog({ branches }: Props) {
                             <Label htmlFor="amount">Jumlah Uang (Rp) <span className="text-red-500">*</span></Label>
                             <Input
                                 id="amount"
-                                type="number"
-                                min="0"
-                                placeholder="Nominal"
-                                value={data.amount}
-                                onChange={(e) => setData('amount', e.target.value)}
+                                type="text"
+                                placeholder="Rp 0"
+                                value={data.amount ? formatRupiah(data.amount) : ''}
+                                onChange={(e) => setData('amount', e.target.value.replace(/\D/g, ''))}
                             />
                         </div>
                         <div className="space-y-1.5">

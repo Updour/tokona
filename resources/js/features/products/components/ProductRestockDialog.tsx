@@ -164,16 +164,12 @@ return;
                                 <Label className="text-xs font-semibold uppercase text-muted-foreground">
                                     Harga Beli Satuan (Opsional)
                                 </Label>
-                                <div className="relative max-w-[200px]">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">Rp</span>
+                                <div className="max-w-[200px]">
                                     <Input
-                                        type="number"
-                                        min="0"
-                                        step="1"
-                                        value={data.unit_cost}
-                                        onChange={(e) => setData('unit_cost', e.target.value)}
-                                        className="pl-8"
-                                        placeholder="0"
+                                        type="text"
+                                        value={data.unit_cost ? formatRupiah(data.unit_cost) : ''}
+                                        onChange={(e) => setData('unit_cost', e.target.value.replace(/\D/g, ''))}
+                                        placeholder="Rp 0"
                                     />
                                 </div>
                                 <p className="text-xs text-muted-foreground">

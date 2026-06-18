@@ -60,6 +60,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Helper untuk mengecek hak akses Owner (Pemilik Toko).
+     */
+    public function isOwner(): bool
+    {
+        return $this->roles()->where('name', 'owner')->exists();
+    }
+
+    /**
      * Check if user has a specific permission key.
      */
     public function hasPermission(string $permissionKey): bool

@@ -119,12 +119,15 @@ class FinanceService
         $year = intval($filters['year'] ?? Carbon::now()->year);
         $branchId = $filters['branch_id'] ?? 'ALL';
 
-        // Revenue: Hanya dari CashBook IN category 'penjualan'
-        $revenueQuery = CashBook::where('type', 'in')->where('category', 'penjualan')->whereYear('created_at', $year);
+        // Revenue (Accrual): Total penjualan dari POS (Kas + Hutang) + Pemasukan Manual
+        $posRevenueQuery = Transaction::whereIn('status', ['paid', 'partial', 'debt'])->whereYear('created_at', $year);
+        $manualRevenueQuery = CashBook::where('type', 'in')->where('category', 'penjualan')->whereNull('reference_id')->whereYear('created_at', $year);
+        
         if ($branchId !== 'ALL') {
-            $revenueQuery->where('branch_id', $branchId);
+            $posRevenueQuery->where('branch_id', $branchId);
+            $manualRevenueQuery->where('branch_id', $branchId);
         }
-        $revenue = (clone $revenueQuery)->sum('amount');
+        $revenue = (clone $posRevenueQuery)->sum('total') + (clone $manualRevenueQuery)->sum('amount');
 
         // HPP / COGS: Dari total_cogs di transaksi penjualan yang sukses (paid, partial, debt)
         $cogsQuery = Transaction::whereIn('status', ['paid', 'partial', 'debt'])->whereYear('created_at', $year);
@@ -145,7 +148,10 @@ class FinanceService
         for ($m = 1; $m <= 12; $m++) {
             $monthName = Carbon::create($year, $m, 1)->locale('id')->isoFormat('MMM');
             
-            $mRev = (clone $revenueQuery)->whereMonth('created_at', $m)->sum('amount');
+            $mRevPos = (clone $posRevenueQuery)->whereMonth('created_at', $m)->sum('total');
+            $mRevManual = (clone $manualRevenueQuery)->whereMonth('created_at', $m)->sum('amount');
+            $mRev = $mRevPos + $mRevManual;
+            
             $mCogs = (clone $cogsQuery)->whereMonth('created_at', $m)->sum('total_cogs');
             $mExp = (clone $expensesQuery)->whereMonth('expense_date', $m)->sum('amount');
             $mNet = $mRev - ($mCogs + $mExp);
@@ -331,16 +337,19 @@ class FinanceService
         }
         $totalDebts = $debtsQuery->sum('total_cost');
 
-        // Laba Ditahan = Pendapatan Penjualan - HPP Penjualan - Biaya
-        $revenueQuery = CashBook::where('type', 'in')->where('category', 'penjualan');
-        $cogsQuery = Transaction::whereIn('status', ['paid', 'partial', 'debt']);
+        // Laba Ditahan = Pendapatan Penjualan (Accrual) - HPP Penjualan - Biaya
+        $posRevenueQuery = Transaction::whereIn('status', ['paid', 'partial', 'debt'])->whereBetween('created_at', [$startDate, $endDate]);
+        $manualRevenueQuery = CashBook::where('type', 'in')->where('category', 'penjualan')->whereNull('reference_id')->whereBetween('created_at', [$startDate, $endDate]);
+        
+        $cogsQuery = Transaction::whereIn('status', ['paid', 'partial', 'debt'])->whereBetween('created_at', [$startDate, $endDate]);
         
         if ($branchId !== 'ALL') {
-            $revenueQuery->where('branch_id', $branchId);
+            $posRevenueQuery->where('branch_id', $branchId);
+            $manualRevenueQuery->where('branch_id', $branchId);
             $cogsQuery->where('branch_id', $branchId);
         }
         
-        $revenue = $revenueQuery->sum('amount');
+        $revenue = $posRevenueQuery->sum('total') + $manualRevenueQuery->sum('amount');
         $totalCogs = $cogsQuery->sum('total_cogs');
         $retainedEarnings = $revenue - ($totalCogs + $totalExp->sum('amount'));
 

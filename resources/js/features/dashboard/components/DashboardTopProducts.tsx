@@ -8,7 +8,7 @@ interface DashboardTopProductsProps {
 
 export function DashboardTopProducts({ topProducts }: DashboardTopProductsProps) {
     return (
-        <Card className="border border-slate-200/80 shadow-sm bg-white col-span-1 lg:col-span-2">
+        <Card className="border border-slate-200/80 shadow-sm bg-white col-span-1 lg:col-span-1">
             <CardHeader className="p-4 border-b flex flex-row items-center justify-between">
                 <div>
                     <CardTitle className="text-sm font-black text-slate-800">10 Produk Terlaris</CardTitle>

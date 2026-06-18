@@ -37,7 +37,8 @@ class Journal extends Model
 
         static::creating(function ($model) {
             if (empty($model->reference_number)) {
-                $model->reference_number = 'JNL-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
+                $monthName = strtoupper(now()->locale('id')->isoFormat('MMM'));
+                $model->reference_number = 'JNL-' . date('d') . $monthName . '-' . date('Y') . '-' . strtoupper(substr(uniqid(), -5));
             }
         });
     }

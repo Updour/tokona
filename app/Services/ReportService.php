@@ -168,6 +168,24 @@ class ReportService
                 ];
             })->values()->toArray();
 
+        // Riwayat Transaksi Terakhir (Recent Transactions)
+        $recentTransactions = $salesQuery->clone()
+            ->with(['creator:id,name'])
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get()
+            ->map(function ($tx) {
+                return [
+                    'id' => $tx->id,
+                    'invoice_number' => $tx->invoice_number,
+                    'total' => (float) $tx->total,
+                    'payment_method' => $tx->payment_method,
+                    'status' => $tx->status,
+                    'created_at' => $tx->created_at->format('Y-m-d H:i'),
+                    'creator' => $tx->creator->name ?? 'Sistem',
+                ];
+            })->values()->toArray();
+
         // ── B. LAPORAN PERFORMA PRODUK (PRODUCT SALES ANALYSIS) ───────────────
         $itemsQuery = TransactionItem::whereHas('transaction', function ($q) use ($startDate, $endDate, $branchId) {
             $q->where('status', 'paid')
@@ -358,6 +376,7 @@ class ReportService
                 'all_daily_sales'=> array_reverse($dailySales), // Untuk export non-paginasi
                 'payment_methods' => $paymentMethods,
                 'top_employees'  => $topEmployees,
+                'recent_transactions' => $recentTransactions,
             ],
             'productPerformance' => [
                 'top_products' => $topProducts,

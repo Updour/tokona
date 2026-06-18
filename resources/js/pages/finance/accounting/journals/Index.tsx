@@ -1,9 +1,9 @@
-import { formatNumber , formatRupiah } from '@/lib/helpers/format';
+import { formatNumber, formatRupiah, formatDateTime } from '@/lib/helpers/format';
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/layouts/app/app-main-layout';
 import { Head, router } from '@inertiajs/react';
-import { 
-    Search, BookOpen, Download, Building2, X, SlidersHorizontal
+import {
+    Search, BookOpen, Download, Building2, X, SlidersHorizontal, Calendar, Receipt, ShoppingBag, CreditCard
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -30,11 +30,15 @@ export default function JournalsIndex({ journals, accounts, filters, branches, t
     const [localFilters, setLocalFilters] = useState({
         branch_id: filters.branch_id || '',
         tenant_id: filters.tenant_id || '',
+        start_date: filters.start_date || '',
+        end_date: filters.end_date || '',
     });
 
     const activeFilterCount = [
         localFilters.branch_id,
         localFilters.tenant_id,
+        localFilters.start_date,
+        localFilters.end_date,
     ].filter(Boolean).length;
 
     useEffect(() => {
@@ -51,6 +55,9 @@ export default function JournalsIndex({ journals, accounts, filters, branches, t
             search: search || undefined,
             branch_id: localFilters.branch_id || undefined,
             tenant_id: localFilters.tenant_id || undefined,
+            start_date: localFilters.start_date || undefined,
+            end_date: localFilters.end_date || undefined,
+            per_page: filters.per_page || undefined,
             ...overrides,
         };
         Object.keys(params).forEach((k) => params[k] === undefined && delete params[k]);
@@ -59,7 +66,7 @@ export default function JournalsIndex({ journals, accounts, filters, branches, t
 
     const resetFilters = () => {
         setSearch('');
-        setLocalFilters({ branch_id: '', tenant_id: '' });
+        setLocalFilters({ branch_id: '', tenant_id: '', start_date: '', end_date: '' });
         router.get('/finance/accounting/journals', {}, { preserveState: false, replace: true });
     };
 
@@ -67,7 +74,7 @@ export default function JournalsIndex({ journals, accounts, filters, branches, t
         setLocalFilters((prev) => ({ ...prev, [key]: value }));
     };
 
-    
+
     const formatDateHelper = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('id-ID', {
             year: 'numeric',
@@ -95,7 +102,7 @@ export default function JournalsIndex({ journals, accounts, filters, branches, t
             </div>
 
             <div className="flex-1 bg-background rounded-lg border shadow-sm p-4 w-full flex flex-col gap-4">
-                
+
                 {/* Filter Header */}
                 <div className="space-y-3">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -166,6 +173,31 @@ export default function JournalsIndex({ journals, accounts, filters, branches, t
                                             </SelectContent>
                                         </Select>
                                     </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5">
+                                            <Calendar className="h-3 w-3" /> Tanggal Jurnal
+                                        </Label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] text-muted-foreground">Dari</Label>
+                                                <Input 
+                                                    type="date" 
+                                                    value={localFilters.start_date} 
+                                                    onChange={(e) => updateLocal('start_date', e.target.value)} 
+                                                    className="h-8 text-xs" 
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] text-muted-foreground">Sampai</Label>
+                                                <Input 
+                                                    type="date" 
+                                                    value={localFilters.end_date} 
+                                                    onChange={(e) => updateLocal('end_date', e.target.value)} 
+                                                    className="h-8 text-xs" 
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="px-4 py-3 border-t">
                                     <Button className="w-full" size="sm" onClick={() => applyFilters()}>
@@ -234,12 +266,26 @@ export default function JournalsIndex({ journals, accounts, filters, branches, t
                                     journals.data.map((journal: any) => (
                                         <React.Fragment key={journal.id}>
                                             <tr className="border-b bg-muted/20">
-                                                <td className="p-3 align-top font-medium">
-                                                    {formatDateHelper(journal.date)}
+                                                <td className="p-3 align-top font-medium whitespace-nowrap">
+                                                    {formatDateTime(journal.created_at)}
                                                 </td>
                                                 <td className="p-3 align-top">
                                                     <div className="font-medium text-primary">{journal.reference_number}</div>
-                                                    <div className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wider">{journal.source_type}</div>
+                                                    <div className="text-xs mt-2">
+                                                        {journal.source_type === 'pos_sale' ? (
+                                                            <a href={`/export/invoice/${journal.source_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-200 uppercase tracking-wider font-bold transition-all shadow-sm group">
+                                                                <ShoppingBag className="h-3 w-3 group-hover:scale-110 transition-transform" /> 
+                                                                <span className="text-[10px]">POS SALE</span>
+                                                            </a>
+                                                        ) : journal.source_type === 'pos_payment' ? (
+                                                            <a href={`/export/invoice/${journal.source_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 px-2.5 py-1 rounded-full border border-blue-200 uppercase tracking-wider font-bold transition-all shadow-sm group">
+                                                                <CreditCard className="h-3 w-3 group-hover:scale-110 transition-transform" /> 
+                                                                <span className="text-[10px]">POS PAYMENT</span>
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-muted-foreground uppercase tracking-wider font-semibold text-[10px]">{journal.source_type.replace('_', ' ')}</span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="p-3 align-top font-medium" colSpan={3}>
                                                     {journal.description}
@@ -265,11 +311,19 @@ export default function JournalsIndex({ journals, accounts, filters, branches, t
                                                             </div>
                                                         )}
                                                     </td>
-                                                    <td className="p-2 text-right align-middle font-mono text-sm text-foreground/80">
-                                                        {entry.debit > 0 ? formatRupiah(entry.debit) : '-'}
+                                                    <td className="p-2 text-right align-middle font-mono text-sm">
+                                                        {entry.debit > 0 ? (
+                                                            <span className="font-bold text-blue-600">{formatRupiah(entry.debit)}</span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground/30">-</span>
+                                                        )}
                                                     </td>
-                                                    <td className="p-2 text-right align-middle font-mono text-sm text-foreground/80">
-                                                        {entry.credit > 0 ? formatRupiah(entry.credit) : '-'}
+                                                    <td className="p-2 text-right align-middle font-mono text-sm">
+                                                        {entry.credit > 0 ? (
+                                                            <span className="font-bold text-emerald-600">{formatRupiah(entry.credit)}</span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground/30">-</span>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -284,8 +338,28 @@ export default function JournalsIndex({ journals, accounts, filters, branches, t
                 {/* Pagination */}
                 {journals.data.length > 0 && (
                     <div className="flex items-center justify-between py-2">
-                        <div className="text-sm text-muted-foreground">
-                            Menampilkan <span className="font-medium text-foreground">{journals.from}</span> - <span className="font-medium text-foreground">{journals.to}</span> dari <span className="font-medium text-foreground">{journals.total}</span> data
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                                <span>Tampilkan</span>
+                                <Select
+                                    value={journals.per_page?.toString() || '15'}
+                                    onValueChange={(val) => applyFilters({ per_page: val, page: 1 })}
+                                >
+                                    <SelectTrigger className="h-8 w-[70px] text-xs">
+                                        <SelectValue placeholder="15" />
+                                    </SelectTrigger>
+                                    <SelectContent side="top">
+                                        {[10, 15, 20, 25, 50, 100].map((size) => (
+                                            <SelectItem key={size} value={size.toString()}>
+                                                {size}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="hidden sm:block border-l pl-4 border-slate-200">
+                                Menampilkan <span className="font-medium text-foreground">{journals.from}</span> - <span className="font-medium text-foreground">{journals.to}</span> dari <span className="font-medium text-foreground">{journals.total}</span> data
+                            </div>
                         </div>
                         <div className="flex gap-1">
                             {journals.links.map((link: any, i: number) => (
@@ -295,8 +369,8 @@ export default function JournalsIndex({ journals, accounts, filters, branches, t
                                     disabled={!link.url}
                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                     className={`inline-flex items-center justify-center rounded-md h-8 min-w-8 px-3 text-xs font-medium transition-colors border
-                                        ${link.active 
-                                            ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90' 
+                                        ${link.active
+                                            ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90'
                                             : 'bg-background hover:bg-muted'}
                                         ${!link.url ? 'opacity-50 cursor-not-allowed border-transparent' : ''}
                                     `}

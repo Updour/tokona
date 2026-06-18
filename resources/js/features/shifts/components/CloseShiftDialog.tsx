@@ -50,11 +50,11 @@ export function CloseShiftDialog() {
                             <Label htmlFor="closing_balance">Saldo Akhir di Laci Kas (Rp)</Label>
                             <Input
                                 id="closing_balance"
-                                type="number"
-                                min="0"
-                                value={form.data.closing_balance}
-                                onChange={e => form.setData('closing_balance', e.target.value)}
-                                placeholder="Contoh: 350000"
+                                type="text"
+                                className="text-5xl font-semibold h-12 py-3"
+                                value={form.data.closing_balance ? formatRupiah(form.data.closing_balance.toString()) : ''}
+                                onChange={e => form.setData('closing_balance', e.target.value.replace(/\D/g, ''))}
+                                placeholder="Rp 0"
                                 autoFocus
                             />
                             {form.errors.closing_balance && (

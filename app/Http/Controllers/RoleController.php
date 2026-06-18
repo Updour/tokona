@@ -9,13 +9,28 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class RoleController extends Controller
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+
+class RoleController extends Controller implements HasMiddleware
 {
     protected RoleService $roleService;
 
     public function __construct(RoleService $roleService)
     {
         $this->roleService = $roleService;
+    }
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware(function ($request, $next) {
+                if (!auth()->user()->isSuperAdmin() && !auth()->user()->isOwner()) {
+                    abort(403, 'Akses ditolak. Hanya Super Admin dan Pemilik Toko yang dapat mengelola hak akses dan peran.');
+                }
+                return $next($request);
+            }),
+        ];
     }
 
     /**

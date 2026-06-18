@@ -7,12 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useJournalStore, JournalEntryInput } from '../stores/useJournalStore';
-import { formatRupiah, getTodayDateString } from '@/lib/helpers/format';
-import { Plus, Trash2, BookOpen, AlertCircle } from 'lucide-react';
+import { formatRupiah, getTodayDateString, formatNumber } from '@/lib/helpers/format';
+import { Plus, Trash2, BookOpen, AlertCircle, Sparkles } from 'lucide-react';
 
 export default function JournalFormDialog({ accounts, branches, isSuperAdmin }: any) {
     const { isFormOpen, closeForm } = useJournalStore();
-    
+
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         date: getTodayDateString(),
         description: '',
@@ -67,7 +67,7 @@ export default function JournalFormDialog({ accounts, branches, isSuperAdmin }: 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!isBalanced) {
             toast.error('Total Debit dan Kredit harus seimbang!');
             return;
@@ -79,6 +79,17 @@ export default function JournalFormDialog({ accounts, branches, isSuperAdmin }: 
                 reset();
             },
         });
+    };
+
+    const handleGenerateRef = () => {
+        const dateObj = new Date(data.date || new Date());
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = dateObj.toLocaleString('id-ID', { month: 'short' }).toUpperCase().replace('.', '');
+        const year = dateObj.getFullYear();
+        // Generate 5 random alphanumeric characters (base36) to ensure no duplicates
+        const randomStr = Math.random().toString(36).substring(2, 7).toUpperCase(); 
+        const newRef = `JNL-${day}${month}-${year}-${randomStr}`;
+        setData('reference_number', newRef);
     };
 
     return (
@@ -98,30 +109,40 @@ export default function JournalFormDialog({ accounts, branches, isSuperAdmin }: 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <Label>Tanggal Transaksi</Label>
-                            <Input 
-                                type="date" 
-                                value={data.date} 
-                                onChange={e => setData('date', e.target.value)} 
+                            <Input
+                                type="date"
+                                value={data.date}
+                                onChange={e => setData('date', e.target.value)}
                                 required
                             />
                             {errors.date && <p className="text-xs text-red-500">{errors.date}</p>}
                         </div>
-                        
+
                         <div className="space-y-1.5">
-                            <Label>No. Referensi (Opsional)</Label>
-                            <Input 
-                                placeholder="JNL-AUTO-GEN" 
-                                value={data.reference_number} 
-                                onChange={e => setData('reference_number', e.target.value)} 
+                            <Label className="flex items-center gap-1.5">
+                                No. Referensi (Opsional) 
+                                <button 
+                                    type="button" 
+                                    onClick={handleGenerateRef}
+                                    title="Klik untuk membuat nomor otomatis"
+                                    className="flex items-center gap-1 text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold transition-colors cursor-pointer"
+                                >
+                                    <Sparkles className="h-3 w-3" /> Auto-Generate
+                                </button>
+                            </Label>
+                            <Input
+                                placeholder="Cth: JNL-18JUN-2026-XXXXX"
+                                value={data.reference_number}
+                                onChange={e => setData('reference_number', e.target.value)}
                             />
                         </div>
 
                         <div className="space-y-1.5 md:col-span-2">
                             <Label>Deskripsi Jurnal</Label>
-                            <Input 
-                                placeholder="Cth: Penyesuaian penyusutan aset bulan ini" 
-                                value={data.description} 
-                                onChange={e => setData('description', e.target.value)} 
+                            <Input
+                                placeholder="Cth: Penyesuaian penyusutan aset bulan ini"
+                                value={data.description}
+                                onChange={e => setData('description', e.target.value)}
                                 required
                             />
                             {errors.description && <p className="text-xs text-red-500">{errors.description}</p>}
@@ -131,7 +152,7 @@ export default function JournalFormDialog({ accounts, branches, isSuperAdmin }: 
                             <div className="space-y-1.5 md:col-span-2">
                                 <Label>Cabang (Opsional)</Label>
                                 <Select value={data.branch_id} onValueChange={v => setData('branch_id', v)}>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="w-full">
                                         <SelectValue placeholder="Pilih Cabang (Biarkan kosong jika Pusat)" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -152,50 +173,56 @@ export default function JournalFormDialog({ accounts, branches, isSuperAdmin }: 
                                 <Plus className="h-3.5 w-3.5" /> Tambah Baris
                             </Button>
                         </div>
-                        
+
                         <div className="p-3 space-y-3">
                             {data.entries.map((entry, index) => (
                                 <div key={entry.id} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center relative p-3 border rounded bg-white">
                                     <div className="flex-1 min-w-[200px] w-full">
                                         <Label className="text-xs mb-1 block">Akun Perkiraan</Label>
                                         <Select value={entry.account_id} onValueChange={v => updateEntry(entry.id, 'account_id', v)} required>
-                                            <SelectTrigger className="h-9 text-xs">
+                                            <SelectTrigger className="h-9 text-xs w-full">
                                                 <SelectValue placeholder="Pilih Akun" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {accounts?.map((acc: any) => (
                                                     <SelectItem key={acc.id} value={acc.id}>
                                                         <span className="font-mono text-muted-foreground mr-2">{acc.code}</span>
-                                                        {acc.name}
+                                                        {acc.name} {isSuperAdmin && acc.tenant ? `(${acc.tenant.name})` : ''}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
                                     </div>
                                     <div className="w-full sm:w-[150px]">
-                                        <Label className="text-xs mb-1 block">Debit (Rp)</Label>
-                                        <Input 
-                                            type="number" 
-                                            className="h-9 text-xs text-right"
-                                            value={entry.debit}
-                                            onChange={e => updateEntry(entry.id, 'debit', e.target.value)}
-                                            min="0"
+                                        <Label className="text-xs mb-1 block">Debit</Label>
+                                        <Input
+                                            type="text"
+                                            className="h-9 text-xs text-right font-mono"
+                                            value={entry.debit ? formatRupiah(entry.debit) : ''}
+                                            onChange={e => {
+                                                const raw = e.target.value.replace(/\D/g, '');
+                                                updateEntry(entry.id, 'debit', raw);
+                                            }}
+                                            placeholder="Rp 0"
                                         />
                                     </div>
                                     <div className="w-full sm:w-[150px]">
-                                        <Label className="text-xs mb-1 block">Kredit (Rp)</Label>
-                                        <Input 
-                                            type="number" 
-                                            className="h-9 text-xs text-right"
-                                            value={entry.credit}
-                                            onChange={e => updateEntry(entry.id, 'credit', e.target.value)}
-                                            min="0"
+                                        <Label className="text-xs mb-1 block">Kredit</Label>
+                                        <Input
+                                            type="text"
+                                            className="h-9 text-xs text-right font-mono"
+                                            value={entry.credit ? formatRupiah(entry.credit) : ''}
+                                            onChange={e => {
+                                                const raw = e.target.value.replace(/\D/g, '');
+                                                updateEntry(entry.id, 'credit', raw);
+                                            }}
+                                            placeholder="Rp 0"
                                         />
                                     </div>
-                                    <Button 
-                                        type="button" 
-                                        variant="ghost" 
-                                        size="icon" 
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
                                         className="h-9 w-9 text-red-500 hover:text-red-700 hover:bg-red-50 mt-5 self-end sm:self-auto shrink-0"
                                         onClick={() => removeEntry(entry.id)}
                                         disabled={data.entries.length <= 2}

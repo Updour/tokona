@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Journal;
 use App\Models\JournalEntry;
 use App\Models\Branch;
+use App\Models\Account;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -50,8 +51,8 @@ class AccountingService
                 'reference_number' => $data['reference_number'] ?? null, // Jika null akan auto-generate di model
                 'date' => $data['date'],
                 'description' => $data['description'],
-                'source_type' => 'manual_journal',
-                'source_id' => null,
+                'source_type' => $data['source_type'] ?? 'manual_journal',
+                'source_id' => $data['source_id'] ?? null,
                 'created_by' => $user->id,
             ]);
 
@@ -82,5 +83,154 @@ class AccountingService
             // Hapus induk jurnal
             $journal->delete();
         });
+    }
+
+    /**
+     * Generate Default Chart of Accounts (COA) untuk Tenant
+     */
+    public function generateDefaultCOA(string $tenantId, ?string $branchId = null): void
+    {
+        $defaultAccounts = [
+            // Aset (Aktiva)
+            ['code' => '111', 'name' => 'Kas & Bank', 'type' => 'asset'],
+            ['code' => '112', 'name' => 'Piutang Usaha', 'type' => 'asset'],
+            ['code' => '113', 'name' => 'Persediaan Barang Dagang', 'type' => 'asset'],
+            
+            // Kewajiban (Pasiva)
+            ['code' => '211', 'name' => 'Hutang Usaha', 'type' => 'liability'],
+            
+            // Ekuitas (Modal)
+            ['code' => '311', 'name' => 'Modal Pemilik', 'type' => 'equity'],
+            ['code' => '312', 'name' => 'Laba Ditahan', 'type' => 'equity'],
+            
+            // Pendapatan
+            ['code' => '411', 'name' => 'Pendapatan Penjualan', 'type' => 'revenue'],
+            
+            // Beban (Biaya)
+            ['code' => '511', 'name' => 'Harga Pokok Penjualan (HPP)', 'type' => 'expense'],
+            ['code' => '611', 'name' => 'Biaya Operasional', 'type' => 'expense'],
+        ];
+
+        DB::transaction(function () use ($tenantId, $branchId, $defaultAccounts) {
+            foreach ($defaultAccounts as $acc) {
+                Account::firstOrCreate(
+                    [
+                        'tenant_id' => $tenantId,
+                        'code' => $acc['code'],
+                    ],
+                    [
+                        'branch_id' => $branchId,
+                        'name' => $acc['name'],
+                        'type' => $acc['type'],
+                        'is_active' => true,
+                    ]
+                );
+            }
+        });
+    }
+
+    /**
+     * Auto-Journaling untuk Transaksi POS (Penjualan & HPP)
+     */
+    public function generatePosJournal($transaction): void
+    {
+        $tenantId = $transaction->tenant_id;
+        $branchId = $transaction->branch_id;
+
+        // Pastikan COA sudah ada, jika belum, buat otomatis
+        $this->generateDefaultCOA($tenantId, $branchId);
+
+        $accounts = Account::where('tenant_id', $tenantId)->get()->keyBy('code');
+
+        $entries = [];
+
+        $customerName = $transaction->customer ? $transaction->customer->name : 'Umum';
+
+        // 1. Catat Piutang ATAU Kas berdasarkan status pembayaran
+        $isFullyPaid = $transaction->status === 'paid';
+        $assetAccountId = $isFullyPaid ? $accounts['111']->id : $accounts['112']->id; // Kas atau Piutang
+        
+        $entries[] = [
+            'account_id' => $assetAccountId,
+            'debit' => $transaction->total,
+            'credit' => 0,
+            'description' => 'Penjualan POS Inv: ' . $transaction->invoice_number . ' (' . $customerName . ')',
+        ];
+
+        // 2. Catat Pendapatan Penjualan
+        $entries[] = [
+            'account_id' => $accounts['411']->id, // Pendapatan Penjualan
+            'debit' => 0,
+            'credit' => $transaction->total,
+            'description' => 'Pendapatan POS Inv: ' . $transaction->invoice_number . ' (' . $customerName . ')',
+        ];
+
+        // 3. Catat HPP (Harga Pokok Penjualan)
+        if ($transaction->total_cogs > 0) {
+            $entries[] = [
+                'account_id' => $accounts['511']->id, // HPP
+                'debit' => $transaction->total_cogs,
+                'credit' => 0,
+                'description' => 'HPP Inv: ' . $transaction->invoice_number,
+            ];
+
+            // 4. Catat Pengurangan Persediaan
+            $entries[] = [
+                'account_id' => $accounts['113']->id, // Persediaan Barang
+                'debit' => 0,
+                'credit' => $transaction->total_cogs,
+                'description' => 'Pengurangan Stok Inv: ' . $transaction->invoice_number,
+            ];
+        }
+
+        // Simpan sebagai Jurnal (Double Entry)
+        $this->storeManualJournal([
+            'branch_id' => $branchId,
+            'reference_number' => null, // Biarkan model yang auto-generate dengan format JNL-DDMMM-YYYY-XXXXX
+            'date' => $transaction->created_at->toDateString(),
+            'description' => 'Auto-Journal Penjualan POS (' . $customerName . '): ' . $transaction->invoice_number,
+            'source_type' => 'pos_sale',
+            'source_id' => $transaction->id,
+            'entries' => $entries,
+        ]);
+    }
+
+    /**
+     * Auto-Journaling untuk Pelunasan Piutang POS
+     */
+    public function generatePosPaymentJournal($transaction, $amountPaid): void
+    {
+        $tenantId = $transaction->tenant_id;
+        $branchId = $transaction->branch_id;
+
+        $this->generateDefaultCOA($tenantId, $branchId);
+        $accounts = Account::where('tenant_id', $tenantId)->get()->keyBy('code');
+
+        $customerName = $transaction->customer ? $transaction->customer->name : 'Umum';
+
+        $entries = [
+            [
+                'account_id' => $accounts['111']->id, // Kas bertambah
+                'debit' => $amountPaid,
+                'credit' => 0,
+                'description' => 'Pelunasan Piutang Inv: ' . $transaction->invoice_number . ' (' . $customerName . ')',
+            ],
+            [
+                'account_id' => $accounts['112']->id, // Piutang berkurang
+                'debit' => 0,
+                'credit' => $amountPaid,
+                'description' => 'Pelunasan Piutang Inv: ' . $transaction->invoice_number . ' (' . $customerName . ')',
+            ]
+        ];
+
+        $this->storeManualJournal([
+            'branch_id' => $branchId,
+            'reference_number' => null, // Biarkan model yang auto-generate
+            'date' => now()->toDateString(),
+            'description' => 'Auto-Journal Pelunasan Piutang POS (' . $customerName . '): ' . $transaction->invoice_number,
+            'source_type' => 'pos_payment',
+            'source_id' => $transaction->id,
+            'entries' => $entries,
+        ]);
     }
 }

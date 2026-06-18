@@ -392,22 +392,13 @@ export function ProductFormDialog() {
 
                             <div className="grid grid-cols-3 gap-4">
                                 <Field label="HPP (Harga Pokok)" required error={errors.base_cost}>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">Rp</span>
-                                        <Input type="text" value={data.base_cost ? new Intl.NumberFormat('id-ID').format(Number(data.base_cost)) : ''} onChange={(e) => setData('base_cost', e.target.value.replace(/\D/g, ''))} className="pl-8" placeholder="0" required />
-                                    </div>
+                                    <Input type="text" value={data.base_cost ? formatRupiah(data.base_cost) : ''} onChange={(e) => setData('base_cost', e.target.value.replace(/\D/g, ''))} placeholder="Rp 0" required />
                                 </Field>
                                 <Field label="Harga Jual" required error={errors.sell_price}>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">Rp</span>
-                                        <Input type="text" value={data.sell_price ? new Intl.NumberFormat('id-ID').format(Number(data.sell_price)) : ''} onChange={(e) => setData('sell_price', e.target.value.replace(/\D/g, ''))} className="pl-8" placeholder="0" required />
-                                    </div>
+                                    <Input type="text" value={data.sell_price ? formatRupiah(data.sell_price) : ''} onChange={(e) => setData('sell_price', e.target.value.replace(/\D/g, ''))} placeholder="Rp 0" required />
                                 </Field>
                                 <Field label="Harga Min. Jual" error={errors.min_sell_price}>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">Rp</span>
-                                        <Input type="text" value={data.min_sell_price ? new Intl.NumberFormat('id-ID').format(Number(data.min_sell_price)) : ''} onChange={(e) => setData('min_sell_price', e.target.value.replace(/\D/g, ''))} className="pl-8" placeholder="Batas bawah" />
-                                    </div>
+                                    <Input type="text" value={data.min_sell_price ? formatRupiah(data.min_sell_price) : ''} onChange={(e) => setData('min_sell_price', e.target.value.replace(/\D/g, ''))} placeholder="Batas bawah" />
                                 </Field>
                             </div>
 

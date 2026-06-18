@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatRupiah , formatNumber} from '@/lib/helpers/format';
+import { formatRupiah, formatNumber } from '@/lib/helpers/format';
 
 interface PosCartSidebarProps {
     cart: any[];
@@ -86,7 +86,7 @@ export function PosCartSidebar({
 }: PosCartSidebarProps) {
     const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
     const selectedCustomerObj = customers.find(c => c.id === selectedCustomer);
-    
+
     // Hitung sisa poin yang tersedia dikurangi poin yang mau di-redeem
     const currentPoints = selectedCustomerObj?.points || 0;
     const maxRedeemAmount = currentPoints * (loyaltySettings?.redeem_rate || 1);
@@ -128,20 +128,20 @@ export function PosCartSidebar({
             </div>
 
             {/* Member & Customer Selector */}
-            <div className="p-4 border-b grid grid-cols-2 gap-3 bg-slate-50/20 shrink-0">
-                <div>
-                    <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                            Pelanggan (Member)
+            <div className="p-3 border-b grid grid-cols-2 gap-3 bg-slate-50/20 shrink-0">
+                <div className="flex flex-col justify-end">
+                    <div className="flex items-center justify-between mb-1.5 min-h-[16px]">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider line-clamp-1">
+                            Pelanggan
                         </label>
                         {selectedCustomerObj && currentPoints > 0 && (
-                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-sm">
-                                {formatNumber(currentPoints)} Poin
+                            <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-1 py-0.5 rounded-sm whitespace-nowrap ml-1 shrink-0">
+                                {formatNumber(currentPoints)} Ptn
                             </span>
                         )}
                     </div>
                     <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-                        <SelectTrigger className="w-full h-9 text-xs bg-white mt-1 border-slate-200">
+                        <SelectTrigger className="w-full h-8 text-xs bg-white border-slate-200">
                             <SelectValue placeholder="Pilih Pelanggan" />
                         </SelectTrigger>
                         <SelectContent>
@@ -155,15 +155,17 @@ export function PosCartSidebar({
                     </Select>
                 </div>
 
-                <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        Promo / Voucher
-                    </label>
+                <div className="flex flex-col justify-end">
+                    <div className="flex items-center mb-1.5 min-h-[16px]">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider line-clamp-1">
+                            Promo / Voucher
+                        </label>
+                    </div>
                     <Select
                         value={selectedPromo || 'NO_PROMO'}
                         onValueChange={(val) => setSelectedPromo(val === 'NO_PROMO' ? null : val)}
                     >
-                        <SelectTrigger className="w-full h-9 text-xs bg-white mt-1 border-slate-200">
+                        <SelectTrigger className="w-full h-8 text-xs bg-white border-slate-200">
                             <SelectValue placeholder="Terapkan Voucher" />
                         </SelectTrigger>
                         <SelectContent>
@@ -351,8 +353,8 @@ export function PosCartSidebar({
                                         type="button"
                                         onClick={() => setPaymentMethod(method as any)}
                                         className={`py-2 rounded-lg text-[11px] font-black border transition-all ${isSelected
-                                                ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
-                                                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
+                                            ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                                            : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
                                             }`}
                                     >
                                         {labels[method]}
@@ -398,21 +400,23 @@ export function PosCartSidebar({
                             <div className="space-y-3">
                                 <div className="flex gap-2 items-center">
                                     <div className="relative flex-1">
-                                        <span className="absolute left-4 top-3.5 text-base font-black text-slate-400">Rp</span>
                                         <Input
                                             id="pos-paid-amount-input"
                                             type="text"
-                                            placeholder="0"
-                                            className="pl-11 h-14 text-xl font-black border-2 border-slate-900 rounded-xl font-mono text-slate-900 focus-visible:ring-slate-900 shadow-sm focus:border-slate-900 bg-white"
-                                            value={paidAmountInput}
-                                            onChange={(e) => handlePaidAmountChange(e.target.value)}
+                                            placeholder="Rp 0"
+                                            className="h-14 text-xl font-black border-2 border-slate-900 rounded-xl font-mono text-slate-900 focus-visible:ring-slate-900 shadow-sm focus:border-slate-900 bg-white"
+                                            value={paidAmountInput ? formatRupiah(paidAmountInput) : ''}
+                                            onChange={(e) => {
+                                                const raw = e.target.value.replace(/\D/g, '');
+                                                handlePaidAmountChange(raw);
+                                            }}
                                         />
                                     </div>
                                     <Button
                                         type="button"
                                         onClick={() => setQuickCash(cartTotal)}
                                         variant="outline"
-                                        className="text-xs h-14 px-4 font-black border-2 border-slate-900 bg-slate-900 hover:bg-slate-950 text-white rounded-xl shadow-sm transition-all shrink-0"
+                                        className="text-xs h-14 px-4 border-2 border-slate-900 text-slate-900 rounded-xl shadow-sm transition-all shrink-0"
                                     >
                                         Uang Pas
                                     </Button>
@@ -446,7 +450,7 @@ export function PosCartSidebar({
                     disabled={cart.length === 0 || isSubmitting || !isPaymentValid()}
                     className="w-full h-14 bg-slate-900 hover:bg-slate-950 text-white font-black text-base gap-2 rounded-xl shadow-lg transition-all active:scale-[0.98] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {isSubmitting ? 'Memproses Checkout...' : 'PROSES TRANSAKSI (F4)'}
+                    {isSubmitting ? 'Memproses Checkout...' : 'PROSES TRANSAKSI'}
                 </Button>
             </div>
         </div>

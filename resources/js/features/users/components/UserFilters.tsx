@@ -105,7 +105,7 @@ export function UserFilters({
                     <PopoverContent className="w-80 p-0" align="start">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
                             <h4 className="font-semibold text-sm flex items-center gap-2">
-                                <Users className="h-4 w-4 text-indigo-500" /> Filter Karyawan
+                                <Users className="h-4 w-4 text-indigo-500" /> Filter User
                             </h4>
                             {activeFilterCount > 0 && (
                                 <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 text-xs text-muted-foreground hover:text-red-600">
@@ -167,7 +167,7 @@ export function UserFilters({
                         </div>
                         <Separator />
                         <div className="p-3 bg-slate-50 flex flex-col gap-2">
-                            <span className="text-xs text-muted-foreground text-center">{totalResults} karyawan ditemukan</span>
+                            <span className="text-xs text-muted-foreground text-center">{totalResults} user ditemukan</span>
                             <Button size="sm" className="w-full" onClick={() => applyFilters()}>Terapkan Filter</Button>
                         </div>
                     </PopoverContent>

@@ -21,8 +21,8 @@ export function PayDebtDialog({ isOpen, onClose, transaction }: PayDebtDialogPro
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!transaction) {
-return null;
-}
+        return null;
+    }
 
     const remainingDebt = transaction.total - (transaction.paid_amount || 0);
 
@@ -69,7 +69,7 @@ return null;
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Receipt className="h-5 w-5 text-indigo-600" />
+                        <Receipt className="h-5 w-5 text-primary" />
                         Terima Pelunasan Piutang
                     </DialogTitle>
                     <DialogDescription>
@@ -90,19 +90,21 @@ return null;
                     <div className="space-y-2">
                         <Label>Nominal Pembayaran</Label>
                         <div className="relative">
-                            <div className="absolute left-3 top-2.5 text-slate-500 font-bold">Rp</div>
                             <Input
-                                type="number"
-                                className="pl-9 h-11 text-lg font-bold"
-                                placeholder="0"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
+                                type="text"
+                                className="h-11 text-lg font-bold pr-24"
+                                placeholder="Rp 0"
+                                value={amount ? formatRupiah(amount) : ''}
+                                onChange={(e) => {
+                                    const raw = e.target.value.replace(/\D/g, '');
+                                    setAmount(raw);
+                                }}
                             />
-                            <Button 
-                                type="button" 
-                                variant="outline" 
-                                size="sm" 
-                                className="absolute right-1 top-1.5 h-8 text-xs font-bold text-indigo-600"
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="absolute right-1 top-1.5 h-8 text-xs font-bold text-primary border-primary/20 hover:bg-primary/10"
                                 onClick={handleAutoFill}
                             >
                                 Lunas Semua
@@ -113,7 +115,7 @@ return null;
                     <div className="space-y-2">
                         <Label>Masuk via Metode Pembayaran</Label>
                         <Select value={paymentMethod} onValueChange={(val: 'cash' | 'transfer') => setPaymentMethod(val)}>
-                            <SelectTrigger className="h-11">
+                            <SelectTrigger className="h-11 w-full">
                                 <SelectValue placeholder="Pilih Metode" />
                             </SelectTrigger>
                             <SelectContent>
@@ -136,7 +138,7 @@ return null;
 
                 <DialogFooter>
                     <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Batal</Button>
-                    <Button onClick={handleSubmit} disabled={isSubmitting || !amount || Number(amount) <= 0} className="bg-indigo-600 hover:bg-indigo-700">
+                    <Button onClick={handleSubmit} disabled={isSubmitting || !amount || Number(amount) <= 0} className="bg-primary hover:bg-primary/90">
                         {isSubmitting ? 'Memproses...' : 'Simpan Pelunasan'}
                     </Button>
                 </DialogFooter>

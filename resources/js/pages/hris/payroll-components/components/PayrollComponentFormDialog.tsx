@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePayrollComponentStore } from '../stores/usePayrollComponentStore';
+import { formatRupiah } from '@/lib/helpers/format';
 
 export default function PayrollComponentFormDialog() {
     const { isFormOpen, closeForm, selectedComponent } = usePayrollComponentStore();
@@ -112,11 +113,10 @@ export default function PayrollComponentFormDialog() {
                             <Label htmlFor="amount">Nominal (Rp) <span className="text-red-500">*</span></Label>
                             <Input 
                                 id="amount" 
-                                type="number" 
-                                min="0" 
-                                placeholder="0" 
-                                value={data.amount} 
-                                onChange={e => setData('amount', e.target.value)} 
+                                type="text" 
+                                placeholder="Rp 0" 
+                                value={data.amount ? formatRupiah(data.amount) : ''} 
+                                onChange={e => setData('amount', e.target.value.replace(/\D/g, ''))} 
                             />
                             {errors.amount && <p className="text-xs text-red-500">{errors.amount}</p>}
                         </div>

@@ -109,4 +109,16 @@ class Tenants extends Model
             'redeem_rate' => $settings['loyalty_redeem_rate'] ?? 1,
         ];
     }
+
+    /**
+     * Helper untuk mengambil konfigurasi Akuntansi Ganda (Advanced Accounting)
+     */
+    public function getAccountingSettings(): array
+    {
+        $settings = $this->settings ?? [];
+        return [
+            // Default: false (Gunakan Simple Cash-Basis untuk kemudahan)
+            'enable_advanced_accounting' => filter_var($settings['enable_advanced_accounting'] ?? false, FILTER_VALIDATE_BOOLEAN),
+        ];
+    }
 }

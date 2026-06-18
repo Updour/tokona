@@ -71,7 +71,7 @@ return;
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'tokona_karyawan_export.csv';
+        link.download = 'tokona_user_export.csv';
         link.click();
     };
 
@@ -115,7 +115,7 @@ return;
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground">
-                                    Tidak ada karyawan yang ditemukan.
+                                    Tidak ada user yang ditemukan.
                                 </TableCell>
                             </TableRow>
                         )}
@@ -125,7 +125,7 @@ return;
 
             <DataTablePagination 
                 data={data as any} 
-                itemName="karyawan" 
+                itemName="user" 
                 filters={filters} 
             />
         </div>

@@ -170,7 +170,7 @@ export default function AccountingReports({ ledger, balanceSheet, cashFlow, bran
                                 : 'border-transparent text-slate-500 hover:text-slate-800'
                             }`}
                     >
-                        <ArrowRightLeft className="h-3.5 w-3.5" /> Buku Besar Mutasi (General Ledger)
+                        <ArrowRightLeft className="h-3.5 w-3.5" /> Buku Besar Mutasi Kas (Cash Ledger)
                     </button>
                     <button
                         onClick={() => setActiveTab('balance_sheet')}

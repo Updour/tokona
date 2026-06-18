@@ -235,28 +235,28 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                                     </TableCell>
 
                                     <TableCell className="align-top">
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">Rp</span>
-                                            <Input
-                                                type="number" min="0" step="any"
-                                                value={item.unit_cost}
-                                                onChange={(e) => updateItem(idx, 'unit_cost', parseFloat(e.target.value) || 0, products)}
-                                                className={`pl-8 ${formErrors[`items.${idx}.unit_cost`] ? 'border-red-500 bg-red-50' : ''}`}
-                                            />
-                                        </div>
+                                        <Input
+                                            type="text"
+                                            value={item.unit_cost ? formatRupiah(item.unit_cost) : ''}
+                                            onChange={(e) => {
+                                                const raw = parseFloat(e.target.value.replace(/\D/g, '')) || 0;
+                                                updateItem(idx, 'unit_cost', raw, products);
+                                            }}
+                                            className={`${formErrors[`items.${idx}.unit_cost`] ? 'border-red-500 bg-red-50' : ''}`}
+                                        />
                                     </TableCell>
 
                                     <TableCell className="align-top">
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">Rp</span>
-                                            <Input
-                                                type="number" min="0" step="any"
-                                                value={item.discount || ''}
-                                                onChange={(e) => updateItem(idx, 'discount', parseFloat(e.target.value) || 0, products)}
-                                                className={`pl-8 ${formErrors[`items.${idx}.discount`] ? 'border-red-500 bg-red-50' : ''}`}
-                                                placeholder="Opsional"
-                                            />
-                                        </div>
+                                        <Input
+                                            type="text"
+                                            value={item.discount ? formatRupiah(item.discount) : ''}
+                                            onChange={(e) => {
+                                                const raw = parseFloat(e.target.value.replace(/\D/g, '')) || 0;
+                                                updateItem(idx, 'discount', raw, products);
+                                            }}
+                                            className={`${formErrors[`items.${idx}.discount`] ? 'border-red-500 bg-red-50' : ''}`}
+                                            placeholder="Opsional"
+                                        />
                                     </TableCell>
 
                                     <TableCell className="align-top">
@@ -299,14 +299,16 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
 
                     <div className="flex items-center justify-end gap-4 w-full">
                         <Label className="text-muted-foreground">Potongan / Diskon Nota (Rp):</Label>
-                        <div className="relative w-48">
-                            <span className="absolute left-3 top-2.5 text-muted-foreground text-sm font-semibold">Rp</span>
+                        <div className="w-48">
                             <Input
-                                type="number" min="0" step="any"
-                                value={global_discount || ''}
-                                onChange={(e) => setField('global_discount', parseFloat(e.target.value) || 0)}
-                                className="pl-8 text-right font-bold text-red-500"
-                                placeholder="0"
+                                type="text"
+                                value={global_discount ? formatRupiah(global_discount) : ''}
+                                onChange={(e) => {
+                                    const raw = parseFloat(e.target.value.replace(/\D/g, '')) || 0;
+                                    setField('global_discount', raw);
+                                }}
+                                className="text-right font-bold text-red-500"
+                                placeholder="Rp 0"
                             />
                         </div>
                     </div>

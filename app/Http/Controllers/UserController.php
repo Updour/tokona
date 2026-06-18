@@ -109,7 +109,7 @@ class UserController extends Controller
             $tenant = Tenants::find(auth()->user()->tenant_id);
             $subService = new \App\Services\SubscriptionService();
             if ($tenant && !$subService->canAddUser($tenant)) {
-                return redirect()->back()->with('error', 'Limit jumlah karyawan tercapai! Silakan upgrade paket langganan Anda untuk menambah karyawan baru.');
+                return redirect()->back()->with('error', 'Limit jumlah user tercapai! Silakan upgrade paket langganan Anda untuk menambah user baru.');
             }
         } else {
             // Super Admin
@@ -143,7 +143,7 @@ class UserController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'Karyawan berhasil ditambahkan.');
+        return redirect()->back()->with('success', 'User berhasil ditambahkan.');
     }
 
     /**
@@ -187,7 +187,7 @@ class UserController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'Data karyawan berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Data user berhasil diperbarui.');
     }
 
     /**
@@ -202,6 +202,6 @@ class UserController extends Controller
 
         $user->delete();
 
-        return redirect()->route('users.index')->with('success', 'Karyawan berhasil dihapus.');
+        return redirect()->route('users.index')->with('success', 'User berhasil dihapus.');
     }
 }

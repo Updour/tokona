@@ -38,28 +38,47 @@ class AccountingController extends Controller
             $query->where('branch_id', $request->branch_id);
         }
         
-        if (auth()->user()->isSuperAdmin() && $request->filled('tenant_id')) {
-            // Because tenant scope is auto applied, we should use withoutGlobalScope if we want cross tenant
-            // Or just rely on the fact that SuperAdmin bypasses the global scope
-            $query->where('tenant_id', $request->tenant_id);
+        if ($request->filled('tenant_id')) {
+            if (auth()->user()->isSuperAdmin()) {
+                $query->where('tenant_id', $request->tenant_id);
+            }
         }
 
-        $journals = $query->paginate($request->get('per_page', 15));
+        if ($request->filled('start_date')) {
+            $query->where('created_at', '>=', $request->start_date . ' 00:00:00');
+        }
+        if ($request->filled('end_date')) {
+            $query->where('created_at', '<=', $request->end_date . ' 23:59:59');
+        }
 
-        $branchesQuery = Branch::select('id', 'name')->orderBy('name');
+        $journals = $query->paginate($request->get('per_page', 15))->withQueryString();
+
+        $branchesQuery = Branch::select('id', 'name', 'tenant_id')->orderBy('name');
         if (!auth()->user()->isSuperAdmin()) {
             $branchesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
 
-        $accountsQuery = Account::where('is_active', true)->orderBy('code');
-        if (!auth()->user()->isSuperAdmin()) {
-            $accountsQuery->where('tenant_id', auth()->user()->tenant_id);
+        $accountsQuery = Account::with('tenant:id,name')->where('is_active', true)->orderBy('code');
+        
+        $targetTenantId = auth()->user()->isSuperAdmin() ? $request->tenant_id : auth()->user()->tenant_id;
+
+        if ($targetTenantId) {
+            $accountsQuery->where('tenant_id', $targetTenantId);
+            
+            // Auto generate COA jika kosong untuk tenant ini
+            if (Account::where('tenant_id', $targetTenantId)->count() === 0) {
+                app(AccountingService::class)->generateDefaultCOA($targetTenantId);
+            }
+        } elseif (auth()->user()->isSuperAdmin()) {
+             // Jika super admin belum pilih tenant, jangan tampilkan semua akun (bisa ribuan duplikat)
+             // Atau tampilkan saja beberapa dengan limit
+             $accountsQuery->limit(100);
         }
 
-        return Inertia::render('finance/accounting/journals/Index', [
+        return inertia('finance/accounting/journals/Index', [
             'journals' => $journals,
+            'filters' => $request->all(['search', 'branch_id', 'tenant_id', 'start_date', 'end_date', 'per_page']),
             'accounts' => $accountsQuery->get(),
-            'filters' => $request->only(['search', 'branch_id', 'tenant_id']),
             'branches' => $branchesQuery->get(),
             'tenants' => auth()->user()->isSuperAdmin() ? Tenants::select('id', 'name')->orderBy('name')->get() : null,
             'is_super_admin' => auth()->user()->isSuperAdmin(),
