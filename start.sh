@@ -12,6 +12,7 @@ echo "Caching configurations..."
 php artisan config:cache || true
 php artisan route:cache || true
 php artisan view:cache || true
+php artisan storage:link || true
 
 echo "Starting Apache on port $PORT..."
 exec apache2-foreground

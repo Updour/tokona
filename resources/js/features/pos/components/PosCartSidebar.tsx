@@ -1,4 +1,4 @@
-import { ShoppingCart, Receipt, Minus, Plus, Trash2, ChevronDown, Tag, Sparkles, Calculator } from 'lucide-react';
+import { ShoppingCart, Receipt, Minus, Plus, Trash2, ChevronDown, Tag, Sparkles, Calculator, Wallet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -398,46 +398,56 @@ export function PosCartSidebar({
 
                         {paymentMethod !== 'debt' && paymentMethod !== 'split' && (
                             <div className="space-y-3">
-                                <div className="flex gap-2 items-center">
-                                    <div className="relative flex-1">
-                                        <Input
-                                            id="pos-paid-amount-input"
-                                            type="text"
-                                            placeholder="Rp 0"
-                                            className="h-14 text-xl font-black border-2 border-slate-900 rounded-xl font-mono text-slate-900 focus-visible:ring-slate-900 shadow-sm focus:border-slate-900 bg-white"
-                                            value={paidAmountInput ? formatRupiah(paidAmountInput) : ''}
-                                            onChange={(e) => {
-                                                const raw = e.target.value.replace(/\D/g, '');
-                                                handlePaidAmountChange(raw);
-                                            }}
-                                        />
-                                    </div>
+                                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
                                     <Button
                                         type="button"
                                         onClick={() => setQuickCash(cartTotal)}
-                                        variant="outline"
-                                        className="text-xs h-14 px-4 border-2 border-slate-900 text-slate-900 rounded-xl shadow-sm transition-all shrink-0"
+                                        className="h-10 px-4 bg-blue-600 hover:bg-blue-700 border-0 text-white rounded-lg shadow-sm transition-all shrink-0 active:scale-[0.96] flex items-center gap-1.5"
                                     >
-                                        Uang Pas
+                                        <Wallet className="h-4 w-4" />
+                                        <span className="text-[11px] font-black tracking-wide">UANG PAS</span>
                                     </Button>
-                                </div>
 
-                                <div className="flex gap-1.5 overflow-x-auto pb-1">
+                                    <div className="w-px h-6 bg-slate-200 shrink-0 mx-1"></div>
+
                                     {[10000, 20000, 50000, 100000, 200000].map((amt) => (
                                         <button
                                             key={amt}
                                             type="button"
                                             onClick={() => setQuickCash(amt)}
-                                            className="px-2.5 py-1 bg-white hover:bg-slate-100 border text-[10px] font-black rounded-md text-slate-650 shrink-0 font-mono"
+                                            className="h-10 px-3.5 bg-white hover:bg-blue-50 hover:text-blue-700 border border-slate-200 hover:border-blue-400 text-xs font-black rounded-lg text-slate-600 shrink-0 font-mono transition-all active:scale-[0.95] shadow-sm flex items-center justify-center"
                                         >
                                             +{formatNumber(amt)}
                                         </button>
                                     ))}
                                 </div>
 
-                                <div className="flex justify-between items-center p-3 bg-emerald-50 border-2 border-emerald-250/50 rounded-xl text-emerald-800">
-                                    <span className="text-xs font-black">UANG KEMBALIAN</span>
-                                    <span className="font-mono text-base font-black">{formatRupiah(changeAmount)}</span>
+                                <div className="grid grid-cols-2 gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1">Diterima</label>
+                                        <div className="relative">
+                                            <Input
+                                                id="pos-paid-amount-input"
+                                                type="text"
+                                                placeholder="0"
+                                                className="h-14 pl-12 text-lg sm:text-xl font-black border-slate-300 rounded-xl font-mono text-slate-900 focus-visible:ring-blue-500 focus-visible:border-blue-100 shadow-sm bg-white"
+                                                value={paidAmountInput ? formatRupiah(paidAmountInput) : ''}
+                                                onChange={(e) => {
+                                                    const raw = e.target.value.replace(/\D/g, '');
+                                                    handlePaidAmountChange(raw);
+                                                }}
+                                            />
+                                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                                <span className="text-slate-400 font-black text-sm">Rp</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider px-1 text-red-500">Kembalian</label>
+                                        <div className="h-14 px-3 sm:px-4 flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl text-white shadow-inner">
+                                            <span className="font-mono text-lg sm:text-xl font-black tracking-tight w-full text-right sm:text-left truncate">{formatRupiah(changeAmount)}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}

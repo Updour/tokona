@@ -249,7 +249,7 @@ return 0;
         if (cleanVal === '') {
             setPaidAmountInput('');
         } else {
-            setPaidAmountInput(formatNumber(numericValue));
+            setPaidAmountInput(numericValue.toString());
         }
     };
 
@@ -277,13 +277,13 @@ return 0;
 
         if (parsed > cartSubtotal) {
             toast.error('Diskon tidak boleh melebihi subtotal belanja!');
-            setManualDiscountInput(formatNumber(cartSubtotal));
+            setManualDiscountInput(cartSubtotal.toString());
             setManualDiscount(cartSubtotal);
 
             return;
         }
 
-        setManualDiscountInput(formatNumber(parsed));
+        setManualDiscountInput(parsed.toString());
         setManualDiscount(parsed);
     };
 
@@ -309,7 +309,7 @@ return 0;
             
             // Hitung maks poin yang bisa ditukar agar pas subtotal
             const maxPointsForSubtotal = Math.floor(cartSubtotal / (loyaltySettings?.redeem_rate || 1));
-            setRedeemPointsInput(formatNumber(maxPointsForSubtotal));
+            setRedeemPointsInput(maxPointsForSubtotal.toString());
             setRedeemPoints(maxPointsForSubtotal);
 
             return;
@@ -317,19 +317,19 @@ return 0;
 
         if (parsed > maxPoints) {
             toast.error(`Poin pelanggan tidak mencukupi. Sisa poin: ${maxPoints}`);
-            setRedeemPointsInput(formatNumber(maxPoints));
+            setRedeemPointsInput(maxPoints.toString());
             setRedeemPoints(maxPoints);
 
             return;
         }
 
-        setRedeemPointsInput(formatNumber(parsed));
+        setRedeemPointsInput(parsed.toString());
         setRedeemPoints(parsed);
     };
 
     const setQuickCash = (amount: number) => {
         setPaidAmount(amount);
-        setPaidAmountInput(formatNumber(amount));
+        setPaidAmountInput(amount.toString());
     };
 
     const clearCart = () => {

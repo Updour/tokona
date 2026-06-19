@@ -2,6 +2,8 @@ import html2canvas from 'html2canvas';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
+import * as htmlToImage from 'html-to-image';
+import { usePage } from '@inertiajs/react';
 
 export function usePosReceipt() {
     const [lastTransaction, setLastTransaction] = useState<any>(null);
@@ -72,65 +74,53 @@ return;
         printWindow.document.close();
     };
 
-    const handleDownloadReceiptImage = () => {
-        const element = document.getElementById('receipt-print-area');
+    const handleDownloadReceiptImage = async () => {
+        const element = document.getElementById('receipt-capture-area');
 
         if (!element) {
             toast.error('Gagal mendeteksi area struk untuk diambil gambar.');
-
             return;
         }
 
-        const html2canvasFn = typeof html2canvas === 'function' ? html2canvas : (html2canvas as any).default;
+        toast.loading('Mempersiapkan gambar struk...', { id: 'dl-img' });
 
-        const originalMaxHeight = element.style.maxHeight;
-        const originalOverflow = element.style.overflow;
-        const originalClassName = element.className;
+        try {
+            // Use html-to-image natively to handle modern CSS like oklch()
+            const dataUrl = await htmlToImage.toPng(element, {
+                quality: 1.0,
+                pixelRatio: 3,
+                backgroundColor: '#f8fafc',
+                skipFonts: true, // Fixes SecurityError in Vite dev server
+                style: {
+                    margin: '0',
+                }
+            });
 
-        element.style.maxHeight = 'none';
-        element.style.overflow = 'visible';
-        element.className = "p-6 bg-white font-mono text-xs text-slate-900 space-y-4 w-[280px]";
+            const link = document.createElement('a');
+            const invoiceName = lastTransaction?.invoice_number ? lastTransaction.invoice_number.replace(/\//g, '_') : 'struk';
+            link.download = `STRUK_${invoiceName}.png`;
+            link.href = dataUrl;
+            link.click();
 
-        toast.promise(
-            html2canvasFn(element, {
-                scale: 3,
-                backgroundColor: '#ffffff',
-                logging: false,
-                useCORS: true
-            }).then((canvas: any) => {
-                element.style.maxHeight = originalMaxHeight;
-                element.style.overflow = originalOverflow;
-                element.className = originalClassName;
-
-                const imgData = canvas.toDataURL('image/png');
-                const link = document.createElement('a');
-                const invoiceName = lastTransaction?.invoice_number ? lastTransaction.invoice_number.replace(/\//g, '_') : 'struk';
-                link.download = `STRUK_${invoiceName}.png`;
-                link.href = imgData;
-                link.click();
-            }).catch((err: any) => {
-                element.style.maxHeight = originalMaxHeight;
-                element.style.overflow = originalOverflow;
-                element.className = originalClassName;
-
-                throw err;
-            }),
-            {
-                loading: 'Mempersiapkan gambar struk...',
-                success: 'Struk berhasil disimpan sebagai gambar PNG!',
-                error: 'Gagal mengunduh struk sebagai gambar.'
-            }
-        );
+            toast.success('Struk berhasil disimpan sebagai gambar PNG!', { id: 'dl-img' });
+        } catch (error: any) {
+            console.error('html-to-image error:', error);
+            toast.error(`Gagal mengunduh gambar: ${error?.message || 'Error tidak diketahui'}`, { id: 'dl-img' });
+        }
     };
 
     const handleSendWhatsAppReceipt = () => {
         if (!lastTransaction) {
-return;
-}
+            return;
+        }
+
+        const { auth, tenants } = usePage<any>().props;
+        const currentTenant = tenants?.find((t: any) => t.id === auth?.user?.tenant_id);
+        const storeName = currentTenant?.name ? currentTenant.name.toUpperCase() : 'TOKONA POS';
 
         const phone = lastTransaction.phone || '';
         const name = lastTransaction.customer || 'Pelanggan';
-        let text = `*TOKONA POS - STRUK BELANJA*\n`;
+        let text = `*${storeName} - STRUK BELANJA*\n`;
         text += `=========================\n`;
         text += `Inv: ${lastTransaction.invoice_number}\n`;
         text += `Tanggal: ${formatDateTime(lastTransaction.date)}\n`;

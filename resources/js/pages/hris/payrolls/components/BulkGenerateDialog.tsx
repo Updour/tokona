@@ -51,7 +51,7 @@ export default function BulkGenerateDialog() {
                         <div className="space-y-2">
                             <Label>Bulan</Label>
                             <Select value={String(data.month)} onValueChange={(v) => setData('month', parseInt(v))}>
-                                <SelectTrigger>
+                                <SelectTrigger className='w-full'>
                                     <SelectValue placeholder="Bulan" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -66,7 +66,7 @@ export default function BulkGenerateDialog() {
                         <div className="space-y-2">
                             <Label>Tahun</Label>
                             <Select value={String(data.year)} onValueChange={(v) => setData('year', parseInt(v))}>
-                                <SelectTrigger>
+                                <SelectTrigger className='w-full'>
                                     <SelectValue placeholder="Tahun" />
                                 </SelectTrigger>
                                 <SelectContent>

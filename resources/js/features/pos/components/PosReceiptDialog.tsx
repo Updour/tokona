@@ -1,7 +1,9 @@
 import { CheckCircle2, Printer, Download, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatRupiah , formatDateTime, formatNumber } from '@/lib/helpers/format';
+import { usePage } from '@inertiajs/react';
 
 interface PosReceiptDialogProps {
     open: boolean;
@@ -20,9 +22,17 @@ export function PosReceiptDialog({
     handleDownloadReceiptImage,
     handleSendWhatsAppReceipt
 }: PosReceiptDialogProps) {
+    const { auth, tenants, branches } = usePage<any>().props;
+    
+    const currentTenant = tenants?.find((t: any) => t.id === auth?.user?.tenant_id);
+    const currentBranch = branches?.find((b: any) => b.id === auth?.user?.branch_id);
+    
+    const storeName = currentTenant?.name || 'TOKONA ERP & CRM';
+    const branchName = currentBranch?.name || 'Cabang Kasir Utama Tokona';
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl p-6 overflow-y-auto max-h-[90vh]">
+            <DialogContent className="sm:max-w-sm p-6 overflow-y-auto max-h-[90vh]">
                 <DialogHeader className="flex flex-col items-center">
                     <CheckCircle2 className="h-12 w-12 text-emerald-500 animate-bounce mb-2" />
                     <DialogTitle className="text-lg font-black text-slate-800">Transaksi Sukses!</DialogTitle>
@@ -32,10 +42,11 @@ export function PosReceiptDialog({
                 </DialogHeader>
 
                 {/* DETAIL STRUK (Siap Cetak / Thermal 58-80mm Layout) */}
-                <div id="receipt-print-area" className="my-4 p-4 border border-dashed rounded-lg bg-slate-50 font-mono text-xs text-slate-800 space-y-4 max-h-[360px] overflow-y-auto mx-auto max-w-sm w-full">
+                <div id="receipt-print-area" className="my-4 border border-dashed rounded-lg bg-slate-50 max-h-[360px] overflow-y-auto mx-auto max-w-sm w-full">
+                    <div id="receipt-capture-area" className="p-4 bg-slate-50 font-mono text-xs text-slate-800 space-y-4">
                     <div className="text-center space-y-1">
-                        <h2 className="text-sm font-black tracking-widest uppercase">TOKONA ERP & CRM</h2>
-                        <p className="text-[10px] text-slate-500">Cabang Kasir Utama Tokona</p>
+                        <h2 className="text-sm font-black tracking-widest uppercase">{storeName}</h2>
+                        <p className="text-[10px] text-slate-500">{branchName}</p>
                         <p className="text-[10px] text-slate-500">Tanggal: {lastTransaction?.date ? formatDateTime(lastTransaction.date) : '-'}</p>
                         <p className="text-[10px] text-slate-500">Inv: {lastTransaction?.invoice_number}</p>
                         <p className="text-[10px] text-slate-500">Pelanggan: {lastTransaction?.customer}</p>
@@ -119,32 +130,64 @@ export function PosReceiptDialog({
                         *** TERIMA KASIH ATAS KUNJUNGAN ANDA ***
                     </div>
                 </div>
+            </div>
 
-                <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-2">
-                    <Button
-                        onClick={handlePrintReceipt}
-                        variant="outline"
-                        className="flex-1 font-bold gap-1.5 h-10 border-slate-300 text-slate-800 hover:bg-slate-100 bg-white"
-                    >
-                        <Printer className="h-4 w-4 text-slate-500" /> Cetak Struk
-                    </Button>
-                    <Button
-                        onClick={handleDownloadReceiptImage}
-                        variant="outline"
-                        className="flex-1 font-bold gap-1.5 h-10 border-indigo-300 text-indigo-700 hover:bg-indigo-50 bg-indigo-50/20"
-                    >
-                        <Download className="h-4 w-4 text-indigo-600" /> Unduh Gambar
-                    </Button>
-                    <Button
-                        onClick={handleSendWhatsAppReceipt}
-                        variant="outline"
-                        className="flex-1 font-bold gap-1.5 h-10 border-emerald-300 text-emerald-700 hover:bg-emerald-50 bg-emerald-50/20"
-                    >
-                        <Share2 className="h-4 w-4 text-emerald-600" /> Kirim WhatsApp
-                    </Button>
+                <DialogFooter className="flex flex-row justify-between items-center mt-2 pt-2 border-t border-slate-100">
+                    <TooltipProvider>
+                        <div className="flex gap-1.5">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        onClick={handlePrintReceipt}
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-9 w-9 rounded-full border-slate-200 text-slate-600 hover:bg-slate-100 bg-white shadow-sm"
+                                    >
+                                        <Printer className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Cetak / Simpan PDF</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        onClick={handleDownloadReceiptImage}
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-9 w-9 rounded-full border-indigo-200 text-indigo-600 hover:bg-indigo-50 bg-white shadow-sm"
+                                    >
+                                        <Download className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Unduh Gambar</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        onClick={handleSendWhatsAppReceipt}
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-9 w-9 rounded-full border-emerald-200 text-emerald-600 hover:bg-emerald-50 bg-white shadow-sm"
+                                    >
+                                        <Share2 className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Kirim WhatsApp</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </div>
+                    </TooltipProvider>
+
                     <Button
                         onClick={() => onOpenChange(false)}
-                        className="flex-1 font-black h-10 bg-slate-900 hover:bg-slate-950 text-white"
+                        className="h-9 px-5 bg-slate-900 hover:bg-slate-950 text-white rounded-full text-xs font-bold shadow-sm"
                     >
                         Selesai
                     </Button>

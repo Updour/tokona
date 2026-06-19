@@ -41,9 +41,9 @@ class ReportService
         $cacheKey = "reports_data_{$tenantId}_{$branchId}_{$startDate}_{$endDate}_p{$page}_pp{$perPage}";
 
         return Cache::remember($cacheKey, now()->addMinutes(3), function () use ($filters, $branchId, $startDate, $endDate, $branches, $page, $perPage) {
-            // ── A. LAPORAN PENJUALAN (SALES PERFORMANCE SUMMARY) ──────────────────
+        // ── A. LAPORAN PENJUALAN (SALES PERFORMANCE SUMMARY) ──────────────────
         $salesQuery = Transaction::where('status', 'paid')
-            ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate]);
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
         if ($branchId !== 'ALL') {
             $salesQuery->where('branch_id', $branchId);
@@ -58,7 +58,7 @@ class ReportService
         // Hitung Total HPP (Cost of Goods Sold)
         $cogsQuery = TransactionItem::whereHas('transaction', function ($q) use ($startDate, $endDate, $branchId) {
             $q->where('status', 'paid')
-              ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate]);
+              ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
             if ($branchId !== 'ALL') {
                 $q->where('branch_id', $branchId);
             }
@@ -189,7 +189,7 @@ class ReportService
         // ── B. LAPORAN PERFORMA PRODUK (PRODUCT SALES ANALYSIS) ───────────────
         $itemsQuery = TransactionItem::whereHas('transaction', function ($q) use ($startDate, $endDate, $branchId) {
             $q->where('status', 'paid')
-              ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate]);
+              ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
             if ($branchId !== 'ALL') {
                 $q->where('branch_id', $branchId);
             }

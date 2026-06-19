@@ -34,19 +34,19 @@ export function usePos({
     const [activeTab, setActiveTab] = useState<string>('cashier');
 
     // Offline State Management
-    const [isOffline, setIsOffline] = useState(!navigator.onLine);
-    const [pendingTransactions, setPendingTransactions] = useState<any[]>(() => {
-        try {
-            const saved = localStorage.getItem('pos_pending_transactions');
-
-            return saved ? JSON.parse(saved) : [];
-        } catch (e) {
-            return [];
-        }
-    });
+    const [isOffline, setIsOffline] = useState(false);
+    const [pendingTransactions, setPendingTransactions] = useState<any[]>([]);
     const [isSyncing, setIsSyncing] = useState(false);
 
     useEffect(() => {
+        setIsOffline(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+        try {
+            const saved = localStorage.getItem('pos_pending_transactions');
+            if (saved) setPendingTransactions(JSON.parse(saved));
+        } catch (e) {
+            // ignore
+        }
+
         const handleOnline = () => setIsOffline(false);
         const handleOffline = () => setIsOffline(true);
 

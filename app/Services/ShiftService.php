@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\DB;
 class ShiftService
 {
     public function __construct(
-        private readonly AccountingService $accountingService
+        private readonly AccountingService $accountingService,
+        private readonly AttendanceService $attendanceService
     ) {}
     // =========================================================================
     // Query — data untuk halaman daftar shift
@@ -84,7 +85,7 @@ class ShiftService
             }
         }
 
-        return CashRegisterShift::create([
+        $shift = CashRegisterShift::create([
             'tenant_id'       => $tenantId,
             'branch_id'       => $branchId,
             'user_id'         => auth()->id(),
@@ -93,6 +94,18 @@ class ShiftService
             'notes'           => $data['notes'] ?? null,
             'status'          => 'open',
         ]);
+
+        // Auto clock-in for the cashier
+        try {
+            $this->attendanceService->clockIn([
+                'notes' => 'Auto clock-in via Buka Shift Kasir',
+                'branch_id' => $branchId
+            ]);
+        } catch (\Exception $e) {
+            // Silently ignore if they are already clocked in
+        }
+
+        return $shift;
     }
 
     // =========================================================================
@@ -155,26 +168,50 @@ class ShiftService
 
         // AKUNTANSI: Double-Entry Journal untuk total penjualan selama shift ini
         try {
-            // Kita harus memastikan default accounts sudah di-inisialisasi
-            $this->accountingService->initializeDefaultAccounts($shift->tenant_id, $shift->branch_id);
+            // Pastikan COA sudah ada
+            $this->accountingService->generateDefaultCOA($shift->tenant_id, $shift->branch_id);
 
             // Jurnal 1: Penjualan Tunai (Kas bertambah, Pendapatan bertambah)
-            if ($cashSales > 0) {
-                $this->accountingService->createJournal(
-                    $shift->tenant_id,
-                    $shift->branch_id,
-                    [
-                        ['account_code' => '1110', 'debit' => $cashSales, 'credit' => 0, 'description' => 'Kas dari Penjualan Tunai Shift'],
-                        ['account_code' => '4110', 'debit' => 0, 'credit' => $cashSales, 'description' => 'Pendapatan Penjualan Tunai Shift'],
-                    ],
-                    "Jurnal Tutup Shift Kasir: " . auth()->user()->name,
-                    'pos_shift',
-                    $shift->id
-                );
+            // HANYA JIKA transaksi belum di-jurnal secara individual. Jika sudah di-jurnal individual, 
+            // kita sebenarnya tidak perlu menjurnal lagi agar tidak terjadi double-counting.
+            // Namun untuk saat ini kita perbaiki error pemanggilan fungsinya:
+            $accounts = \App\Models\Account::where('tenant_id', $shift->tenant_id)->get()->keyBy('code');
+
+            if ($cashSales > 0 && isset($accounts['111']) && isset($accounts['411'])) {
+                $this->accountingService->storeManualJournal([
+                    'branch_id' => $shift->branch_id,
+                    'date' => now()->toDateString(),
+                    'description' => "Jurnal Tutup Shift Kasir: " . auth()->user()->name,
+                    'source_type' => 'pos_shift',
+                    'source_id' => $shift->id,
+                    'entries' => [
+                        [
+                            'account_id' => $accounts['111']->id,
+                            'debit' => $cashSales,
+                            'credit' => 0,
+                            'description' => 'Kas dari Penjualan Tunai Shift'
+                        ],
+                        [
+                            'account_id' => $accounts['411']->id,
+                            'debit' => 0,
+                            'credit' => $cashSales,
+                            'description' => 'Pendapatan Penjualan Tunai Shift'
+                        ]
+                    ]
+                ]);
             }
         } catch (\Exception $e) {
             // Log error tapi biarkan shift tertutup agar tidak memblokir operasional
             \Illuminate\Support\Facades\Log::error('Gagal membuat jurnal shift: ' . $e->getMessage());
+        }
+
+        // Auto Clock-Out saat tutup shift (Praktik Terbaik)
+        try {
+            $this->attendanceService->clockOut([
+                'notes' => 'Auto clock-out via Tutup Shift Kasir'
+            ]);
+        } catch (\Exception $e) {
+            // Ignore jika sudah absen keluar
         }
 
         return $shift->fresh();
