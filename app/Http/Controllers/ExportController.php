@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\ExportService;
+use App\Models\BranchTransfer;
 use App\Models\Transaction;
+use App\Services\ExportService;
 use Illuminate\Http\Request;
 
 class ExportController extends Controller
@@ -51,5 +52,20 @@ class ExportController extends Controller
     public function invoice(Transaction $transaction)
     {
         return $this->exportService->exportInvoiceToPdf($transaction);
+    }
+
+    public function deliveryNote(BranchTransfer $transfer)
+    {
+        return $this->exportService->exportDeliveryNoteToPdf($transfer);
+    }
+
+    public function customers(Request $request)
+    {
+        return $this->exportService->exportCustomersToExcel($request->all());
+    }
+
+    public function consignments(Request $request)
+    {
+        return $this->exportService->exportConsignmentsToExcel($request->all());
     }
 }

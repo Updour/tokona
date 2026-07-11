@@ -4,13 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Users\StoreUserRequest;
 use App\Http\Requests\Users\UpdateUserRequest;
-use App\Models\User;
 use App\Models\Branch;
 use App\Models\Role;
 use App\Models\Tenants;
+use App\Models\User;
+use App\Services\EmployeeSalaryService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
 
 class UserController extends Controller
 {
@@ -21,7 +23,7 @@ class UserController extends Controller
     {
         $query = User::with(['roles', 'branch:id,name', 'tenant:id,name']);
 
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $query->whereDoesntHave('roles', function ($q) {
                 $q->where('name', 'super-admin');
             });
@@ -32,8 +34,8 @@ class UserController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
@@ -53,7 +55,7 @@ class UserController extends Controller
         // Sorting logic
         $sortField = $request->input('sort', 'created_at');
         $sortDirection = $request->input('direction', 'desc');
-        
+
         $allowedSorts = ['name', 'email', 'status', 'created_at'];
         if (in_array($sortField, $allowedSorts)) {
             $query->orderBy($sortField, $sortDirection === 'asc' ? 'asc' : 'desc');
@@ -63,14 +65,14 @@ class UserController extends Controller
 
         // Get branches dropdown options
         $branchesQuery = Branch::select('id', 'name', 'tenant_id')->orderBy('name');
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $branchesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
         $branches = $branchesQuery->get();
 
         // Get roles dropdown options
         $rolesQuery = Role::orderBy('name');
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $rolesQuery->where('tenant_id', auth()->user()->tenant_id)
                 ->where('name', '!=', 'super-admin');
         } else {
@@ -102,13 +104,13 @@ class UserController extends Controller
         $validated['password'] = Hash::make($validated['password']);
 
         // Determine tenant_id
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $validated['tenant_id'] = auth()->user()->tenant_id;
-            
+
             // Check subscription limit for employees
             $tenant = Tenants::find(auth()->user()->tenant_id);
-            $subService = new \App\Services\SubscriptionService();
-            if ($tenant && !$subService->canAddUser($tenant)) {
+            $subService = new SubscriptionService;
+            if ($tenant && ! $subService->canAddUser($tenant)) {
                 return redirect()->back()->with('error', 'Limit jumlah user tercapai! Silakan upgrade paket langganan Anda untuk menambah user baru.');
             }
         } else {
@@ -138,8 +140,8 @@ class UserController extends Controller
 
         // Save Basic Salary if provided
         if (isset($validated['basic_salary'])) {
-            app(\App\Services\EmployeeSalaryService::class)->setSalary($user->id, [
-                'basic_salary' => $validated['basic_salary']
+            app(EmployeeSalaryService::class)->setSalary($user->id, [
+                'basic_salary' => $validated['basic_salary'],
             ]);
         }
 
@@ -182,8 +184,8 @@ class UserController extends Controller
 
         // Save Basic Salary if provided
         if (isset($validated['basic_salary'])) {
-            app(\App\Services\EmployeeSalaryService::class)->setSalary($user->id, [
-                'basic_salary' => $validated['basic_salary']
+            app(EmployeeSalaryService::class)->setSalary($user->id, [
+                'basic_salary' => $validated['basic_salary'],
             ]);
         }
 

@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
-import { ShoppingCart, History, RefreshCw, Bookmark, WifiOff, CloudUpload, Loader2 } from 'lucide-react';
+import { ShoppingCart, History, RefreshCw, Bookmark, WifiOff, CloudUpload, Loader2, TrendingUp, TrendingDown, Clock } from 'lucide-react';
+import { formatRupiah } from '@/lib/helpers/format';
 import { Badge } from '@/components/ui/badge';
 import { PayDebtDialog } from '@/features/pos/components/PayDebtDialog';
 import { PosCartSidebar } from '@/features/pos/components/PosCartSidebar';
@@ -12,9 +14,55 @@ import { PosReturnsTab } from '@/features/pos/components/tabs/PosReturnsTab';
 import { PosTransactionsTab } from '@/features/pos/components/tabs/PosTransactionsTab';
 import { usePos } from '@/features/pos/services/usePos';
 import { ShiftStatusBanner } from '@/features/shifts/components/ShiftStatusBanner';
+import { CloseShiftDialog } from '@/features/shifts/components/CloseShiftDialog';
+import { useShiftStore } from '@/pages/shifts/stores/useShiftStore';
 import MainLayout from '@/layouts/app/app-main-layout';
 
-export default function Pos({ products, customers, promos, branches, transactions, defaultSettings, filters, activeShift, loyaltySettings }: any) {
+const ShiftTimerButton = ({ openedAt, onClick }: { openedAt: string, onClick: () => void }) => {
+    const [duration, setDuration] = useState('00:00:00');
+
+    useEffect(() => {
+        if (!openedAt) return;
+        const start = new Date(openedAt).getTime();
+        
+        const updateTimer = () => {
+            const now = new Date().getTime();
+            const diff = now - start;
+            if (diff < 0) return;
+            
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            setDuration(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+        };
+        
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+    }, [openedAt]);
+
+    return (
+        <button 
+            onClick={onClick}
+            className="flex items-center gap-3 px-4 py-2 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors border border-rose-200"
+        >
+            <div className="h-8 w-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <TrendingDown className="h-4 w-4" />
+            </div>
+            <div className="text-left flex flex-col justify-center">
+                <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider leading-none mb-1">Tutup Shift</p>
+                <div className="flex items-center gap-1 text-rose-800 leading-none">
+                    <Clock className="h-3 w-3" />
+                    <span className="text-sm font-black font-mono tracking-wider">{duration}</span>
+                </div>
+            </div>
+        </button>
+    );
+};
+
+export default function Pos({ products, customers, promos, branches, transactions, defaultSettings, filters, activeShift, loyaltySettings, todaySalesAmount, todaySalesCount }: any) {
+    const { openClose } = useShiftStore();
     const pos = usePos({
         products,
         customers,
@@ -120,6 +168,30 @@ export default function Pos({ products, customers, promos, branches, transaction
                         )}
                     </button>
                 </div>
+                
+                {/* KANAN: RINGKASAN & TUTUP SHIFT */}
+                <div className="flex items-center gap-3">
+                    {/* RINGKASAN PENJUALAN HARI INI */}
+                    <div className="hidden lg:flex items-center gap-3 px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-100">
+                        <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                            <TrendingUp className="h-4 w-4" />
+                        </div>
+                        <div>
+                            <div className="flex items-center">
+                                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Shift Hari Ini</p>
+                            </div>
+                            <p className="text-sm font-black text-emerald-800">
+                                {formatRupiah(todaySalesAmount || 0)} 
+                                <span className="text-xs font-semibold text-emerald-600 ml-1">({todaySalesCount || 0} trx)</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* TOMBOL TUTUP SHIFT (WITH TIMER) */}
+                    {activeShift && (
+                        <ShiftTimerButton openedAt={activeShift.opened_at} onClick={() => openClose(activeShift)} />
+                    )}
+                </div>
             </div>
 
             {/* KONTEN BERDASARKAN TAB AKTIF */}
@@ -182,6 +254,8 @@ export default function Pos({ products, customers, promos, branches, transaction
                                 handlePaidAmountChange={pos.handlePaidAmountChange}
                                 setQuickCash={pos.setQuickCash}
                                 changeAmount={pos.changeAmount}
+                                dueDate={pos.dueDate}
+                                setDueDate={pos.setDueDate}
                                 handleCheckout={pos.handleCheckout}
                                 isSubmitting={pos.isSubmitting}
                                 setShowDraftModal={pos.setShowDraftModal}
@@ -262,6 +336,8 @@ export default function Pos({ products, customers, promos, branches, transaction
                 }}
                 transaction={pos.payDebtTransaction}
             />
+
+            <CloseShiftDialog />
 
             <style>{`
                 @media print {

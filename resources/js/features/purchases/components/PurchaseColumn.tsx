@@ -17,7 +17,7 @@ export const columns: ColumnDef<any>[] = [
 
             if (invoice) {
                 return (
-                    <Link 
+                    <Link
                         href={`/purchases/${id}`}
                         className="font-mono font-semibold text-primary hover:text-primary/80 hover:underline transition-all"
                     >
@@ -64,39 +64,55 @@ export const columns: ColumnDef<any>[] = [
     },
     {
         accessorKey: 'total_cost',
-        header: 'Total Tagihan',
+        header: 'Total & Sisa Hutang',
         cell: ({ row }) => {
             const total = Number(row.original.total_cost || 0);
+            const paid = Number(row.original.amount_paid || 0);
+            const remaining = Math.max(0, total - paid);
 
-            return <span className="font-bold text-base">{formatRupiah(total)}</span>;
+            return (
+                <div className="flex flex-col gap-1">
+                    <span className="font-bold text-base">{formatRupiah(total)}</span>
+                    {remaining > 0 && row.original.status !== 'draft' ? (
+                        <span className="text-xs font-semibold text-destructive">Sisa: {formatRupiah(remaining)}</span>
+                    ) : null}
+                </div>
+            );
         },
     },
     {
         accessorKey: 'status',
-        header: 'Status',
+        header: 'Status Dokumen',
         cell: ({ row }) => {
             const status = row.original.status as string;
-            
-            if (status === 'draft') {
-                return <Badge variant="outline" className="text-muted-foreground"><CircleDashed className="mr-1 h-3 w-3" /> Draft</Badge>;
-            }
+            const paymentStatus = row.original.payment_status as string;
 
-            if (status === 'received') {
-                return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200"><CheckCircle2 className="mr-1 h-3 w-3" /> Diterima (Belum Lunas)</Badge>;
-            }
+            return (
+                <div className="flex flex-col gap-2 items-start">
+                    {/* Status Barang */}
+                    {status === 'draft' && <Badge variant="outline" className="text-muted-foreground"><CircleDashed className="mr-1 h-3 w-3" /> Draft</Badge>}
+                    {status === 'received' && <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200"><CheckCircle2 className="mr-1 h-3 w-3" /> Diterima Gudang</Badge>}
+                    {status === 'paid' && <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200"><CheckCircle2 className="mr-1 h-3 w-3" /> Dokumen Selesai</Badge>}
 
-            if (status === 'paid') {
-                return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200"><Wallet className="mr-1 h-3 w-3" /> Lunas</Badge>;
-            }
-
-            return <Badge>{status}</Badge>;
+                    {/* Status Pembayaran */}
+                    {status !== 'draft' && (
+                        paymentStatus === 'paid' ? (
+                            <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50 text-[10px] py-0">LUNAS</Badge>
+                        ) : paymentStatus === 'partial' ? (
+                            <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50 text-[10px] py-0">DICICIL / DP</Badge>
+                        ) : (
+                            <Badge variant="outline" className="text-destructive border-red-200 bg-red-50 text-[10px] py-0">BELUM DIBAYAR</Badge>
+                        )
+                    )}
+                </div>
+            );
         },
     },
     {
         id: 'actions',
         cell: ({ row }) => {
             const purchase = row.original;
-            
+
             const updateStatus = (newStatus: string) => {
                 router.put(`/purchases/${purchase.id}/status`, { status: newStatus }, {
                     preserveScroll: true,

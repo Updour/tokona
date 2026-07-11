@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\SalesService;
 use App\Http\Requests\Sales\LoadStockRequest;
 use App\Http\Requests\Sales\RecordOrderRequest;
 use App\Http\Requests\Sales\StoreSalesRequest;
 use App\Http\Requests\Sales\UnloadStockRequest;
+use App\Services\SalesService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

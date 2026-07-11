@@ -33,13 +33,14 @@ class ProductService
         $query = new ProductQuery($request);
 
         return [
-            'products'       => $query->paginate(),
-            'categories'     => ProductCategory::forDropdown()->get(),
-            'types'          => ProductType::forDropdown()->get(),
-            'branches'       => $this->branchesForForm(),
-            'tenants'        => $this->tenantsForForm(),
+            'products' => $query->paginate(),
+            'all_products' => Products::active()->where('is_bundle', false)->orderBy('name')->select('id', 'name', 'base_cost')->get(),
+            'categories' => ProductCategory::forDropdown()->get(),
+            'types' => ProductType::forDropdown()->get(),
+            'branches' => $this->branchesForForm(),
+            'tenants' => $this->tenantsForForm(),
             'is_super_admin' => auth()->user()->isSuperAdmin(),
-            'filters'        => $query->activeFilters(),
+            'filters' => $query->activeFilters(),
         ];
     }
 
@@ -49,18 +50,45 @@ class ProductService
 
     public function create(array $data): Products
     {
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $data['tenant_id'] = auth()->user()->tenant_id;
         }
 
         $images = $data['images'] ?? [];
-        unset($data['images']);
+        $bundleItems = $data['bundle_items'] ?? [];
+        
+        if (!empty($data['new_category_name'])) {
+            $cat = ProductCategory::firstOrCreate([
+                'tenant_id' => $data['tenant_id'],
+                'name' => $data['new_category_name']
+            ]);
+            $data['category_id'] = $cat->id;
+        }
+        
+        if (!empty($data['new_type_name'])) {
+            $type = ProductType::firstOrCreate([
+                'tenant_id' => $data['tenant_id'],
+                'name' => $data['new_type_name']
+            ]);
+            $data['type_id'] = $type->id;
+        }
+
+        unset($data['images'], $data['bundle_items'], $data['new_category_name'], $data['new_type_name']);
 
         $product = Products::create($data);
 
+        if ($product->is_bundle && !empty($bundleItems)) {
+            foreach ($bundleItems as $item) {
+                $product->bundleItems()->create([
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity']
+                ]);
+            }
+        }
+
         $this->recordInitialStock($product, (int) ($data['initial_stock'] ?? 0));
 
-        if (!empty($images)) {
+        if (! empty($images)) {
             $this->imageService->upload($product->id, $images);
         }
 
@@ -69,9 +97,39 @@ class ProductService
 
     public function update(Products $product, array $data): Products
     {
-        unset($data['tenant_id'], $data['initial_stock']);
+        $bundleItems = $data['bundle_items'] ?? null;
+        
+        if (!empty($data['new_category_name'])) {
+            $cat = ProductCategory::firstOrCreate([
+                'tenant_id' => $product->tenant_id,
+                'name' => $data['new_category_name']
+            ]);
+            $data['category_id'] = $cat->id;
+        }
+        
+        if (!empty($data['new_type_name'])) {
+            $type = ProductType::firstOrCreate([
+                'tenant_id' => $product->tenant_id,
+                'name' => $data['new_type_name']
+            ]);
+            $data['type_id'] = $type->id;
+        }
+        
+        unset($data['tenant_id'], $data['initial_stock'], $data['bundle_items'], $data['new_category_name'], $data['new_type_name']);
 
         $product->update($data);
+
+        if ($product->is_bundle && $bundleItems !== null) {
+            $product->bundleItems()->delete(); // drop old items
+            foreach ($bundleItems as $item) {
+                $product->bundleItems()->create([
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity']
+                ]);
+            }
+        } elseif (!$product->is_bundle) {
+            $product->bundleItems()->delete();
+        }
 
         return $product->fresh();
     }
@@ -104,10 +162,10 @@ class ProductService
     {
         $query = Products::query();
 
-        if (!empty($filters['category_id'])) {
+        if (! empty($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
         }
-        if (!empty($filters['branch_id'])) {
+        if (! empty($filters['branch_id'])) {
             $query->where('branch_id', $filters['branch_id']);
         }
 
@@ -121,7 +179,7 @@ class ProductService
             } else {
                 $product->sell_price = $product->sell_price + $val;
             }
-            
+
             // Validasi harga jual minimum agar tidak melampaui harga jual baru
             if ($product->min_sell_price > $product->sell_price) {
                 $product->min_sell_price = $product->sell_price;
@@ -144,7 +202,7 @@ class ProductService
 
         $product->recordStockMovement('IN', $qty, [
             'source_type' => 'initial',
-            'notes'       => 'Stok awal saat produk dibuat',
+            'notes' => 'Stok awal saat produk dibuat',
         ]);
     }
 
@@ -167,7 +225,7 @@ class ProductService
             ->lowStock()
             ->active();
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $query->search($filters['search']);
         }
 
@@ -178,7 +236,7 @@ class ProductService
 
         return [
             'products' => $products,
-            'filters'  => collect($filters)->only(['search', 'per_page'])->toArray(),
+            'filters' => collect($filters)->only(['search', 'per_page'])->toArray(),
         ];
     }
 
@@ -190,7 +248,7 @@ class ProductService
     {
         $query = Branch::forDropdown();
 
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $query->forTenant(auth()->user()->tenant_id);
         }
 

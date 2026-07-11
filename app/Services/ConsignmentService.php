@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\Branch;
+use App\Models\CashBook;
 use App\Models\Consignment;
 use App\Models\ConsignmentItem;
 use App\Models\Products;
 use App\Models\Supplier;
-use App\Models\Branch;
-use App\Models\CashBook;
+use App\Models\Tenants;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -20,49 +21,85 @@ class ConsignmentService
     {
         $query = Consignment::with(['supplier', 'branch', 'items.product'])->latest();
 
-        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
             $query->where('tenant_id', auth()->user()->tenant_id);
         }
 
-        if (!empty($filters['status']) && $filters['status'] !== 'ALL') {
+        if (! empty($filters['status']) && $filters['status'] !== 'ALL') {
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['supplier_id']) && $filters['supplier_id'] !== 'ALL') {
+        if (! empty($filters['supplier_id']) && $filters['supplier_id'] !== 'ALL') {
             $query->where('supplier_id', $filters['supplier_id']);
         }
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $search = $filters['search'];
-            $query->whereHas('supplier', function($q) use ($search) {
+            $query->whereHas('supplier', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%");
             });
         }
 
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->whereDate('consignment_date', '>=', $filters['date_from']);
         }
 
-        if (!empty($filters['date_to'])) {
+        if (! empty($filters['date_to'])) {
             $query->whereDate('consignment_date', '<=', $filters['date_to']);
         }
 
         $consignments = $query->paginate($filters['per_page'] ?? 15);
 
         $suppliersQuery = Supplier::orderBy('name');
-        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
             $suppliersQuery->where('tenant_id', auth()->user()->tenant_id);
         }
-        
+
         $branchesQuery = Branch::orderBy('name');
-        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
             $branchesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
 
         $productsQuery = Products::withCurrentStock()->where('is_active', true);
-        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
             $productsQuery->where('tenant_id', auth()->user()->tenant_id);
         }
+
+        // Hitung Statistik Dasar (Hanya untuk tenant saat ini)
+        $statsQuery = Consignment::query();
+        $tenantId = auth()->check() ? auth()->user()->tenant_id : null;
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
+            $statsQuery->where('tenant_id', $tenantId);
+        }
+
+        $activeConsignments = (clone $statsQuery)->where('status', 'active')->get();
+        $totalActiveSessions = $activeConsignments->count();
+
+        // Optimalkan perhitungan total nilai aktif konsinyasi untuk mengeliminasi bottleneck N+1 query
+        $totalActiveValueQuery = DB::table('consignment_items')
+            ->join('consignments', 'consignment_items.consignment_id', '=', 'consignments.id')
+            ->where('consignments.status', 'active');
+        if ($tenantId && ! auth()->user()->isSuperAdmin()) {
+            $totalActiveValueQuery->where('consignments.tenant_id', $tenantId);
+        }
+        $totalActiveValue = (float) $totalActiveValueQuery->sum('consignment_items.subtotal');
+
+        $dueThisWeek = (clone $statsQuery)->where('status', 'active')
+            ->whereNotNull('due_date')
+            ->whereBetween('due_date', [now()->startOfDay(), now()->addDays(7)->endOfDay()])
+            ->count();
+
+        $soldThisMonth = (clone $statsQuery)->where('status', 'settled')
+            ->whereMonth('settled_at', now()->month)
+            ->whereYear('settled_at', now()->year)
+            ->sum('total_paid');
+
+        $stats = [
+            'total_active_sessions' => $totalActiveSessions,
+            'total_active_value' => $totalActiveValue,
+            'due_this_week' => $dueThisWeek,
+            'sold_this_month' => $soldThisMonth,
+        ];
 
         return [
             'consignments' => $consignments,
@@ -70,6 +107,7 @@ class ConsignmentService
             'branches' => $branchesQuery->get(),
             'products' => $productsQuery->get(),
             'filters' => $filters,
+            'stats' => $stats,
         ];
     }
 
@@ -80,9 +118,9 @@ class ConsignmentService
     {
         return DB::transaction(function () use ($data) {
             $tenantId = auth()->check() ? auth()->user()->tenant_id : null;
-            if (!$tenantId) {
+            if (! $tenantId) {
                 $branch = Branch::find($data['branch_id']);
-                $tenantId = $branch ? $branch->tenant_id : (\App\Models\Tenants::first()->id ?? Str::uuid());
+                $tenantId = $branch ? $branch->tenant_id : (Tenants::first()->id ?? Str::uuid());
             }
 
             $consignment = Consignment::create([
@@ -98,7 +136,9 @@ class ConsignmentService
 
             foreach ($data['items'] as $item) {
                 $product = Products::find($item['product_id']);
-                if (!$product) continue;
+                if (! $product) {
+                    continue;
+                }
 
                 // Tandai produk sebagai barang titipan (source = consignment) jika belum
                 if ($product->source !== 'consignment') {
@@ -122,7 +162,7 @@ class ConsignmentService
                 if ($product->track_stock) {
                     $product->recordStockMovement('IN', $item['qty'], [
                         'source_type' => 'consignment_receive',
-                        'description' => "Penerimaan titipan dari supplier",
+                        'description' => 'Penerimaan titipan dari supplier',
                     ]);
                 }
             }
@@ -140,7 +180,7 @@ class ConsignmentService
             $consignment = Consignment::with('items.product')->findOrFail($id);
 
             if ($consignment->status === 'settled') {
-                throw new \Exception("Sesi titipan ini sudah disetor/diselesaikan.");
+                throw new \Exception('Sesi titipan ini sudah disetor/diselesaikan.');
             }
 
             $totalPaid = 0;
@@ -153,7 +193,7 @@ class ConsignmentService
             foreach ($consignment->items as $cItem) {
                 if ($itemUpdates->has($cItem->id)) {
                     $input = $itemUpdates->get($cItem->id);
-                    $qtyUnsold = (int)$input['qty_unsold'];
+                    $qtyUnsold = (int) $input['qty_unsold'];
 
                     // Laku = Diterima - Sisa Fisik
                     $qtySold = max(0, $cItem->qty_received - $qtyUnsold);
@@ -173,10 +213,10 @@ class ConsignmentService
                         if ($cItem->product && $cItem->product->track_stock) {
                             $cItem->product->recordStockMovement('OUT', $qtyUnsold, [
                                 'source_type' => 'consignment_return',
-                                'description' => "Retur sisa titipan ke supplier",
+                                'description' => 'Retur sisa titipan ke supplier',
                             ]);
                         }
-                    } 
+                    }
                     // Jika rollover, stok tidak diapa-apakan karena barang masih ada di rak.
                 }
             }
@@ -209,7 +249,7 @@ class ConsignmentService
                         'status' => 'active',
                         'consignment_date' => now()->format('Y-m-d'),
                         'due_date' => now()->addDays(7)->format('Y-m-d'),
-                        'notes' => 'Rollover dari sesi titipan sebelumnya (' . ($consignment->reference_number ?? substr($consignment->id, 0, 8)) . ')',
+                        'notes' => 'Rollover dari sesi titipan sebelumnya ('.($consignment->reference_number ?? substr($consignment->id, 0, 8)).')',
                     ]);
 
                     foreach ($rolloverItems as $item) {
@@ -239,7 +279,7 @@ class ConsignmentService
                     'amount' => $netPaid,
                     'reference_type' => 'consignment',
                     'reference_id' => $consignment->id,
-                    'note' => 'Setoran Barang Titipan ke Supplier: ' . ($consignment->supplier->name ?? 'Tanpa Nama'),
+                    'note' => 'Setoran Barang Titipan ke Supplier: '.($consignment->supplier->name ?? 'Tanpa Nama'),
                     'created_by' => auth()->id() ?? $consignment->tenant_id,
                 ]);
             }

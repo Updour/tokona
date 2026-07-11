@@ -78,9 +78,9 @@ export default function OpnameDialog({ products }: OpnameDialogProps) {
 
     return (
         <Dialog open={isCreateOpen} onOpenChange={closeCreate}>
-            <DialogContent className="max-w-4xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
-                <DialogHeader className="p-5 border-b bg-slate-50 shrink-0">
-                    <DialogTitle className="text-xl font-black text-slate-800">Catat Stock Opname</DialogTitle>
+            <DialogContent className="!max-w-[1200px] w-[95vw] p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                <DialogHeader className="p-5 border-b bg-slate-50/80 backdrop-blur shrink-0">
+                    <DialogTitle className="text-xl font-bold tracking-tight text-slate-800">Catat Stock Opname</DialogTitle>
                 </DialogHeader>
 
                 <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
@@ -102,9 +102,9 @@ export default function OpnameDialog({ products }: OpnameDialogProps) {
                                 <div key={p.id} className="p-2 border-b last:border-0 hover:bg-slate-50 flex justify-between items-center group cursor-pointer" onClick={() => addItem(p)}>
                                     <div>
                                         <p className="text-xs font-bold text-slate-800 line-clamp-1">{p.name}</p>
-                                        <p className="text-[10px] text-slate-500">Sistem: <strong className="text-indigo-600">{p.current_stock || 0}</strong></p>
+                                        <p className="text-[10px] text-slate-500">Sistem: <strong className="text-primary">{p.current_stock || 0}</strong></p>
                                     </div>
-                                    <button className="h-6 w-6 rounded bg-slate-100 text-slate-500 group-hover:bg-indigo-650 group-hover:text-white flex items-center justify-center transition-colors">
+                                    <button className="h-6 w-6 rounded bg-slate-100 text-slate-500 group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-all shadow-sm">
                                         <Plus className="h-3 w-3" />
                                     </button>
                                 </div>
@@ -161,7 +161,7 @@ export default function OpnameDialog({ products }: OpnameDialogProps) {
                                             <div className="grid grid-cols-3 gap-3 items-end">
                                                 <div>
                                                     <label className="text-[10px] font-bold text-slate-500 block mb-1">Stok Sistem</label>
-                                                    <div className="h-9 bg-slate-100 rounded-lg flex items-center px-3 text-sm font-semibold text-slate-600">
+                                                    <div className="h-9 bg-slate-50 border border-slate-100 rounded-lg flex items-center px-3 text-sm font-semibold text-slate-500 shadow-inner">
                                                         {item.system_stock}
                                                     </div>
                                                 </div>
@@ -170,7 +170,7 @@ export default function OpnameDialog({ products }: OpnameDialogProps) {
                                                     <Input 
                                                         type="number"
                                                         min="0"
-                                                        className="h-9 font-bold"
+                                                        className="h-9 font-bold bg-white focus-visible:ring-primary shadow-sm"
                                                         value={item.physical_stock}
                                                         onChange={e => updateItem(item.product_id, 'physical_stock', parseInt(e.target.value) || 0)}
                                                     />
@@ -205,11 +205,11 @@ export default function OpnameDialog({ products }: OpnameDialogProps) {
                     </div>
                 </div>
 
-                <DialogFooter className="p-4 border-t bg-slate-50 shrink-0">
-                    <Button variant="outline" onClick={closeCreate} disabled={processing}>Batal</Button>
-                    <Button onClick={handleSubmit} disabled={processing || data.items.length === 0} className="bg-indigo-650 hover:bg-indigo-700">
+                <DialogFooter className="p-4 border-t bg-slate-50/80 backdrop-blur shrink-0">
+                    <Button variant="outline" onClick={closeCreate} disabled={processing} className="shadow-sm">Batal</Button>
+                    <Button onClick={handleSubmit} disabled={processing || data.items.length === 0} className="shadow-sm font-bold px-6">
                         {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Simpan Penyesuaian
+                        Simpan & Sesuaikan Stok
                     </Button>
                 </DialogFooter>
             </DialogContent>

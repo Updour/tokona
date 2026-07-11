@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Products;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Products\StoreProductTypeRequest;
 use App\Models\ProductType;
+use App\Models\Tenants;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,8 +16,7 @@ class ProductTypeController extends Controller
     public function index(Request $request): Response
     {
         $types = ProductType::query()
-            ->when($request->filled('search'), fn ($q) =>
-                $q->where('name', 'like', '%' . $request->input('search') . '%')
+            ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%'.$request->input('search').'%')
             )
             ->when(
                 in_array($request->input('sort'), ['name', 'created_at']),
@@ -28,7 +28,7 @@ class ProductTypeController extends Controller
             ->withQueryString();
 
         return Inertia::render('product-types/Index', [
-            'types'   => $types,
+            'types' => $types,
             'filters' => $request->only(['search', 'sort', 'direction', 'per_page']),
         ]);
     }
@@ -36,8 +36,8 @@ class ProductTypeController extends Controller
     public function store(StoreProductTypeRequest $request): RedirectResponse
     {
         $tenantId = auth()->user()->tenant_id;
-        if (!$tenantId && auth()->user()->isSuperAdmin()) {
-            $tenantId = \App\Models\Tenants::first()->id ?? null;
+        if (! $tenantId && auth()->user()->isSuperAdmin()) {
+            $tenantId = Tenants::first()->id ?? null;
         }
 
         ProductType::create(array_merge(

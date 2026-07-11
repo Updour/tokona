@@ -15,6 +15,9 @@ interface PurchaseState {
     purchase_date: string;
     status: string;
     global_discount: number;
+    due_date: string;
+    initial_payment: number;
+    payment_method: string;
     items: PurchaseItem[];
     
     // Actions
@@ -36,6 +39,9 @@ const initialState = {
     purchase_date: getTodayDateString(),
     status: 'draft',
     global_discount: 0,
+    due_date: '',
+    initial_payment: 0,
+    payment_method: 'Cash',
     items: []
 };
 

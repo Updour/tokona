@@ -8,8 +8,8 @@ use App\Http\Requests\Products\PayDebtRequest;
 use App\Http\Requests\Products\ReturnPOSRequest;
 use App\Http\Requests\Products\SavePOSSettingsRequest;
 use App\Services\PosService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,6 +28,7 @@ class PosController extends Controller
     public function index(Request $request): Response
     {
         $data = $this->posService->getPosPageData($request->all());
+
         return Inertia::render('products/pos', $data);
     }
 

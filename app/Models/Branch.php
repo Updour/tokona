@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Branch extends Model
 {
+    use LogsActivity;
+
     use HasFactory, HasUuids;
 
     protected $fillable = [
@@ -30,8 +33,14 @@ class Branch extends Model
     protected static function booted()
     {
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && !auth()->user()->isSuperAdmin()) {
-                $builder->where('tenant_id', auth()->user()->tenant_id);
+            if (auth()->check() && auth()->user()->isSuperAdmin()) {
+                return;
+            }
+
+            if (config('app.current_tenant')) {
+                $builder->where($builder->getModel()->getTable() . '.tenant_id', config('app.current_tenant')->id);
+            } elseif (auth()->check()) {
+                $builder->where($builder->getModel()->getTable() . '.tenant_id', auth()->user()->tenant_id);
             }
         });
     }
@@ -67,7 +76,7 @@ class Branch extends Model
         $query->when($filters['search'] ?? null, function ($q, $search) {
             $q->where(function ($sq) use ($search) {
                 $sq->where('name', 'like', "%{$search}%")
-                   ->orWhere('code', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%");
             });
         });
     }

@@ -5,7 +5,7 @@ import { EmployeeDetailSheet } from '@/features/employees/components/EmployeeDet
 import { EmployeeDeleteDialog } from '@/features/employees/components/EmployeeDeleteDialog';
 import { EmployeeTable } from '@/features/employees/components/EmployeeTable';
 import MainLayout from '@/layouts/app/app-main-layout';
-import type {Employee, Role} from './types';
+import type { Employee, Role } from './types';
 
 interface IndexProps {
     users: any;
@@ -23,7 +23,7 @@ export default function Index({ users, filters, branches, roles, tenants = [] }:
             <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
-                        <Users className="h-8 w-8 text-indigo-600" />
+                        <Users className="h-8 w-8 text-black-600" />
                         Manajemen Karyawan
                     </h1>
                     <p className="text-muted-foreground mt-1 text-sm">
@@ -36,10 +36,10 @@ export default function Index({ users, filters, branches, roles, tenants = [] }:
                 <EmployeeTable data={users} filters={filters} branches={branches} tenants={tenants} />
             </div>
 
-            <EmployeeFormDialog 
-                branches={branches} 
-                roles={roles} 
-                tenants={tenants} 
+            <EmployeeFormDialog
+                branches={branches}
+                roles={roles}
+                tenants={tenants}
             />
             <EmployeeDetailSheet />
             <EmployeeDeleteDialog />

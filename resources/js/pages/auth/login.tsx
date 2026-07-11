@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -16,6 +16,8 @@ type Props = {
 };
 
 export default function Login({ status, canResetPassword }: Props) {
+    const { currentTenant } = usePage<any>().props;
+
     return (
         <>
             <Head title="Log in" />
@@ -28,8 +30,8 @@ export default function Login({ status, canResetPassword }: Props) {
                 {({ processing, errors }) => (
                     <>
                         <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="email" className="text-slate-300">Alamat Email</Label>
+                            <div className="grid gap-3">
+                                <Label htmlFor="email" className="text-slate-300 text-sm font-semibold">Alamat Email</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -39,14 +41,14 @@ export default function Login({ status, canResetPassword }: Props) {
                                     tabIndex={1}
                                     autoComplete="email"
                                     placeholder="email@example.com"
-                                    className="dark:bg-slate-900/50 dark:border-slate-700/50 dark:text-slate-100 dark:placeholder:text-slate-500 focus-visible:ring-indigo-500"
+                                    className="h-14 text-lg px-4 dark:bg-slate-900/50 dark:border-slate-700/50 dark:text-slate-100 dark:placeholder:text-slate-500 focus-visible:ring-indigo-500"
                                 />
                                 <InputError message={errors.email} />
                             </div>
 
-                            <div className="grid gap-2">
+                            <div className="grid gap-3">
                                 <div className="flex items-center">
-                                    <Label htmlFor="password" className="text-slate-300">Kata Sandi</Label>
+                                    <Label htmlFor="password" className="text-slate-300 text-sm font-semibold">Kata Sandi</Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
@@ -64,7 +66,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                     tabIndex={2}
                                     autoComplete="current-password"
                                     placeholder="Password"
-                                    className="dark:bg-slate-900/50 dark:border-slate-700/50 dark:text-slate-100 dark:placeholder:text-slate-500 focus-visible:ring-indigo-500"
+                                    className="h-14 text-lg px-4 dark:bg-slate-900/50 dark:border-slate-700/50 dark:text-slate-100 dark:placeholder:text-slate-500 focus-visible:ring-indigo-500"
                                 />
                                 <InputError message={errors.password} />
                             </div>
@@ -81,13 +83,13 @@ export default function Login({ status, canResetPassword }: Props) {
 
                             <Button
                                 type="submit"
-                                className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/25 transition-all duration-300"
+                                className="mt-8 h-14 text-lg font-bold w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-500/25 transition-all duration-300"
                                 tabIndex={4}
                                 disabled={processing}
                                 data-test="login-button"
                             >
                                 {processing && <Spinner className="mr-2" />}
-                                Masuk ke Tokona
+                                Masuk ke {currentTenant ? currentTenant.name : 'Tokona'}
                             </Button>
                         </div>
 

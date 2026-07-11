@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
+
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 
 class Journal extends Model
 {
+    use LogsActivity;
+
     use HasUuids;
 
     protected $fillable = [
@@ -30,7 +34,7 @@ class Journal extends Model
     protected static function booted()
     {
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+            if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
                 $builder->where('tenant_id', auth()->user()->tenant_id);
             }
         });
@@ -38,7 +42,7 @@ class Journal extends Model
         static::creating(function ($model) {
             if (empty($model->reference_number)) {
                 $monthName = strtoupper(now()->locale('id')->isoFormat('MMM'));
-                $model->reference_number = 'JNL-' . date('d') . $monthName . '-' . date('Y') . '-' . strtoupper(substr(uniqid(), -5));
+                $model->reference_number = 'JNL-'.date('d').$monthName.'-'.date('Y').'-'.strtoupper(substr(uniqid(), -5));
             }
         });
     }
@@ -52,7 +56,7 @@ class Journal extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
-    
+
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class, 'branch_id');

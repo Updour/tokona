@@ -3,6 +3,7 @@
 namespace App\Services\Promos;
 
 use App\Models\Promo;
+use App\Models\Tenants;
 use App\Queries\PromoQuery;
 use Illuminate\Http\Request;
 
@@ -11,24 +12,27 @@ class PromoService
     public function indexData(Request $request): array
     {
         $query = new PromoQuery($request);
+
         return $query->indexData();
     }
 
     public function create(array $data): Promo
     {
         $tenantId = $data['tenant_id'] ?? auth()->user()->tenant_id;
-        
+
         if (empty($tenantId) && auth()->user()->isSuperAdmin()) {
-            $tenantId = \App\Models\Tenants::first()->id;
+            $tenantId = Tenants::first()->id;
         }
-        
+
         $data['tenant_id'] = $tenantId;
+
         return Promo::create($data);
     }
 
     public function update(Promo $promo, array $data): Promo
     {
         $promo->update($data);
+
         return $promo;
     }
 

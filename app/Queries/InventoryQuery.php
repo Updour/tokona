@@ -2,8 +2,8 @@
 
 namespace App\Queries;
 
+use App\Models\Branch;
 use App\Models\StockMovement;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 
 class InventoryQuery
@@ -16,15 +16,15 @@ class InventoryQuery
             ->paginate($this->request->integer('per_page', 15))
             ->withQueryString();
 
-        $branchesQuery = \App\Models\Branch::query()->select('id', 'name');
-        if (!auth()->user()->isSuperAdmin()) {
+        $branchesQuery = Branch::query()->select('id', 'name');
+        if (! auth()->user()->isSuperAdmin()) {
             $branchesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
 
         return [
             'movements' => $movements,
-            'branches'  => $branchesQuery->orderBy('name')->get(),
-            'filters'   => $this->request->only(['search', 'type', 'branch_id', 'start_date', 'end_date']),
+            'branches' => $branchesQuery->orderBy('name')->get(),
+            'filters' => $this->request->only(['search', 'type', 'branch_id', 'start_date', 'end_date']),
         ];
     }
 
@@ -54,8 +54,8 @@ class InventoryQuery
             $search = $this->request->input('search');
             $query->whereHas('product', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%")
-                  ->orWhere('barcode', 'like', "%{$search}%");
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhere('barcode', 'like', "%{$search}%");
             });
         }
     }

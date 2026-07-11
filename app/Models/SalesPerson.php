@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SalesPerson extends Model
 {
+    use LogsActivity;
+
     use HasFactory, HasUuids;
 
     protected $table = 'sales_people';
@@ -28,7 +32,7 @@ class SalesPerson extends Model
     protected static function booted()
     {
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+            if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
                 $builder->where('tenant_id', auth()->user()->tenant_id);
             }
         });
@@ -64,8 +68,8 @@ class SalesPerson extends Model
         return $query->when($filters['search'] ?? null, function ($q, $search) {
             $q->where(function ($sub) use ($search) {
                 $sub->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         })->when($filters['branch_id'] ?? null, function ($q, $branchId) {
             $q->where('branch_id', $branchId);

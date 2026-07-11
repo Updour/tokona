@@ -17,7 +17,7 @@ class CustomerQuery
 
         return [
             'customers' => $customers,
-            'filters'   => $this->request->only(['search', 'tier']),
+            'filters' => $this->request->only(['search', 'tier']),
         ];
     }
 
@@ -27,6 +27,7 @@ class CustomerQuery
         $this->applySearch($query);
         $this->applyTierFilter($query);
         $query->orderBy('created_at', 'desc');
+
         return $query;
     }
 
@@ -36,8 +37,8 @@ class CustomerQuery
             $search = $this->request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
     }

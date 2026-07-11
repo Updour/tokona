@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +19,8 @@ use Illuminate\Database\Eloquent\Model;
 ])]
 class TenantMedia extends Model
 {
+    use LogsActivity;
+
     use HasFactory, HasUuids;
 
     protected function casts(): array
@@ -41,11 +45,12 @@ class TenantMedia extends Model
             if (str_contains($this->file_url, '://placeholder.com')) {
                 return 'https://picsum.photos';
             }
+
             return $this->file_url;
         }
 
         // 3. Jika berupa path lokal, gabungkan dengan URL domain utama Anda secara absolut
-        return asset('storage/' . $this->file_url);
+        return asset('storage/'.$this->file_url);
     }
 
     // 🔗 ke tenant

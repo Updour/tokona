@@ -9,10 +9,12 @@ use App\Models\Customer;
 use App\Models\Products;
 use App\Models\Promo;
 use App\Models\StockMovement;
+use App\Models\Tenants;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
-use Illuminate\Support\Facades\DB;
+use App\Models\TransactionPayment;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PosService
 {
@@ -22,14 +24,35 @@ class PosService
     public function getPosPageData(array $filters): array
     {
         $user = Auth::user();
-        
+
         // Produk aktif dengan saringan cabang dan hitungan stok real-time
         $products = Products::active()
             ->withCurrentStock()
             ->withListRelations()
+            ->with(['bundleItems.product' => function ($q) {
+                $q->withCurrentStock();
+            }])
             ->orderBy('name')
             ->get()
             ->map(function ($p) {
+                $currentStock = (int) $p->current_stock;
+                
+                // Kalkulasi stok virtual untuk produk bundle
+                if ($p->is_bundle && $p->bundleItems->count() > 0) {
+                    $maxBundles = PHP_INT_MAX;
+                    foreach ($p->bundleItems as $bItem) {
+                        $comp = $bItem->product;
+                        if ($comp && $bItem->quantity > 0) {
+                            $compStock = (int) $comp->current_stock;
+                            $possible = floor($compStock / $bItem->quantity);
+                            if ($possible < $maxBundles) {
+                                $maxBundles = $possible;
+                            }
+                        }
+                    }
+                    $currentStock = $maxBundles === PHP_INT_MAX ? 0 : max(0, $maxBundles);
+                }
+
                 return [
                     'id' => $p->id,
                     'name' => $p->name,
@@ -40,7 +63,8 @@ class PosService
                     'sell_price' => (float) $p->sell_price,
                     'min_sell_price' => (float) $p->min_sell_price,
                     'track_stock' => $p->track_stock,
-                    'current_stock' => (int) $p->current_stock,
+                    'is_bundle' => $p->is_bundle,
+                    'current_stock' => $currentStock,
                     'image' => $p->images->first()?->url ?? null,
                     'category' => $p->category?->name ?? 'Tanpa Kategori',
                 ];
@@ -53,11 +77,11 @@ class PosService
         $promos = Promo::where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('start_date')
-                  ->orWhere('start_date', '<=', now());
+                    ->orWhere('start_date', '<=', now());
             })
             ->where(function ($q) {
                 $q->whereNull('end_date')
-                  ->orWhere('end_date', '>=', now());
+                    ->orWhere('end_date', '>=', now());
             })
             ->get()->toArray();
 
@@ -75,14 +99,14 @@ class PosService
         $currentBranch = Branch::find($user->branch_id);
         $defaultSettings = $currentBranch ? $currentBranch->pos_settings : null;
 
-        if (!$defaultSettings) {
+        if (! $defaultSettings) {
             $defaultSettings = [
                 'taxEnabled' => true,
                 'taxRate' => 11,
                 'activeMethods' => [
                     'cash' => true,
                     'transfer' => true,
-                    'debt' => true
+                    'debt' => true,
                 ],
                 'roundingNearest' => 100,
                 'roundingMethod' => 'floor',
@@ -91,10 +115,10 @@ class PosService
             ];
         } else {
             // Ensure fallback for existing branches
-            if (!isset($defaultSettings['require_shift'])) {
+            if (! isset($defaultSettings['require_shift'])) {
                 $defaultSettings['require_shift'] = true;
             }
-            if (!isset($defaultSettings['enable_canvas'])) {
+            if (! isset($defaultSettings['enable_canvas'])) {
                 $defaultSettings['enable_canvas'] = false;
             }
         }
@@ -111,10 +135,22 @@ class PosService
             $tenantId = $fallbackBranch ? $fallbackBranch->tenant_id : null;
         }
 
-        $tenant = \App\Models\Tenants::find($tenantId);
+        $tenant = Tenants::find($tenantId);
         $loyaltySettings = $tenant ? $tenant->getLoyaltySettings() : ['earn_amount' => 10000, 'redeem_rate' => 1];
 
+        $todaySales = Transaction::whereDate('created_at', today())
+            ->where('status', 'completed');
+            
+        if (! $user->isSuperAdmin()) {
+            $todaySales->where('tenant_id', $user->tenant_id);
+        }
+
+        $todaySalesAmount = $todaySales->sum('total');
+        $todaySalesCount = $todaySales->count();
+
         return [
+            'todaySalesAmount' => $todaySalesAmount,
+            'todaySalesCount' => $todaySalesCount,
             'products' => $products,
             'customers' => $customers,
             'promos' => $promos,
@@ -154,32 +190,104 @@ class PosService
                 ->latest('opened_at')
                 ->first();
 
-            if ($requireShift && !$activeShift && empty($data['is_offline_sync'])) {
+            if ($requireShift && ! $activeShift && empty($data['is_offline_sync'])) {
                 throw new \RuntimeException('Tidak bisa checkout. Buka shift kasir terlebih dahulu.');
+            }
+
+            // 1. Rekonsiliasi Matematika & Verifikasi Harga Item Sisi Server
+            $calculatedSubtotal = 0;
+            foreach ($data['items'] as $item) {
+                // Terapkan row locking untuk memuat produk secara aman dari race condition konkurensi
+                $product = Products::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
+                
+                // Cek batas harga minimum
+                if (! empty($product->min_sell_price) && $item['price'] < $product->min_sell_price) {
+                    throw new \RuntimeException("Harga jual {$product->name} (Rp " . number_format($item['price'], 0, ',', '.') . ") berada di bawah batas minimum yang diizinkan (Rp " . number_format($product->min_sell_price, 0, ',', '.') . ").");
+                }
+                
+                // Cek kalkulasi subtotal item
+                $itemSubtotal = $item['qty'] * $item['price'];
+                if (abs($itemSubtotal - $item['subtotal']) > 0.01) {
+                    throw new \RuntimeException("Subtotal untuk barang {$product->name} tidak valid secara matematis.");
+                }
+                
+                $calculatedSubtotal += $itemSubtotal;
+            }
+
+            // Cek subtotal transaksi
+            if (abs($calculatedSubtotal - $data['subtotal']) > 0.01) {
+                throw new \RuntimeException("Subtotal transaksi tidak sesuai dengan kalkulasi rincian barang.");
+            }
+
+            // Cek Poin Loyalty & Nilai Redeem (jika ada)
+            $tenant = Tenants::find($tenantId);
+            $loyaltySettings = $tenant ? $tenant->getLoyaltySettings() : ['earn_amount' => 10000, 'redeem_rate' => 1];
+            $redeemRate = (float) ($loyaltySettings['redeem_rate'] ?? 1);
+            $calculatedRedeemDiscount = 0;
+
+            if (! empty($data['customer_id']) && ! empty($data['redeem_points']) && $data['redeem_points'] > 0) {
+                $customer = Customer::find($data['customer_id']);
+                if (!$customer || $customer->points < $data['redeem_points']) {
+                    throw new \RuntimeException("Poin pelanggan tidak mencukupi untuk diredeem.");
+                }
+                $calculatedRedeemDiscount = $data['redeem_points'] * $redeemRate;
+                if ($data['discount'] < $calculatedRedeemDiscount) {
+                    throw new \RuntimeException("Nominal diskon transaksi tidak sesuai dengan jumlah redeem poin pelanggan.");
+                }
+            }
+
+            // Cek nominal pajak transaksi
+            $taxRate = (float) ($posSettings['taxRate'] ?? 11);
+            $taxEnabled = (bool) ($posSettings['taxEnabled'] ?? true);
+            $calculatedTax = 0;
+            if ($taxEnabled) {
+                $netAfterDiscount = max(0, $calculatedSubtotal - $data['discount']);
+                $calculatedTax = round($netAfterDiscount * ($taxRate / 100));
+            }
+            if (abs($calculatedTax - $data['tax']) > 5.00) {
+                throw new \RuntimeException("Pajak transaksi tidak valid secara perhitungan server.");
+            }
+
+            // Cek total akhir transaksi
+            $calculatedTotal = $calculatedSubtotal - $data['discount'] + $data['tax'] + ($data['rounding_diff'] ?? 0);
+            if (abs($calculatedTotal - $data['total']) > 1.00) {
+                throw new \RuntimeException("Total nominal transaksi tidak valid secara perhitungan server.");
             }
 
             // Generate invoice number INV/YYYYMMDD/[BRANCH_CODE]/[COUNTER]
             $today = date('Ymd');
             $branch = Branch::findOrFail($branchId);
             $branchCode = $branch->code ?? 'HO';
-            
+
             // If offline sync, we might just append a unique identifier to avoid clash if multiple syncs happen
             $todayCount = Transaction::whereDate('created_at', today())
                 ->where('branch_id', $branchId)
                 ->count();
-            
+
             $sequence = str_pad($todayCount + 1, 4, '0', STR_PAD_LEFT);
             $invoiceNumber = "INV/{$today}/{$branchCode}/{$sequence}";
-            
-            if (!empty($data['is_offline_sync'])) {
+
+            if (! empty($data['is_offline_sync'])) {
                 $invoiceNumber .= '-OFF';
             }
 
-            // Tentukan status awal
-            $status = $data['payment_method'] === 'debt' ? 'draft' : 'paid';
+            // Tentukan status pembayaran
+            $paymentStatus = 'paid';
+            $status = 'paid';
+            $dueDate = null;
+
+            if ($data['payment_method'] === 'debt') {
+                $status = $data['paid_amount'] > 0 ? 'partial' : 'draft';
+                $dueDate = $data['due_date'] ?? null;
+                if ($data['paid_amount'] > 0) {
+                    $paymentStatus = 'partial';
+                } else {
+                    $paymentStatus = 'unpaid';
+                }
+            }
 
             // Proses potongan poin loyalty (redeem points)
-            if (!empty($data['customer_id']) && !empty($data['redeem_points']) && $data['redeem_points'] > 0) {
+            if (! empty($data['customer_id']) && ! empty($data['redeem_points']) && $data['redeem_points'] > 0) {
                 $customer = Customer::find($data['customer_id']);
                 if ($customer && $customer->points >= $data['redeem_points']) {
                     $customer->decrement('points', $data['redeem_points']);
@@ -206,15 +314,30 @@ class PosService
                 'transfer_amount' => $data['payment_method'] === 'transfer' ? $data['paid_amount'] : ($data['transfer_amount'] ?? 0),
                 'change_amount' => $data['change_amount'],
                 'payment_method' => $data['payment_method'],
+                'payment_status' => $paymentStatus,
+                'due_date' => $dueDate,
                 'status' => $status,
                 'created_by' => $user->id,
             ]);
+
+            // Jika ada DP untuk Kasbon, catat ke transaction_payments
+            if ($data['payment_method'] === 'debt' && $data['paid_amount'] > 0) {
+                TransactionPayment::create([
+                    'transaction_id' => $transaction->id,
+                    'customer_id' => $data['customer_id'] ?? null,
+                    'amount' => $data['paid_amount'],
+                    'payment_date' => now()->toDateString(),
+                    'payment_method' => 'cash', // asumsikan DP pakai tunai, bisa disesuaikan
+                    'notes' => 'Uang Muka (DP) Transaksi Piutang',
+                    'created_by' => $user->id,
+                ]);
+            }
 
             $totalCogs = 0;
 
             // Simpan item-item detail penjualan & potong stok
             foreach ($data['items'] as $item) {
-                $product = Products::findOrFail($item['product_id']);
+                $product = Products::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
                 $itemCogs = $product->base_cost * $item['qty'];
                 $totalCogs += $itemCogs;
 
@@ -229,7 +352,27 @@ class PosService
                 ]);
 
                 // Potong stok barang (StockMovement OUT) jika dilacak
-                if ($product->track_stock) {
+                if ($product->is_bundle) {
+                    $bundleItems = $product->bundleItems()->with('product')->get();
+                    foreach ($bundleItems as $bItem) {
+                        $compProduct = $bItem->product;
+                        if ($compProduct && $compProduct->track_stock) {
+                            $compProduct = Products::where('id', $compProduct->id)->lockForUpdate()->first();
+                            StockMovement::create([
+                                'tenant_id' => $tenantId,
+                                'branch_id' => $branchId,
+                                'product_id' => $compProduct->id,
+                                'type' => 'OUT',
+                                'qty' => $item['qty'] * $bItem->quantity,
+                                'unit_cost' => $compProduct->base_cost,
+                                'unit_price' => 0,
+                                'source_type' => 'sale',
+                                'source_id' => $transaction->id,
+                                'notes' => "Komponen Paket ({$product->name}) - Penjualan Kasir POS - Inv: {$invoiceNumber}",
+                            ]);
+                        }
+                    }
+                } elseif ($product->track_stock) {
                     StockMovement::create([
                         'tenant_id' => $tenantId,
                         'branch_id' => $branchId,
@@ -249,7 +392,7 @@ class PosService
             $transaction->update(['total_cogs' => $totalCogs]);
 
             // Proses tambahan untuk Pelanggan / Keanggotaan
-            if (!empty($data['customer_id'])) {
+            if (! empty($data['customer_id'])) {
                 $customer = Customer::findOrFail($data['customer_id']);
 
                 // 1. Catat hutang jika menggunakan metode 'debt'
@@ -258,7 +401,7 @@ class PosService
                 }
 
                 // 2. Loyalty points: Berikan poin berdasarkan kelipatan belanja sesuai setting
-                $tenant = \App\Models\Tenants::find($tenantId);
+                $tenant = Tenants::find($tenantId);
                 $loyaltySettings = $tenant ? $tenant->getLoyaltySettings() : ['earn_amount' => 10000];
                 $earnAmount = max(1, (int) $loyaltySettings['earn_amount']);
                 $pointsEarned = (int) floor($transaction->total / $earnAmount);
@@ -288,10 +431,10 @@ class PosService
             // TRANSAKSI NON-TUNAI (Transfer, dll): Uang langsung masuk rekening perusahaan, otomatis catat di Buku Kas.
             // TRANSAKSI TUNAI (Cash): Uang masuk ke Laci Kasir (Shift), TIDAK dicatat di Buku Kas sampai Tutup Shift.
             if ($data['payment_method'] === 'transfer' || $data['payment_method'] === 'split') {
-                $transferValue = $data['payment_method'] === 'split' 
-                    ? (float) ($data['transfer_amount'] ?? 0) 
+                $transferValue = $data['payment_method'] === 'split'
+                    ? (float) ($data['transfer_amount'] ?? 0)
                     : (float) min($transaction->total, $transaction->paid_amount);
-                
+
                 if ($transferValue > 0) {
                     CashBook::create([
                         'tenant_id' => $tenantId,
@@ -307,23 +450,26 @@ class PosService
                 }
             }
 
-            \App\Services\ActivityLogger::log(
-                'Transaksi POS', 
-                "Melakukan checkout penjualan POS: {$invoiceNumber} senilai " . number_format($transaction->total, 0, ',', '.'),
+            ActivityLogger::log(
+                'Transaksi POS',
+                "Melakukan checkout penjualan POS: {$invoiceNumber} senilai ".number_format($transaction->total, 0, ',', '.'),
                 $transaction,
                 ['payment_method' => $data['payment_method'], 'total' => $transaction->total]
             );
 
             // [Langkah 2: Dual-Mode Accounting]
             // Jika mode Akuntansi Baku aktif, cetak Jurnal Entry secara otomatis
-            $tenantObj = \App\Models\Tenants::find($tenantId);
+            $tenantObj = Tenants::find($tenantId);
             if ($tenantObj) {
                 $accountingSettings = $tenantObj->getAccountingSettings();
                 if ($accountingSettings['enable_advanced_accounting']) {
-                    $accountingService = app(\App\Services\AccountingService::class);
+                    $accountingService = app(AccountingService::class);
                     $accountingService->generatePosJournal($transaction);
                 }
             }
+
+            // Picu kenaikan versi cache laporan untuk tenant ini agar data grafik ter-sinkronisasi instan
+            \Illuminate\Support\Facades\Cache::increment("reports_cache_version_{$tenantId}");
 
             return $transaction;
         });
@@ -348,15 +494,35 @@ class PosService
                 $fallbackBranch = Branch::first();
                 $tenantId = $fallbackBranch ? $fallbackBranch->tenant_id : null;
             }
-            
+
             // Tandai status transaksi menjadi returned
             $transaction->update(['status' => 'returned']);
 
             foreach ($data['items'] as $item) {
-                $product = Products::findOrFail($item['product_id']);
-                
+                $product = Products::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
+
                 // Kembalikan stok barang (StockMovement type RETURN) jika dilacak
-                if ($product->track_stock) {
+                if ($product->is_bundle) {
+                    $bundleItems = $product->bundleItems()->with('product')->get();
+                    foreach ($bundleItems as $bItem) {
+                        $compProduct = $bItem->product;
+                        if ($compProduct && $compProduct->track_stock) {
+                            $compProduct = Products::where('id', $compProduct->id)->lockForUpdate()->first();
+                            StockMovement::create([
+                                'tenant_id' => $tenantId,
+                                'branch_id' => $branchId,
+                                'product_id' => $compProduct->id,
+                                'type' => 'RETURN',
+                                'qty' => $item['qty'] * $bItem->quantity,
+                                'unit_cost' => $compProduct->base_cost,
+                                'unit_price' => 0,
+                                'source_type' => 'sale_return',
+                                'source_id' => $transaction->id,
+                                'notes' => "Retur Komponen Paket ({$product->name}) Kasir POS - Inv: {$transaction->invoice_number}",
+                            ]);
+                        }
+                    }
+                } elseif ($product->track_stock) {
                     StockMovement::create([
                         'tenant_id' => $tenantId,
                         'branch_id' => $branchId,
@@ -393,6 +559,9 @@ class PosService
                     $customer->decrement('debt_balance', $transaction->total);
                 }
             }
+
+            // Picu kenaikan versi cache laporan untuk tenant ini agar data grafik ter-sinkronisasi instan
+            \Illuminate\Support\Facades\Cache::increment("reports_cache_version_{$tenantId}");
         });
     }
 
@@ -404,7 +573,6 @@ class PosService
         $user = Auth::user();
         $transaction = Transaction::where('id', $transactionId)
             ->where('payment_method', 'debt')
-            ->whereIn('status', ['draft', 'partial']) // Piutang yang belum lunas
             ->firstOrFail();
 
         DB::transaction(function () use ($transaction, $data, $user) {
@@ -413,22 +581,27 @@ class PosService
 
             // Jika lunas atau lebih
             if ($newPaidAmount >= $transaction->total) {
-                $transaction->status = 'paid';
+                $transaction->payment_status = 'paid';
                 $transaction->paid_amount = $transaction->total;
             } else {
-                $transaction->status = 'partial';
+                $transaction->payment_status = 'partial';
                 $transaction->paid_amount = $newPaidAmount;
-            }
-
-            if ($data['payment_method'] === 'cash') {
-                $transaction->cash_amount = ($transaction->cash_amount ?? 0) + $amountPaid;
-            } else {
-                $transaction->transfer_amount = ($transaction->transfer_amount ?? 0) + $amountPaid;
             }
 
             $transaction->save();
 
-            // Kurangi saldo piutang pelanggan
+            // Catat ke transaction_payments
+            TransactionPayment::create([
+                'transaction_id' => $transaction->id,
+                'customer_id' => $transaction->customer_id,
+                'amount' => $amountPaid,
+                'payment_date' => $data['payment_date'] ?? now()->toDateString(),
+                'payment_method' => $data['payment_method'] ?? 'cash',
+                'notes' => $data['notes'] ?? 'Cicilan Piutang POS',
+                'created_by' => $user->id,
+            ]);
+
+            // Update Saldo Piutang Pelanggan
             if ($transaction->customer_id) {
                 $customer = Customer::find($transaction->customer_id);
                 if ($customer) {
@@ -436,37 +609,31 @@ class PosService
                 }
             }
 
-            $tenantId = $transaction->tenant_id ?? $user->tenant_id;
-            if (empty($tenantId)) {
-                $branch = Branch::find($transaction->branch_id);
-                $tenantId = $branch ? $branch->tenant_id : null;
-            }
-            if (empty($tenantId)) {
-                $fallbackBranch = Branch::first();
-                $tenantId = $fallbackBranch ? $fallbackBranch->tenant_id : null;
-            }
-
+            // Catat penambahan Kas ke CashBook
             CashBook::create([
-                'tenant_id' => $tenantId,
+                'tenant_id' => $transaction->tenant_id,
                 'branch_id' => $transaction->branch_id,
                 'type' => 'in',
-                'category' => 'penjualan',
+                'category' => 'sales',
                 'amount' => $amountPaid,
-                'reference_type' => 'sale_payment',
+                'reference_type' => 'pos_payment',
                 'reference_id' => $transaction->id,
-                'note' => "Pelunasan Piutang ({$data['payment_method']}) - Invoice: {$transaction->invoice_number}",
+                'note' => "Pembayaran Piutang Penjualan - Inv: {$transaction->invoice_number}",
                 'created_by' => $user->id,
             ]);
 
-            // [Langkah 2: Dual-Mode Accounting]
-            $tenantObj = \App\Models\Tenants::find($tenantId);
+            // ── Auto-Journaling (AccountingService) ──
+            $tenantObj = Tenants::find($transaction->tenant_id);
             if ($tenantObj) {
                 $accountingSettings = $tenantObj->getAccountingSettings();
                 if ($accountingSettings['enable_advanced_accounting']) {
-                    $accountingService = app(\App\Services\AccountingService::class);
+                    $accountingService = app(AccountingService::class);
                     $accountingService->generatePosPaymentJournal($transaction, $amountPaid);
                 }
             }
+
+            // Picu kenaikan versi cache laporan untuk tenant ini agar data grafik ter-sinkronisasi instan
+            \Illuminate\Support\Facades\Cache::increment("reports_cache_version_{$transaction->tenant_id}");
         });
     }
 
@@ -492,7 +659,7 @@ class PosService
                         'roundingMethod' => (string) ($settings['roundingMethod'] ?? 'floor'),
                         'require_shift' => (bool) ($settings['require_shift'] ?? true),
                         'enable_canvas' => (bool) ($settings['enable_canvas'] ?? false),
-                    ]
+                    ],
                 ]);
             }
         }

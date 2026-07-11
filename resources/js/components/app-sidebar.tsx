@@ -32,6 +32,7 @@ const iconMap: Record<string, React.ComponentType<any>> = {
     LinkIcon: Icons.Link,
     Settings: Icons.Settings,
     ShieldAlert: Icons.ShieldAlert,
+    Activity: Icons.Activity,
 };
 
 

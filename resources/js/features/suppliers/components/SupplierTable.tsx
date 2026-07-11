@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatDate } from '@/lib/helpers/format';
+import { formatDate, formatRupiah } from '@/lib/helpers/format';
 import { SupplierFilters } from './SupplierFilters';
 
 export function SupplierTable({ onEdit, onAddClick }: { onEdit: (supplier: any) => void; onAddClick: () => void }) {
@@ -40,6 +40,7 @@ export function SupplierTable({ onEdit, onAddClick }: { onEdit: (supplier: any) 
                             <TableHead className="font-bold text-slate-700">Kontak Person</TableHead>
                             <TableHead className="font-bold text-slate-700">No. HP</TableHead>
                             <TableHead className="font-bold text-slate-700">Alamat</TableHead>
+                            <TableHead className="font-bold text-slate-700 text-right">Hutang Berjalan</TableHead>
                             <TableHead className="font-bold text-slate-700">Tanggal Daftar</TableHead>
                             <TableHead className="font-bold text-slate-700">Status</TableHead>
                             <TableHead className="text-right font-bold text-slate-700 pr-4">Aksi</TableHead>
@@ -57,6 +58,13 @@ export function SupplierTable({ onEdit, onAddClick }: { onEdit: (supplier: any) 
                                     <TableCell className="text-slate-600">{s.contact_person || '-'}</TableCell>
                                     <TableCell className="font-mono text-slate-600">{s.phone || '-'}</TableCell>
                                     <TableCell className="max-w-[200px] truncate text-slate-500">{s.address || '-'}</TableCell>
+                                    <TableCell className="text-right">
+                                        {s.total_hutang > 0 ? (
+                                            <span className="font-bold text-red-600">{formatRupiah(s.total_hutang)}</span>
+                                        ) : (
+                                            <span className="text-muted-foreground">-</span>
+                                        )}
+                                    </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-0.5">
                                             <span className="font-medium text-xs">{formatDate(s.created_at)}</span>

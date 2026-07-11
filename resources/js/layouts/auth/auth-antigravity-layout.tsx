@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import type { Engine, ISourceOptions } from '@tsparticles/engine';
 import { Particles, ParticlesProvider } from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
@@ -13,9 +13,11 @@ function buildParticleOptions(isDark: boolean): ISourceOptions {
         fpsLimit: 60,
         interactivity: {
             events: {
+                onClick: { enable: true, mode: 'push' },
                 onHover: { enable: true, mode: ['grab', 'bubble'] },
             },
             modes: {
+                push: { quantity: 5 },
                 grab: { distance: 180, links: { opacity: isDark ? 0.6 : 0.4 } },
                 bubble: { distance: 120, size: 6, opacity: 0.9, duration: 0.4 },
             },
@@ -46,8 +48,8 @@ function buildParticleOptions(isDark: boolean): ISourceOptions {
                 value: isDark ? { min: 0.2, max: 0.6 } : { min: 0.3, max: 0.7 },
                 animation: { enable: true, speed: 0.8, sync: false },
             },
-            shape: { type: 'circle' },
-            size: { value: { min: 1, max: 3 } },
+            shape: { type: 'star' },
+            size: { value: { min: 2, max: 6 } },
         },
         detectRetina: true,
     };
@@ -65,6 +67,17 @@ function AuthContent({
     isDark: boolean;
     children: React.ReactNode;
 }) {
+    const { currentTenant } = usePage<any>().props;
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setMousePosition({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+        });
+    };
+
     // Warna token berdasar mode
     const bg         = isDark ? 'bg-[#07091a]'     : 'bg-slate-100';
     const textColor  = isDark ? 'text-slate-100'   : 'text-slate-900';
@@ -102,26 +115,41 @@ function AuthContent({
 
             {/* ── Main Content ── */}
             <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
-                <div className="w-full max-w-md">
+                <div className="w-full max-w-lg">
 
                     {/* Logo */}
                     <div className="mb-8 flex flex-col items-center gap-3">
-                        <Link href="/" className="group flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/40 transition-all duration-300 group-hover:scale-110 group-hover:shadow-indigo-500/60">
-                                <AppLogoIcon className="h-7 w-7 fill-current text-white" />
-                            </div>
+                        <Link href="/" className="group flex flex-col items-center gap-3">
+                            {currentTenant?.logo_url ? (
+                                <img src={currentTenant.logo_url} alt={currentTenant.name} className="h-20 w-auto rounded-lg object-contain shadow-lg" />
+                            ) : (
+                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/40 transition-all duration-300 group-hover:scale-110 group-hover:shadow-indigo-500/60">
+                                    <AppLogoIcon className="h-7 w-7 fill-current text-white" />
+                                </div>
+                            )}
                             <span className={`text-2xl font-bold tracking-tight drop-shadow-sm ${logoText}`}>
-                                Tokona
+                                {currentTenant ? currentTenant.name : 'Tokona'}
                             </span>
                         </Link>
                         <div className="h-px w-20 bg-gradient-to-r from-transparent via-indigo-500/60 to-transparent" />
                     </div>
 
                     {/* Glass Card */}
-                    <div className={`relative overflow-hidden rounded-2xl border ${cardBorder} ${cardBg} shadow-2xl backdrop-blur-2xl`}>
-                        <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${shimmer}`} />
+                    <div 
+                        className={`relative overflow-hidden rounded-2xl border ${cardBorder} ${cardBg} shadow-2xl backdrop-blur-2xl group`}
+                        onMouseMove={handleMouseMove}
+                    >
+                        {/* ── Spotlight / Senter Kursor ── */}
+                        <div 
+                            className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-0"
+                            style={{
+                                background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, ${isDark ? 'rgba(99, 102, 241, 0.15)' : 'rgba(79, 70, 229, 0.08)'}, transparent 40%)`
+                            }}
+                        />
 
-                        <div className="p-8">
+                        <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${shimmer} z-10`} />
+
+                        <div className="p-8 relative z-20">
                             {(title || description) && (
                                 <div className="mb-7 text-center">
                                     {title && (
@@ -185,12 +213,12 @@ export default function AuthAntigravityLayout({
         }
     }, [isDark]);
 
-    const initParticles = useCallback(async (engine: Engine) => {
+    const initParticles = useCallback(async (engine: any) => {
         await loadSlim(engine);
     }, []);
 
     return (
-        <ParticlesProvider init={initParticles}>
+        <ParticlesProvider init={initParticles as any}>
             <Head title={title} />
             <AuthContent title={title} description={description} isDark={isDark}>
                 {children}

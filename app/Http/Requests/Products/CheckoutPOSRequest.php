@@ -28,6 +28,7 @@ class CheckoutPOSRequest extends FormRequest
             'transfer_amount' => 'nullable|numeric|min:0',
             'change_amount' => 'required|numeric|min:0',
             'payment_method' => 'required|in:cash,transfer,debt,split',
+            'due_date' => 'nullable|date',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|uuid|exists:products,id',
             'items.*.qty' => 'required|integer|min:1',

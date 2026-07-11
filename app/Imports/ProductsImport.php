@@ -14,11 +14,15 @@ class ProductsImport implements \Maatwebsite\Excel\Concerns\ToCollection, WithHe
 {
     private string $tenantId;
     private string $branchId;
+    private array $categoryMapping;
+    private array $typeMapping;
 
-    public function __construct(string $tenantId, string $branchId)
+    public function __construct(string $tenantId, string $branchId, array $categoryMapping = [], array $typeMapping = [])
     {
         $this->tenantId = $tenantId;
         $this->branchId = $branchId;
+        $this->categoryMapping = $categoryMapping;
+        $this->typeMapping = $typeMapping;
     }
 
     public function prepareForValidation($data, $index)
@@ -66,16 +70,50 @@ class ProductsImport implements \Maatwebsite\Excel\Concerns\ToCollection, WithHe
     public function collection(\Illuminate\Support\Collection $rows)
     {
         foreach ($rows as $row) {
-            $categoryName = trim($row['kategori'] ?? 'Umum');
-            $category = ProductCategory::firstOrCreate(
-                ['tenant_id' => $this->tenantId, 'name' => $categoryName],
-                ['slug' => Str::slug($categoryName) . '-' . Str::random(5)]
-            );
+            $catInput = trim($row['kategori'] ?? '');
+            $categoryName = $catInput !== '' ? ucwords(strtolower($catInput)) : 'Umum';
+            
+            // Check mapping
+            if (isset($this->categoryMapping[$categoryName]) && is_numeric($this->categoryMapping[$categoryName])) {
+                $categoryId = $this->categoryMapping[$categoryName];
+                $category = ProductCategory::find($categoryId);
+                $categoryName = $category->name ?? $categoryName;
+            } else {
+                $categoryName = $this->categoryMapping[$categoryName] ?? $categoryName; // if mapped to string text
+                $category = ProductCategory::where('tenant_id', $this->tenantId)
+                    ->whereRaw('LOWER(name) = ?', [strtolower($categoryName)])
+                    ->first();
+                    
+                if (!$category) {
+                    $category = ProductCategory::create([
+                        'tenant_id' => $this->tenantId,
+                        'name' => $categoryName,
+                        'slug' => Str::slug($categoryName) . '-' . Str::random(5)
+                    ]);
+                }
+                $categoryId = $category->id;
+            }
 
-            $typeName = trim($row['tipe_produk'] ?? 'Barang');
-            $type = \App\Models\ProductType::firstOrCreate(
-                ['tenant_id' => $this->tenantId, 'name' => $typeName]
-            );
+            $typeInput = trim($row['tipe_produk'] ?? '');
+            $typeName = $typeInput !== '' ? ucwords(strtolower($typeInput)) : 'Barang';
+            
+            // Check mapping
+            if (isset($this->typeMapping[$typeName]) && is_numeric($this->typeMapping[$typeName])) {
+                $typeId = $this->typeMapping[$typeName];
+            } else {
+                $typeName = $this->typeMapping[$typeName] ?? $typeName; // if mapped to string text
+                $type = \App\Models\ProductType::where('tenant_id', $this->tenantId)
+                    ->whereRaw('LOWER(name) = ?', [strtolower($typeName)])
+                    ->first();
+
+                if (!$type) {
+                    $type = \App\Models\ProductType::create([
+                        'tenant_id' => $this->tenantId,
+                        'name' => $typeName
+                    ]);
+                }
+                $typeId = $type->id;
+            }
 
             $sku = !empty($row['sku']) 
                 ? trim($row['sku']) 
@@ -86,10 +124,11 @@ class ProductsImport implements \Maatwebsite\Excel\Concerns\ToCollection, WithHe
                 'branch_id' => $this->branchId,
                 'name' => $row['nama_produk'], // Sudah uppercase karena prepareForValidation
                 'sku' => $sku,
-                'category_id' => $category->id,
-                'type_id' => $type->id,
+                'category_id' => $categoryId,
+                'type_id' => $typeId,
                 'barcode' => $row['barcode'] ?? null,
                 'base_cost' => $row['harga_modal'] ?? 0,
+                'min_sell_price' => $row['harga_min_jual'] ?? 0,
                 'sell_price' => $row['harga_jual'] ?? 0,
                 'track_stock' => true,
                 'status' => 'active',
@@ -120,6 +159,7 @@ class ProductsImport implements \Maatwebsite\Excel\Concerns\ToCollection, WithHe
             'tipe_produk' => 'nullable|string|max:255',
             'stok' => 'nullable|integer|min:0',
             'harga_modal' => 'nullable|numeric|min:0',
+            'harga_min_jual' => 'nullable|numeric|min:0',
             'harga_jual' => 'required|numeric|min:0',
         ];
     }

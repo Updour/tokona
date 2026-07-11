@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ConsignmentItem extends Model
 {
+    use LogsActivity;
+
     use HasFactory, HasUuids;
 
     protected $table = 'consignment_items';
@@ -16,7 +20,7 @@ class ConsignmentItem extends Model
     protected $fillable = [
         'consignment_id', 'product_id',
         'qty_received', 'qty_unsold', 'qty_sold',
-        'base_cost', 'subtotal'
+        'base_cost', 'subtotal',
     ];
 
     protected $casts = [

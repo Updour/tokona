@@ -72,10 +72,16 @@ export function usePos({
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('Semua');
 
-    const [txSearchQuery, setTxSearchQuery] = useState('');
+    const [txSearchQuery, setTxSearchQuery] = useState(filters?.search || '');
     const [txPaymentMethod, setTxPaymentMethod] = useState('all');
     const [txStatus, setTxStatus] = useState('all');
     const [txDateRange, setTxDateRange] = useState('all');
+
+    useEffect(() => {
+        if (filters?.search) {
+            setTxSearchQuery(filters.search);
+        }
+    }, [filters?.search]);
 
     const filteredTransactions = useMemo(() => {
         return transactions.filter((tx: any) => {
@@ -134,6 +140,7 @@ export function usePos({
     });
 
     const [isPaymentExpanded, setIsPaymentExpanded] = useState<boolean>(false);
+    const [dueDate, setDueDate] = useState<string>('');
 
     useEffect(() => {
         if (defaultSettings) {
@@ -346,12 +353,13 @@ export function usePos({
             tax: cartTax,
             rounding_diff: paymentMethod === 'cash' ? roundingDiff : 0,
             total: cartTotal,
-            paid_amount: paymentMethod === 'debt' ? 0 : (paymentMethod === 'split' ? (Number(splitCashInput) + Number(splitTransferInput)) : paidAmount),
+            paid_amount: paymentMethod === 'debt' ? paidAmount : (paymentMethod === 'split' ? (Number(splitCashInput) + Number(splitTransferInput)) : paidAmount),
             cash_amount: paymentMethod === 'split' ? Number(splitCashInput) : 0,
             transfer_amount: paymentMethod === 'split' ? Number(splitTransferInput) : 0,
             change_amount: changeAmount,
             redeem_points: redeemPoints,
             payment_method: paymentMethod,
+            due_date: dueDate || null,
             items: cart.map(item => ({
                 product_id: item.id,
                 qty: item.qty,
@@ -592,6 +600,8 @@ return;
         roundingDiff,
         changeAmount,
         activePromoObj,
+        dueDate,
+        setDueDate,
         handleAddToCart,
         updateQty,
         handleQtyInputChange,

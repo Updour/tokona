@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
+use App\Models\Products;
 use App\Models\PurchaseReturn;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class PurchaseReturnController extends Controller
 {
@@ -23,15 +26,15 @@ class PurchaseReturnController extends Controller
 
         return Inertia::render('purchase-returns/index', [
             'returns' => $returns,
-            'filters' => $request->only(['search'])
+            'filters' => $request->only(['search']),
         ]);
     }
 
     public function create()
     {
-        $branches = \App\Models\Branch::select('id', 'name')->orderBy('name')->get();
-        $suppliers = \App\Models\Supplier::active()->select('id', 'name')->orderBy('name')->get();
-        $products = \App\Models\Products::active()->select('id', 'name', 'sku', 'base_cost', 'track_stock')->orderBy('name')->get();
+        $branches = Branch::select('id', 'name')->orderBy('name')->get();
+        $suppliers = Supplier::active()->select('id', 'name')->orderBy('name')->get();
+        $products = Products::active()->select('id', 'name', 'sku', 'base_cost', 'track_stock')->orderBy('name')->get();
 
         return Inertia::render('purchase-returns/create', [
             'branches' => $branches,
@@ -55,11 +58,11 @@ class PurchaseReturnController extends Controller
 
         DB::beginTransaction();
         try {
-            $totalAmount = collect($validated['items'])->sum(fn($i) => $i['qty'] * $i['unit_cost']);
+            $totalAmount = collect($validated['items'])->sum(fn ($i) => $i['qty'] * $i['unit_cost']);
 
             // Generate Return Number
-            $branchCode = \App\Models\Branch::find($validated['branch_id'])->code ?? 'CAB';
-            $returnNum = 'RET/' . $branchCode . '/' . date('Ymd') . '/' . rand(1000, 9999);
+            $branchCode = Branch::find($validated['branch_id'])->code ?? 'CAB';
+            $returnNum = 'RET/'.$branchCode.'/'.date('Ymd').'/'.rand(1000, 9999);
 
             $retur = PurchaseReturn::create([
                 'tenant_id' => auth()->user()->tenant_id,
@@ -81,23 +84,25 @@ class PurchaseReturnController extends Controller
                 ]);
 
                 // OTOMATIS TARIK STOK KELUAR (RETURN)
-                $product = \App\Models\Products::find($item['product_id']);
+                $product = Products::find($item['product_id']);
                 if ($product && $product->track_stock) {
                     $product->recordStockMovement('OUT', $item['qty'], [
                         'branch_id' => $validated['branch_id'],
                         'source_type' => 'purchase_return',
-                        'notes' => 'Retur Barang ke Supplier: ' . $returnNum,
+                        'notes' => 'Retur Barang ke Supplier: '.$returnNum,
                         'unit_cost' => $item['unit_cost'],
                     ]);
                 }
             }
 
             DB::commit();
+
             return redirect()->route('purchase-returns.index')->with('success', 'Retur Pembelian berhasil disimpan dan stok otomatis dipotong!');
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal menyimpan retur: ' . $e->getMessage());
+
+            return back()->with('error', 'Gagal menyimpan retur: '.$e->getMessage());
         }
     }
 }

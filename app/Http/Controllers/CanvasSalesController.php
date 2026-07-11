@@ -4,11 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CanvasCheckInRequest;
 use App\Http\Requests\CanvasCheckoutRequest;
+use App\Models\Branch;
 use App\Models\Customer;
+use App\Models\SalesLoadedStock;
 use App\Models\SalesPerson;
 use App\Models\SalesVisit;
+use App\Models\Tenants;
 use App\Services\SalesService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,16 +32,18 @@ class CanvasSalesController extends Controller
     protected function getActiveSalesPerson()
     {
         $user = auth()->user();
-        if (!$user) return null;
+        if (! $user) {
+            return null;
+        }
 
         $sales = SalesPerson::where('email', $user->email)->first();
 
         // Jika user adalah super admin tapi tidak punya profil sales, beri akses mock untuk preview
-        if (!$sales && $user->isSuperAdmin()) {
+        if (! $sales && $user->isSuperAdmin()) {
             $sales = new SalesPerson([
-                'tenant_id' => $user->tenant_id ?? \App\Models\Tenants::first()->id ?? \Illuminate\Support\Str::uuid(),
-                'branch_id' => $user->branch_id ?? \App\Models\Branch::first()->id ?? \Illuminate\Support\Str::uuid(),
-                'name' => $user->name . ' (Admin Preview)',
+                'tenant_id' => $user->tenant_id ?? Tenants::first()->id ?? Str::uuid(),
+                'branch_id' => $user->branch_id ?? Branch::first()->id ?? Str::uuid(),
+                'name' => $user->name.' (Admin Preview)',
                 'email' => $user->email,
                 'phone' => $user->phone ?? '-',
                 'is_active' => true,
@@ -55,10 +61,10 @@ class CanvasSalesController extends Controller
     {
         $sales = $this->getActiveSalesPerson();
 
-        if (!$sales) {
+        if (! $sales) {
             // Jika user login tapi tidak punya profil sales, beri tampilan error/kosong
             return Inertia::render('canvas/Error', [
-                'message' => 'Profil Sales Lapangan tidak ditemukan untuk akun ini. Pastikan email Anda terdaftar di data Sales Representative.'
+                'message' => 'Profil Sales Lapangan tidak ditemukan untuk akun ini. Pastikan email Anda terdaftar di data Sales Representative.',
             ]);
         }
 
@@ -84,7 +90,7 @@ class CanvasSalesController extends Controller
     public function pos(Request $request): Response
     {
         $sales = $this->getActiveSalesPerson();
-        if (!$sales) {
+        if (! $sales) {
             return Inertia::render('canvas/Error', ['message' => 'Unauthorized']);
         }
 
@@ -92,7 +98,7 @@ class CanvasSalesController extends Controller
         $visit = SalesVisit::with('customer')->where('id', $visitId)->where('sales_id', $sales->id)->firstOrFail();
 
         // Ambil stok yang sedang dibawa oleh sales (SalesLoadedStock)
-        $loadedStocks = \App\Models\SalesLoadedStock::with('product')
+        $loadedStocks = SalesLoadedStock::with('product')
             ->where('sales_person_id', $sales->id)
             ->where('current_stock', '>', 0)
             ->get()
@@ -120,12 +126,12 @@ class CanvasSalesController extends Controller
     public function checkIn(CanvasCheckInRequest $request)
     {
         $sales = $this->getActiveSalesPerson();
-        if (!$sales) {
+        if (! $sales) {
             return redirect()->back()->with('error', 'Unauthorized');
         }
 
         $data = $request->validated();
-        
+
         $visit = $this->salesService->recordSalesVisit($sales->id, [
             ...$data,
             'status' => 'visit',
@@ -142,7 +148,7 @@ class CanvasSalesController extends Controller
     public function checkout(CanvasCheckoutRequest $request)
     {
         $sales = $this->getActiveSalesPerson();
-        if (!$sales) {
+        if (! $sales) {
             return redirect()->route('canvas.index')->with('error', 'Unauthorized');
         }
 

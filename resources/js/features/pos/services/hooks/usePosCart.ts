@@ -18,10 +18,35 @@ export function usePosCart({
     posSettings,
     loyaltySettings
 }: UsePosCartProps) {
-    const [cart, setCart] = useState<any[]>([]);
-    const [selectedCustomer, setSelectedCustomer] = useState('umum');
-    const [selectedPromo, setSelectedPromo] = useState<string | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'debt' | 'split'>('cash');
+    const [cart, setCart] = useState<any[]>(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem('tokona_pos_cart');
+                return saved ? JSON.parse(saved) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+        return [];
+    });
+    const [selectedCustomer, setSelectedCustomer] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('tokona_pos_selected_customer') || 'umum';
+        }
+        return 'umum';
+    });
+    const [selectedPromo, setSelectedPromo] = useState<string | null>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('tokona_pos_selected_promo') || null;
+        }
+        return null;
+    });
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'debt' | 'split'>(() => {
+        if (typeof window !== 'undefined') {
+            return (localStorage.getItem('tokona_pos_payment_method') as any) || 'cash';
+        }
+        return 'cash';
+    });
     const [splitCashInput, setSplitCashInput] = useState<string>('');
     const [splitTransferInput, setSplitTransferInput] = useState<string>('');
     const [paidAmount, setPaidAmount] = useState<number>(0);
@@ -37,6 +62,26 @@ export function usePosCart({
             clearRedeem();
         }
     }, [selectedCustomer, clearRedeem]);
+
+    useEffect(() => {
+        localStorage.setItem('tokona_pos_cart', JSON.stringify(cart));
+    }, [cart]);
+
+    useEffect(() => {
+        localStorage.setItem('tokona_pos_selected_customer', selectedCustomer);
+    }, [selectedCustomer]);
+
+    useEffect(() => {
+        if (selectedPromo) {
+            localStorage.setItem('tokona_pos_selected_promo', selectedPromo);
+        } else {
+            localStorage.removeItem('tokona_pos_selected_promo');
+        }
+    }, [selectedPromo]);
+
+    useEffect(() => {
+        localStorage.setItem('tokona_pos_payment_method', paymentMethod);
+    }, [paymentMethod]);
 
     const handleAddToCart = (product: any) => {
         const existing = cart.find(item => item.id === product.id);
@@ -344,6 +389,13 @@ return 0;
         setManualDiscount(0);
         setManualDiscountInput('');
         clearRedeem();
+        
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('tokona_pos_cart');
+            localStorage.removeItem('tokona_pos_selected_customer');
+            localStorage.removeItem('tokona_pos_selected_promo');
+            localStorage.removeItem('tokona_pos_payment_method');
+        }
     };
 
     return {

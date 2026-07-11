@@ -1,16 +1,21 @@
-import { PackageOpen, Download } from 'lucide-react';
+import { PackageOpen, Download, Printer } from 'lucide-react';
 import * as React from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { formatDateTime, formatRupiah } from '@/lib/helpers/format';
 import { useConsignmentStore } from '../stores/useConsignmentStore';
+import { ConsignmentReceiptDialog } from './ConsignmentReceiptDialog';
+import { ConsignmentSettleReceiptDialog } from './ConsignmentSettleReceiptDialog';
 
 export function ConsignmentDetailDialog() {
     const { isDetailFormOpen, closeDetailForm, selectedConsignmentDetail: consignment } = useConsignmentStore();
+    const [showReceiveReceipt, setShowReceiveReceipt] = useState(false);
+    const [showSettleReceipt, setShowSettleReceipt] = useState(false);
 
     if (!consignment) {
-return null;
-}
+        return null;
+    }
 
     return (
         <Dialog open={isDetailFormOpen} onOpenChange={closeDetailForm}>
@@ -103,18 +108,50 @@ return null;
                     )}
                 </div>
 
-                <DialogFooter className="flex justify-between items-center w-full sm:justify-between">
-                    <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => window.open(`/consignments/${consignment.id}/pdf`, '_blank')}
-                        className="gap-2"
-                    >
-                        <Download className="h-4 w-4" /> Download Tanda Terima (PDF)
-                    </Button>
+                <DialogFooter className="flex justify-between items-center w-full sm:justify-between mt-6">
+                    <div className="flex gap-2">
+                        <Button 
+                            type="button" 
+                            variant="secondary" 
+                            onClick={() => setShowReceiveReceipt(true)}
+                            className="gap-2"
+                        >
+                            <Printer className="h-4 w-4" /> Cetak Tanda Terima
+                        </Button>
+                        {consignment.status === 'settled' && (
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                                onClick={() => setShowSettleReceipt(true)}
+                            >
+                                <Printer className="h-4 w-4" /> Cetak Bukti Setoran
+                            </Button>
+                        )}
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => window.open(`/consignments/${consignment.id}/print`, '_blank')}
+                            className="gap-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                        >
+                            <Download className="h-4 w-4" /> Unduh PDF Resmi
+                        </Button>
+                    </div>
                     <Button type="button" onClick={closeDetailForm}>Tutup</Button>
                 </DialogFooter>
             </DialogContent>
+
+            <ConsignmentReceiptDialog 
+                isOpen={showReceiveReceipt} 
+                onClose={() => setShowReceiveReceipt(false)} 
+                consignment={consignment} 
+            />
+            
+            <ConsignmentSettleReceiptDialog 
+                isOpen={showSettleReceipt} 
+                onClose={() => setShowSettleReceipt(false)} 
+                consignment={consignment} 
+            />
         </Dialog>
     );
 }

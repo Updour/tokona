@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,6 +21,8 @@ use Illuminate\Database\Eloquent\Model;
 ])]
 class TenantLocations extends Model
 {
+    use LogsActivity;
+
     use HasFactory, HasUuids;
 
     protected function casts(): array

@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\Branch;
 use App\Models\Products;
 use App\Models\TransactionItem;
-use App\Models\Branch;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class InsightService
 {
@@ -15,22 +15,22 @@ class InsightService
      * Get Inventory Forecasting (AI Smart Insights)
      * Menghitung kecepatan penjualan dan sisa usia stok gudang.
      */
-    public function getInventoryForecast(string $branchId = null): array
+    public function getInventoryForecast(?string $branchId = null): array
     {
         $user = Auth::user();
         $tenantId = $user->tenant_id ?? Branch::first()->tenant_id;
-        
+
         $branchId = $branchId ?? $user->branch_id;
-        if (!$branchId) {
+        if (! $branchId) {
             $branchId = Branch::first()->id;
         }
 
         $daysToAnalyze = 30;
         $startDate = Carbon::now()->subDays($daysToAnalyze)->startOfDay();
 
-        // Ambil produk yang dilacak stoknya saja
         $products = Products::where('tenant_id', $tenantId)
             ->where('track_stock', true)
+            ->withCurrentStock()
             ->get();
 
         // Ambil total penjualan per produk dalam 30 hari terakhir
@@ -48,13 +48,13 @@ class InsightService
 
         foreach ($products as $product) {
             $totalSold = $salesData[$product->id] ?? 0;
-            
+
             // Velocity = Rata-rata barang terjual per hari
             $velocity = $totalSold / $daysToAnalyze;
-            
+
             // Days Remaining = Sisa hari sampai stok habis berdasarkan velocity saat ini
             $daysRemaining = $velocity > 0 ? floor($product->current_stock / $velocity) : 999;
-            
+
             // Rekomendasi Restock = Kebutuhan stok untuk 30 hari ke depan
             $recommendedRestock = ceil($velocity * 30);
 
@@ -83,13 +83,14 @@ class InsightService
                 'days_remaining' => (int) $daysRemaining,
                 'recommended_restock' => (int) $recommendedRestock,
                 'status' => $status,
-                'urgency' => $urgency
+                'urgency' => $urgency,
             ];
         }
 
         // Urutkan berdasarkan urgency: critical -> high -> medium -> low
         usort($insights, function ($a, $b) {
             $order = ['critical' => 1, 'high' => 2, 'medium' => 3, 'low' => 4];
+
             return $order[$a['urgency']] <=> $order[$b['urgency']];
         });
 

@@ -19,7 +19,9 @@ class UpdateProductRequest extends FormRequest
         return [
             'branch_id'            => ['required', 'uuid', 'exists:branches,id'],
             'category_id'          => ['nullable', 'uuid', 'exists:product_categories,id'],
+            'new_category_name'    => ['nullable', 'string', 'max:255'],
             'type_id'              => ['nullable', 'uuid', 'exists:product_types,id'],
+            'new_type_name'        => ['nullable', 'string', 'max:255'],
             'supplier_id'          => ['nullable', 'string', 'max:255'],
             'name'                 => ['required', 'string', 'min:3', 'max:255'],
             'sku'                  => ['nullable', 'string', 'max:100', Rule::unique('products', 'sku')->ignore($productId)],
@@ -30,8 +32,13 @@ class UpdateProductRequest extends FormRequest
             'min_sell_price'       => ['nullable', 'numeric', 'min:0', 'lte:sell_price'],
             'track_stock'          => ['required', 'boolean'],
             'allow_negative_stock' => ['required', 'boolean'],
+            'is_bundle'            => ['required', 'boolean'],
             'is_active'            => ['required', 'boolean'],
             'source'               => ['nullable', 'string', 'max:100'],
+
+            'bundle_items'            => ['nullable', 'array'],
+            'bundle_items.*.product_id'=> ['required_with:bundle_items', 'uuid', 'exists:products,id'],
+            'bundle_items.*.quantity'  => ['required_with:bundle_items', 'integer', 'min:1'],
         ];
     }
 

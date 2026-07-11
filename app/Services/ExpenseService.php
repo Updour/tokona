@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Expense;
 use App\Models\Branch;
+use App\Models\Expense;
 use Carbon\Carbon;
 
 class ExpenseService
@@ -21,7 +21,7 @@ class ExpenseService
 
         // Get total amount
         $totalAmount = (clone $allExpensesQuery)->sum('amount');
-        
+
         // Get this month amount
         $currentMonthStart = Carbon::now()->startOfMonth();
         $totalThisMonth = (clone $allExpensesQuery)
@@ -38,7 +38,7 @@ class ExpenseService
 
         // Branches dropdown options
         $branchesQuery = Branch::select('id', 'name')->orderBy('name');
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $branchesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
         $branches = $branchesQuery->get();
@@ -57,7 +57,7 @@ class ExpenseService
 
     public function storeExpenseData(array $data): Expense
     {
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $data['tenant_id'] = auth()->user()->tenant_id;
         } else {
             // Super Admin gets the tenant of the branch

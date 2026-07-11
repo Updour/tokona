@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatNumber, formatRupiah } from '@/lib/helpers/format';
 import { usePromoStore } from '@/pages/promos/stores/usePromoStore';
 
 export function PromoFormDialog() {
@@ -92,8 +93,11 @@ export function PromoFormDialog() {
                     <div className="grid grid-cols-2 gap-4 bg-muted/30 p-3 rounded-lg border">
                         <div className="space-y-2">
                             <Label>Tipe Diskon <span className="text-red-500">*</span></Label>
-                            <Select value={data.type} onValueChange={(val) => setData('type', val)}>
-                                <SelectTrigger>
+                            <Select value={data.type} onValueChange={(val) => {
+                                setData('type', val);
+                                setData('value', 0); // Reset value when type changes
+                            }}>
+                                <SelectTrigger className='w-full'>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -105,9 +109,19 @@ export function PromoFormDialog() {
                         <div className="space-y-2">
                             <Label>Nilai Potongan <span className="text-red-500">*</span></Label>
                             <Input
-                                type="number" step="any" min="0"
-                                value={data.value}
-                                onChange={(e) => setData('value', parseFloat(e.target.value))}
+                                type={data.type === 'percentage' ? "number" : "text"}
+                                step={data.type === 'percentage' ? "any" : undefined}
+                                min="0"
+                                value={data.type === 'percentage' ? data.value : formatRupiah(data.value || 0)}
+                                onChange={(e) => {
+                                    if (data.type === 'percentage') {
+                                        setData('value', parseFloat(e.target.value) || 0);
+                                    } else {
+                                        const val = e.target.value.replace(/\D/g, '');
+                                        setData('value', val ? parseFloat(val) : 0);
+                                    }
+                                }}
+                                placeholder="0"
                             />
                         </div>
                     </div>
@@ -121,7 +135,15 @@ export function PromoFormDialog() {
                         </div>
                         <div className="space-y-2">
                             <Label>Syarat Min. Belanja (Rp)</Label>
-                            <Input type="number" min="0" value={data.min_amount} onChange={(e) => setData('min_amount', parseFloat(e.target.value) || 0)} placeholder="0 = Bebas" />
+                            <Input 
+                                type="text" 
+                                value={data.min_amount ? formatRupiah(data.min_amount) : ''} 
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, '');
+                                    setData('min_amount', val ? parseFloat(val) : 0);
+                                }} 
+                                placeholder="Rp 0" 
+                            />
                         </div>
                     </div>
 

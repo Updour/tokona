@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEmployeeStore } from '@/pages/employees/stores/useEmployeeStore';
-import type {Employee} from '@/pages/employees/types';
+import type { Employee } from '@/pages/employees/types';
 import * as React from 'react';
 
 export const columns: ColumnDef<Employee>[] = [
@@ -48,9 +48,9 @@ export const columns: ColumnDef<Employee>[] = [
         cell: ({ row }) => {
             const roles = row.original.roles || [];
             const roleName = roles[0]?.name || 'Belum Diatur';
-            
+
             let customStyle = "bg-muted text-muted-foreground border-transparent";
-            
+
             switch (roleName.toLowerCase()) {
                 case 'super-admin':
                     customStyle = "bg-amber-500 hover:bg-amber-600 text-white border-transparent shadow-sm";
@@ -65,7 +65,7 @@ export const columns: ColumnDef<Employee>[] = [
                     customStyle = "bg-emerald-600 hover:bg-emerald-700 text-white border-transparent shadow-sm";
                     break;
             }
-            
+
             return (
                 <Badge className={`flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${customStyle}`}>
                     <Shield className="mr-1 h-3 w-3" />
@@ -121,11 +121,11 @@ export const columns: ColumnDef<Employee>[] = [
             const status = row.getValue('status') as string;
 
             return (
-                <Badge 
+                <Badge
                     variant={status === 'active' ? 'default' : 'secondary'}
                     className={
-                        status === 'active' 
-                            ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-transparent rounded-full px-2.5' 
+                        status === 'active'
+                            ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-transparent rounded-full px-2.5'
                             : 'bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 border-transparent rounded-full px-2.5'
                     }
                 >

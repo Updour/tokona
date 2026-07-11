@@ -1,11 +1,12 @@
 import { create } from 'zustand';
-import type {Product} from '../types';
+import type { Product } from '../types';
 
 interface ProductState {
     isFormOpen: boolean;
     isRestockOpen: boolean;
     isDetailOpen: boolean;
     isDeleteOpen: boolean;
+    isRestoreOpen: boolean;
     isImportOpen: boolean;
     selectedProduct: Product | null;
     selectedRowIds: Record<string, boolean>;
@@ -20,6 +21,8 @@ interface ProductActions {
     closeDetail: () => void;
     openDelete: (product: Product) => void;
     closeDelete: () => void;
+    openRestore: (product: Product) => void;
+    closeRestore: () => void;
     openImport: () => void;
     closeImport: () => void;
     setSelectedRowIds: (ids: Record<string, boolean>) => void;
@@ -33,6 +36,7 @@ const initialState: ProductState = {
     isRestockOpen: false,
     isDetailOpen: false,
     isDeleteOpen: false,
+    isRestoreOpen: false,
     isImportOpen: false,
     selectedProduct: null,
     selectedRowIds: {},
@@ -41,18 +45,18 @@ const initialState: ProductState = {
 export const useProductStore = create<ProductStore>((set) => ({
     ...initialState,
 
-    openForm:     (product) => set({ isFormOpen: true, selectedProduct: product ?? null }),
-    closeForm:    ()        => set({ isFormOpen: false, selectedProduct: null }),
-    openRestock:  (product) => set({ isRestockOpen: true, selectedProduct: product }),
-    closeRestock: ()        => set({ isRestockOpen: false, selectedProduct: null }),
-    openDetail:   (product) => set({ isDetailOpen: true, selectedProduct: product }),
-    closeDetail:  ()        => set({ isDetailOpen: false, selectedProduct: null }),
-    openDelete:   (product) => set({ isDeleteOpen: true, selectedProduct: product }),
-    closeDelete:  ()        => set({ isDeleteOpen: false, selectedProduct: null }),
-    openImport:   ()        => set({ isImportOpen: true }),
-    closeImport:  ()        => set({ isImportOpen: false }),
+    openForm: (product) => set({ isFormOpen: true, selectedProduct: product ?? null }),
+    closeForm: () => set({ isFormOpen: false, selectedProduct: null }),
+    openRestock: (product) => set({ isRestockOpen: true, selectedProduct: product }),
+    closeRestock: () => set({ isRestockOpen: false, selectedProduct: null }),
+    openDetail: (product) => set({ isDetailOpen: true, selectedProduct: product }),
+    closeDetail: () => set({ isDetailOpen: false, selectedProduct: null }),
+    openDelete: (product) => set({ isDeleteOpen: true, selectedProduct: product }),
+    closeDelete: () => set({ isDeleteOpen: false, selectedProduct: null }),
+    openImport: () => set({ isImportOpen: true }),
+    closeImport: () => set({ isImportOpen: false }),
     setSelectedRowIds: (ids) => set({ selectedRowIds: ids }),
-    resetStore:   ()        => set(initialState),
+    resetStore: () => set(initialState),
 }));
 
 export type { Product };

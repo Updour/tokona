@@ -29,8 +29,8 @@ export default function TransferDetailDialog() {
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && closeDetail()}>
-            <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-slate-50/50 dark:bg-background">
-                <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30">
+            <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b">
                     <div className="flex items-start justify-between">
                         <div>
                             <DialogTitle className="flex items-center gap-2 text-xl">

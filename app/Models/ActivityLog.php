@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Prunable;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ActivityLog extends Model
 {
@@ -21,11 +21,11 @@ class ActivityLog extends Model
         return static::where(function ($query) {
             // Hapus log biasa yang usianya lebih dari 30 hari
             $query->where('action', '!=', 'Hapus Data Penting')
-                  ->where('created_at', '<=', now()->subDays(30));
+                ->where('created_at', '<=', now()->subDays(30));
         })->orWhere(function ($query) {
             // Hapus log kritikal (penghapusan) yang usianya lebih dari 90 hari
             $query->where('action', 'Hapus Data Penting')
-                  ->where('created_at', '<=', now()->subDays(90));
+                ->where('created_at', '<=', now()->subDays(90));
         });
     }
 

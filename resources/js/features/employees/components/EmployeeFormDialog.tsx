@@ -1,6 +1,6 @@
 import { useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -31,6 +31,7 @@ export function EmployeeFormDialog({ branches, roles, tenants = [] }: EmployeeFo
     const isSuperAdmin = auth?.employee?.roles?.some((r: any) => r.name === 'super-admin') || auth?.employee?.tenant_id === null;
 
     const [selectedTenantId, setSelectedTenantId] = useState<string>('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         name: '',
@@ -295,14 +296,23 @@ export function EmployeeFormDialog({ branches, roles, tenants = [] }: EmployeeFo
                             <Label htmlFor="password" className="text-sm font-semibold">
                                 {selectedEmployee ? 'Kata Sandi Baru (Opsional)' : 'Kata Sandi Akses'}
                             </Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                value={data.password}
-                                onChange={(e) => setData('password', e.target.value)}
-                                placeholder={selectedEmployee ? 'Kosongkan jika tidak ingin mengubah sandi' : 'Minimal 8 karakter'}
-                                className={errors.password ? 'border-red-500' : ''}
-                            />
+                            <div className="relative">
+                                <Input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    value={data.password}
+                                    onChange={(e) => setData('password', e.target.value)}
+                                    placeholder={selectedEmployee ? 'Kosongkan jika tidak ingin mengubah sandi' : 'Minimal 8 karakter'}
+                                    className={`${errors.password ? 'border-red-500' : ''} pr-10`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                                >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                            </div>
                             {errors.password && <span className="text-xs text-red-500 font-medium">{errors.password}</span>}
                         </div>
 

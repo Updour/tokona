@@ -9,6 +9,9 @@ interface Props {
 }
 
 export default function Create({ branches, products, suppliers }: Props) {
+    const searchParams = new URLSearchParams(window.location.search);
+    const initialSupplierId = searchParams.get('supplier_id') || '';
+
     return (
         <MainLayout>
             <Head title="Buat Pembelian" />
@@ -20,7 +23,7 @@ export default function Create({ branches, products, suppliers }: Props) {
                 </p>
             </div>
 
-            <PurchaseForm branches={branches} products={products} suppliers={suppliers} />
+            <PurchaseForm branches={branches} products={products} suppliers={suppliers} initialSupplierId={initialSupplierId} />
         </MainLayout>
     );
 }

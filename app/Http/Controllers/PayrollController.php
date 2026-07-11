@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\Payroll;
+use App\Models\Tenants;
 use App\Models\User;
 use App\Services\PayrollService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-
-use App\Models\Branch;
-use App\Models\Tenants;
 
 class PayrollController extends Controller
 {
@@ -22,32 +22,32 @@ class PayrollController extends Controller
         $query = Payroll::with(['user', 'branch', 'items'])->orderBy('period_start', 'desc');
 
         if ($request->filled('search')) {
-            $query->whereHas('user', function($q) use ($request) {
+            $query->whereHas('user', function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%");
             });
         }
-        
+
         if ($request->filled('branch_id')) {
             $query->where('branch_id', $request->branch_id);
         }
-        
+
         if (auth()->user()->isSuperAdmin() && $request->filled('tenant_id')) {
             $query->where('tenant_id', $request->tenant_id);
         }
 
         $payrolls = $query->paginate($request->get('per_page', 15));
-        
+
         // Filter employees based on Super Admin scope
         $employeesQuery = User::orderBy('name');
         if (auth()->user()->isSuperAdmin() && $request->filled('tenant_id')) {
             $employeesQuery->where('tenant_id', $request->tenant_id);
-        } elseif (!auth()->user()->isSuperAdmin()) {
+        } elseif (! auth()->user()->isSuperAdmin()) {
             $employeesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
         $employees = $employeesQuery->get();
 
         $branchesQuery = Branch::select('id', 'name')->orderBy('name');
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $branchesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
 
@@ -83,28 +83,38 @@ class PayrollController extends Controller
                 $validated['allowances'] ?? [],
                 $validated['deductions'] ?? []
             );
+
             return redirect()->back()->with('success', 'Slip Gaji berhasil digenerate.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal: '.$e->getMessage());
         }
     }
 
     public function bulkGenerate(Request $request)
     {
-        $validated = $request->validate([
+        $rules = [
             'month' => 'required|integer|min:1|max:12',
             'year' => 'required|integer|min:2000|max:2100',
-        ]);
+        ];
+
+        if (auth()->user()->isSuperAdmin()) {
+            $rules['tenant_id'] = 'required|exists:tenants,id';
+        }
+
+        $validated = $request->validate($rules);
 
         try {
+            $tenantId = auth()->user()->isSuperAdmin() ? $validated['tenant_id'] : auth()->user()->tenant_id;
+
             $count = $this->payrollService->bulkGeneratePayroll(
-                auth()->user()->tenant_id,
+                $tenantId,
                 $validated['month'],
                 $validated['year']
             );
+
             return redirect()->back()->with('success', "{$count} Slip Gaji berhasil digenerate masal.");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal Bulk Generate: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal Bulk Generate: '.$e->getMessage());
         }
     }
 
@@ -112,20 +122,21 @@ class PayrollController extends Controller
     {
         try {
             $this->payrollService->markAsPaid($payroll);
+
             return redirect()->back()->with('success', 'Payroll berhasil ditandai sebagai dibayar.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal: '.$e->getMessage());
         }
     }
 
     public function print(Payroll $payroll)
     {
         $payroll->load(['user', 'branch', 'items']);
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.payslip', compact('payroll'));
-        
+        $pdf = Pdf::loadView('pdf.payslip', compact('payroll'));
+
         $userName = $payroll->user ? $payroll->user->name : 'Karyawan';
-        $filename = 'Slip_Gaji_' . str_replace(' ', '_', $userName) . '_' . date('F_Y', strtotime($payroll->period_start)) . '.pdf';
-        
+        $filename = 'Slip_Gaji_'.str_replace(' ', '_', $userName).'_'.date('F_Y', strtotime($payroll->period_start)).'.pdf';
+
         return $pdf->stream($filename);
     }
 }

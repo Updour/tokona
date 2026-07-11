@@ -3,7 +3,10 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use \Illuminate\Support\Facades\Log;
 use App\Models\Tenants;
+use \App\Models\SystemLog;
+use \App\Models\ActivityLog;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -12,8 +15,8 @@ Artisan::command('inspire', function () {
 // Jalankan pembersihan log (SystemLog dan ActivityLog) setiap jam 12 malam
 Schedule::command('model:prune', [
     '--model' => [
-        \App\Models\SystemLog::class,
-        \App\Models\ActivityLog::class,
+        SystemLog::class,
+        ActivityLog::class,
     ]
 ])->daily();
 
@@ -25,6 +28,6 @@ Schedule::call(function () {
         ->update(['status' => 'suspended']);
 
     if ($expiredCount > 0) {
-        \Illuminate\Support\Facades\Log::info("Sistem telah otomatis menonaktifkan {$expiredCount} tenant karena masa aktifnya habis.");
+        Log::info("Sistem telah otomatis menonaktifkan {$expiredCount} tenant karena masa aktifnya habis.");
     }
 })->dailyAt('00:05')->name('suspend-expired-tenants')->withoutOverlapping();

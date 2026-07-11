@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\LogsActivity;
 
 class StockMovement extends Model
 {
@@ -29,8 +30,8 @@ class StockMovement extends Model
     protected function casts(): array
     {
         return [
-            'qty'        => 'integer',
-            'unit_cost'  => 'decimal:2',
+            'qty' => 'integer',
+            'unit_cost' => 'decimal:2',
             'unit_price' => 'decimal:2',
         ];
     }

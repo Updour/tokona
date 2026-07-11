@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CashRegisterShift extends Model
 {
+    use LogsActivity;
+
     use HasUuids;
 
     protected $fillable = [
@@ -22,10 +26,10 @@ class CashRegisterShift extends Model
     protected function casts(): array
     {
         return [
-            'opened_at'        => 'datetime',
-            'closed_at'        => 'datetime',
-            'opening_balance'  => 'decimal:2',
-            'closing_balance'  => 'decimal:2',
+            'opened_at' => 'datetime',
+            'closed_at' => 'datetime',
+            'opening_balance' => 'decimal:2',
+            'closing_balance' => 'decimal:2',
             'expected_balance' => 'decimal:2',
         ];
     }
@@ -70,7 +74,7 @@ class CashRegisterShift extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('tenant', function (Builder $query) {
-            if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+            if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
                 $query->where('cash_register_shifts.tenant_id', auth()->user()->tenant_id);
             }
         });

@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(
             append: [
+                \App\Http\Middleware\IdentifyTenantBySubdomain::class,
                 \App\Http\Middleware\CheckTenantSubscription::class,
                 HandleAppearance::class,
                 HandleInertiaRequests::class,

@@ -1,6 +1,6 @@
 import { DataTable } from '@/components/shared/DataTable';
-import { useTenantStore  } from '@/pages/tenants/stores/useTenantStore';
-import type {Tenant} from '@/pages/tenants/stores/useTenantStore';
+import { useTenantStore } from '@/pages/tenants/stores/useTenantStore';
+import type { Tenant } from '@/pages/tenants/stores/useTenantStore';
 import { columns } from './TenantColumn';
 import { TenantFormDialog } from './TenantFormDialog';
 import { TenantViewDialog } from './TenantViewDialog';
@@ -34,7 +34,7 @@ export function TenantTable({ data, filters }: TenantTableProps) {
                 searchPlaceholder="Search tenants..."
                 exportFileName="tenants_export.csv"
                 onAddClick={() => openForm()}
-                addButtonText="Add Tenant"
+                addButtonText="Tambah Tenant"
             />
             <TenantViewDialog />
             <TenantFormDialog />

@@ -3,6 +3,7 @@
 namespace App\Services\Customers;
 
 use App\Models\Customer;
+use App\Models\Tenants;
 use App\Queries\CustomerQuery;
 use Illuminate\Http\Request;
 
@@ -11,22 +12,25 @@ class CustomerService
     public function indexData(Request $request): array
     {
         $query = new CustomerQuery($request);
+
         return $query->indexData();
     }
 
     public function create(array $data): Customer
     {
         $tenantId = $data['tenant_id'] ?? auth()->user()->tenant_id;
-        if (!$tenantId && auth()->user()->isSuperAdmin()) {
-            $tenantId = \App\Models\Tenants::first()->id ?? null;
+        if (! $tenantId && auth()->user()->isSuperAdmin()) {
+            $tenantId = Tenants::first()->id ?? null;
         }
         $data['tenant_id'] = $tenantId;
+
         return Customer::create($data);
     }
 
     public function update(Customer $customer, array $data): Customer
     {
         $customer->update($data);
+
         return $customer;
     }
 
@@ -39,6 +43,7 @@ class CustomerService
     {
         $customer = Customer::withTrashed()->findOrFail($id);
         $customer->restore();
+
         return $customer;
     }
 

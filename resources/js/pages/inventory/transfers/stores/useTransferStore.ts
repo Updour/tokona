@@ -13,12 +13,17 @@ interface TransferState {
 
     openDetail: (transfer: any) => void;
     closeDetail: () => void;
+
+    shipTransfer: any | null;
+    openShip: (transfer: any) => void;
+    closeShip: () => void;
 }
 
 export const useTransferStore = create<TransferState>((set) => ({
     isCreateOpen: false,
     receiveTransfer: null,
     detailTransfer: null,
+    shipTransfer: null,
 
     openCreate: () => set({ isCreateOpen: true }),
     closeCreate: () => set({ isCreateOpen: false }),
@@ -28,4 +33,7 @@ export const useTransferStore = create<TransferState>((set) => ({
 
     openDetail: (transfer) => set({ detailTransfer: transfer }),
     closeDetail: () => set({ detailTransfer: null }),
+
+    openShip: (transfer) => set({ shipTransfer: transfer }),
+    closeShip: () => set({ shipTransfer: null }),
 }));

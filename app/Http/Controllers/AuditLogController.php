@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
-use App\Models\SystemLog;
-use App\Models\User;
-use App\Models\Branch;
 use App\Http\Requests\Audit\GetActivityLogsRequest;
 use App\Http\Requests\Audit\GetSystemLogsRequest;
+use App\Models\ActivityLog;
+use App\Models\Branch;
+use App\Models\BranchTransfer;
+use App\Models\Products;
+use App\Models\SystemLog;
+use App\Models\User;
+use App\Services\ActivityLogger;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Support\Facades\Auth;
 
 class AuditLogController extends Controller
 {
@@ -21,7 +26,7 @@ class AuditLogController extends Controller
         $query = ActivityLog::with([
             'user',
             'branch',
-            'subject' => fn($q) => $q->withTrashed()
+            'subject' => fn($q) => $q->withTrashed(),
         ])->latest();
 
         // Tenant Isolation
@@ -53,7 +58,8 @@ class AuditLogController extends Controller
             $query->whereDate('created_at', '<=', $validated['date_to']);
         }
 
-        $logs = $query->paginate(20)->withQueryString();
+        $perPage = request('per_page', 15);
+        $logs = $query->paginate($perPage)->withQueryString();
 
         $usersQuery = User::query();
         $branchesQuery = Branch::query();
@@ -96,7 +102,8 @@ class AuditLogController extends Controller
             $query->whereDate('created_at', '<=', $validated['date_to']);
         }
 
-        $logs = $query->paginate(20)->withQueryString();
+        $perPage = request('per_page', 15);
+        $logs = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('audit/system-logs/Index', [
             'logs' => $logs,
@@ -109,7 +116,7 @@ class AuditLogController extends Controller
         $user = Auth::user();
 
         // 1. Negative stock products
-        $negativeStockQuery = \App\Models\Products::withCurrentStock()
+        $negativeStockQuery = Products::withCurrentStock()
             ->whereRaw('COALESCE(sm.current_stock, 0) < 0')
             ->with(['branch']);
 
@@ -119,7 +126,7 @@ class AuditLogController extends Controller
         $negativeStock = $negativeStockQuery->get();
 
         // 2. Branch transfer mismatches
-        $mismatchedTransfersQuery = \App\Models\BranchTransfer::whereIn('status', ['RECEIVED', 'PARTIAL'])
+        $mismatchedTransfersQuery = BranchTransfer::whereIn('status', ['RECEIVED', 'PARTIAL'])
             ->whereHas('items', function ($q) {
                 $q->whereColumn('shipped_qty', '!=', 'received_qty');
             })
@@ -131,7 +138,7 @@ class AuditLogController extends Controller
         $mismatchedTransfers = $mismatchedTransfersQuery->get();
 
         // 3. Unmatched products (track stock but no movements)
-        $unmatchedProductsQuery = \App\Models\Products::where('track_stock', true)
+        $unmatchedProductsQuery = Products::where('track_stock', true)
             ->doesntHave('stockMovements')
             ->with(['branch']);
 
@@ -147,9 +154,9 @@ class AuditLogController extends Controller
         ]);
     }
 
-    public function resolveNegativeStock(string $productId): \Illuminate\Http\RedirectResponse
+    public function resolveNegativeStock(string $productId): RedirectResponse
     {
-        $product = \App\Models\Products::withCurrentStock()->findOrFail($productId);
+        $product = Products::withCurrentStock()->findOrFail($productId);
         $currentStock = (int) $product->current_stock;
 
         if ($currentStock < 0) {
@@ -160,7 +167,7 @@ class AuditLogController extends Controller
                 'notes' => 'Penyelarasan otomatis untuk stok negatif (sistem audit)',
             ]);
 
-            \App\Services\ActivityLogger::log(
+            ActivityLogger::log(
                 'Ubah Data Penting',
                 "Penyelarasan otomatis stok negatif produk {$product->name} (dari {$currentStock} ke 0)",
                 $product,
@@ -171,11 +178,11 @@ class AuditLogController extends Controller
         return redirect()->back()->with('success', 'Stok negatif berhasil diselaraskan menjadi 0.');
     }
 
-    public function resolveTransferMismatch(string $transferId): \Illuminate\Http\RedirectResponse
+    public function resolveTransferMismatch(string $transferId): RedirectResponse
     {
-        $transfer = \App\Models\BranchTransfer::with('items')->findOrFail($transferId);
+        $transfer = BranchTransfer::with('items')->findOrFail($transferId);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($transfer) {
+        DB::transaction(function () use ($transfer) {
             foreach ($transfer->items as $item) {
                 $diff = $item->shipped_qty - $item->received_qty;
 
@@ -184,9 +191,39 @@ class AuditLogController extends Controller
                         'received_qty' => $item->shipped_qty,
                     ]);
 
-                    $product = \App\Models\Products::find($item->product_id);
-                    if ($product) {
-                        $product->recordStockMovement('IN', $diff, [
+                    $sourceProduct = Products::find($item->product_id);
+                    if ($sourceProduct) {
+                        $destProduct = Products::where('branch_id', $transfer->destination_branch_id)
+                            ->where(function ($q) use ($sourceProduct) {
+                                if (!empty($sourceProduct->sku)) {
+                                    $q->where('sku', $sourceProduct->sku);
+                                } elseif (!empty($sourceProduct->barcode)) {
+                                    $q->where('barcode', $sourceProduct->barcode);
+                                } else {
+                                    $q->where('name', $sourceProduct->name);
+                                }
+                            })->first();
+
+                        if (!$destProduct) {
+                            $destProduct = Products::create([
+                                'tenant_id' => $transfer->tenant_id,
+                                'branch_id' => $transfer->destination_branch_id,
+                                'name' => $sourceProduct->name,
+                                'sku' => $sourceProduct->sku,
+                                'barcode' => $sourceProduct->barcode,
+                                'description' => $sourceProduct->description,
+                                'base_cost' => $sourceProduct->base_cost,
+                                'sell_price' => $sourceProduct->sell_price,
+                                'min_sell_price' => $sourceProduct->min_sell_price,
+                                'track_stock' => $sourceProduct->track_stock,
+                                'is_active' => $sourceProduct->is_active,
+                                'category_id' => $sourceProduct->category_id,
+                                'type_id' => $sourceProduct->type_id,
+                                'source' => $sourceProduct->source,
+                            ]);
+                        }
+
+                        $destProduct->recordStockMovement('IN', $diff, [
                             'branch_id' => $transfer->destination_branch_id,
                             'source_type' => 'branch_transfer',
                             'notes' => "Penyelarasan otomatis selisih transfer ({$transfer->reference_number})",
@@ -197,13 +234,26 @@ class AuditLogController extends Controller
                         'received_qty' => $item->shipped_qty,
                     ]);
 
-                    $product = \App\Models\Products::find($item->product_id);
-                    if ($product) {
-                        $product->recordStockMovement('OUT', abs($diff), [
-                            'branch_id' => $transfer->destination_branch_id,
-                            'source_type' => 'branch_transfer',
-                            'notes' => "Penyelarasan otomatis selisih transfer ({$transfer->reference_number})",
-                        ]);
+                    $sourceProduct = Products::find($item->product_id);
+                    if ($sourceProduct) {
+                        $destProduct = Products::where('branch_id', $transfer->destination_branch_id)
+                            ->where(function ($q) use ($sourceProduct) {
+                                if (!empty($sourceProduct->sku)) {
+                                    $q->where('sku', $sourceProduct->sku);
+                                } elseif (!empty($sourceProduct->barcode)) {
+                                    $q->where('barcode', $sourceProduct->barcode);
+                                } else {
+                                    $q->where('name', $sourceProduct->name);
+                                }
+                            })->first();
+
+                        if ($destProduct) {
+                            $destProduct->recordStockMovement('OUT', abs($diff), [
+                                'branch_id' => $transfer->destination_branch_id,
+                                'source_type' => 'branch_transfer',
+                                'notes' => "Penyelarasan otomatis selisih transfer ({$transfer->reference_number})",
+                            ]);
+                        }
                     }
                 }
             }
@@ -213,7 +263,7 @@ class AuditLogController extends Controller
                 'received_at' => now(),
             ]);
 
-            \App\Services\ActivityLogger::log(
+            ActivityLogger::log(
                 'Ubah Data Penting',
                 "Penyelarasan otomatis selisih transfer cabang {$transfer->reference_number}",
                 $transfer,

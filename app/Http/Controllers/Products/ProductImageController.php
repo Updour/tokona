@@ -17,7 +17,7 @@ class ProductImageController extends Controller
     public function store(Request $request, string $productId): RedirectResponse
     {
         $request->validate([
-            'images'   => ['required', 'array', 'max:10'],
+            'images' => ['required', 'array', 'max:10'],
             'images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
@@ -38,7 +38,7 @@ class ProductImageController extends Controller
     public function reorder(Request $request, string $productId): RedirectResponse
     {
         $request->validate([
-            'order'   => ['required', 'array'],
+            'order' => ['required', 'array'],
             'order.*' => ['required', 'uuid'],
         ]);
 

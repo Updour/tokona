@@ -17,16 +17,24 @@ class SupplierQuery
 
         return [
             'suppliers' => $suppliers,
-            'filters'   => $this->request->only(['search', 'status']),
+            'filters' => $this->request->only(['search', 'status']),
         ];
     }
 
     private function build()
     {
-        $query = Supplier::query();
+        $query = Supplier::query()->select('suppliers.*');
         $this->applySearch($query);
         $this->applyStatusFilter($query);
+        
+        $query->addSelect([
+            'total_hutang' => \App\Models\Purchase::selectRaw('COALESCE(SUM(total_cost - amount_paid), 0)')
+                ->whereColumn('supplier_id', 'suppliers.id')
+                ->where('status', '!=', 'draft')
+        ]);
+        
         $query->orderBy('name', 'asc');
+
         return $query;
     }
 
@@ -36,7 +44,7 @@ class SupplierQuery
             $search = $this->request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
     }

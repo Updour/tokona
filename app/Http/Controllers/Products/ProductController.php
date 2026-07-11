@@ -3,17 +3,22 @@
 namespace App\Http\Controllers\Products;
 
 use App\Http\Controllers\Controller;
-use App\Models\Products;
+use App\Http\Requests\Products\BulkMarkupProductRequest;
 use App\Http\Requests\Products\StoreProductRequest;
 use App\Http\Requests\Products\UpdateProductRequest;
-use App\Http\Requests\Products\BulkMarkupProductRequest;
+use App\Imports\ProductsImport;
+use App\Imports\ProductsImportPreview;
+use App\Models\Branch;
+use App\Models\Products;
+use App\Models\Tenants;
+use App\Services\ActivityLogger;
 use App\Services\Products\ProductService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\ProductsImport;
 
 class ProductController extends Controller
 {
@@ -28,10 +33,10 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request): RedirectResponse
     {
-        if (!auth()->user()->isSuperAdmin()) {
-            $tenant = \App\Models\Tenants::find(auth()->user()->tenant_id);
-            $subService = new \App\Services\SubscriptionService();
-            if ($tenant && !$subService->canAddProduct($tenant)) {
+        if (! auth()->user()->isSuperAdmin()) {
+            $tenant = Tenants::find(auth()->user()->tenant_id);
+            $subService = new SubscriptionService;
+            if ($tenant && ! $subService->canAddProduct($tenant)) {
                 return redirect()->back()->with('error', 'Limit jumlah produk tercapai! Silakan upgrade paket langganan Anda untuk menambah produk baru.');
             }
         }
@@ -55,7 +60,7 @@ class ProductController extends Controller
         $productClone = clone $product; // Clone before deletion to log properties if needed
         $name = $this->service->delete($product);
 
-        \App\Services\ActivityLogger::log('Hapus Data Penting', "Menghapus produk: {$name}", $productClone, ['product_name' => $name, 'base_cost' => $productClone->base_cost]);
+        ActivityLogger::log('Hapus Data Penting', "Menghapus produk: {$name}", $productClone, ['product_name' => $name, 'base_cost' => $productClone->base_cost]);
 
         return redirect()->route('products.index')
             ->with('success', "Produk \"{$name}\" berhasil dinonaktifkan.");
@@ -66,7 +71,7 @@ class ProductController extends Controller
         $name = $this->service->restore($id);
         $product = Products::withTrashed()->find($id);
 
-        \App\Services\ActivityLogger::log('Restore Data', "Memulihkan produk: {$name}", $product, ['product_name' => $name]);
+        ActivityLogger::log('Restore Data', "Memulihkan produk: {$name}", $product, ['product_name' => $name]);
 
         return redirect()->back()
             ->with('success', "Produk \"{$name}\" berhasil dipulihkan.");
@@ -85,19 +90,50 @@ class ProductController extends Controller
             ->with('success', "Harga jual untuk {$count} produk berhasil dinaikkan!");
     }
 
-    public function import(Request $request): RedirectResponse
+    public function importPreview(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,csv,xls|max:5120', // Maks 5MB
+            'file' => 'required|mimes:xlsx,csv,xls|max:5120',
         ]);
 
         $user = auth()->user();
-        
-        // Dapatkan Tenant & Branch (Untuk Super Admin, fallback ke cabang pertama di sistem)
-        $tenantId = $user->tenant_id ?? \App\Models\Tenants::first()->id;
-        $branchId = $user->branch_id ?? \App\Models\Branch::where('tenant_id', $tenantId)->first()->id;
+        $tenantId = $user->tenant_id ?? Tenants::first()->id;
 
-        Excel::import(new ProductsImport($tenantId, $branchId), $request->file('file'));
+        $preview = new ProductsImportPreview($tenantId);
+        Excel::import($preview, $request->file('file'));
+
+        // Ambil data existing untuk pilihan dropdown
+        $existingCategories = \App\Models\ProductCategory::where('tenant_id', $tenantId)->get(['id', 'name']);
+        $existingTypes = \App\Models\ProductType::where('tenant_id', $tenantId)->get(['id', 'name']);
+
+        return response()->json([
+            'new_categories' => array_values($preview->newCategories),
+            'new_types' => array_values($preview->newTypes),
+            'category_examples' => $preview->categoryExamples,
+            'type_examples' => $preview->typeExamples,
+            'existing_categories' => $existingCategories,
+            'existing_types' => $existingTypes,
+        ]);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv,xls|max:5120',
+            'category_mapping' => 'nullable|json',
+            'type_mapping' => 'nullable|json',
+        ]);
+
+        $user = auth()->user();
+
+        // Dapatkan Tenant & Branch
+        $tenantId = $user->tenant_id ?? Tenants::first()->id;
+        $branchId = $user->branch_id ?? Branch::where('tenant_id', $tenantId)->first()->id;
+
+        $categoryMapping = $request->filled('category_mapping') ? json_decode($request->category_mapping, true) : [];
+        $typeMapping = $request->filled('type_mapping') ? json_decode($request->type_mapping, true) : [];
+
+        Excel::import(new ProductsImport($tenantId, $branchId, $categoryMapping, $typeMapping), $request->file('file'));
 
         return back()->with('success', 'Berhasil mengimpor data produk massal.');
     }

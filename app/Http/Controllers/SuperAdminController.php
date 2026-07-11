@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Tenants;
 use App\Models\Branch;
-use App\Models\Product;
+use App\Models\Products;
+use App\Models\Tenants;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,7 +17,7 @@ class SuperAdminController extends Controller
     public function billing(): Response
     {
         // Enforce Super Admin only
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             abort(403, 'Akses khusus Pemilik Aplikasi Utama.');
         }
 
@@ -52,16 +51,16 @@ class SuperAdminController extends Controller
     public function monitoring(): Response
     {
         // Enforce Super Admin only
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             abort(403, 'Akses khusus Pemilik Aplikasi Utama.');
         }
 
         $totalStores = Tenants::withoutGlobalScopes()->count();
         $totalBranches = Branch::withoutGlobalScopes()->count();
         $totalUsers = User::withoutGlobalScopes()->count();
-        
+
         // Count products safely
-        $totalProducts = \App\Models\Products::withoutGlobalScopes()->count();
+        $totalProducts = Products::withoutGlobalScopes()->count();
 
         $activeStores = Tenants::withoutGlobalScopes()
             ->with(['location'])
@@ -78,17 +77,45 @@ class SuperAdminController extends Controller
             'activeStores' => $activeStores,
         ]);
     }
+
     /**
      * Display the SaaS Plans & Features limitations.
      */
     public function plans(): Response
     {
         // Enforce Super Admin only
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             abort(403, 'Akses khusus Pemilik Aplikasi Utama.');
         }
 
-        // Return a beautiful view describing the hardcoded plan limits in SubscriptionService
-        return Inertia::render('superadmin/Plans');
+        $plans = \App\Models\Plan::orderBy('price', 'asc')->get();
+
+        return Inertia::render('superadmin/Plans', [
+            'plans' => $plans
+        ]);
+    }
+
+    /**
+     * Update a specific SaaS plan.
+     */
+    public function updatePlan(\Illuminate\Http\Request $request, $id)
+    {
+        if (! auth()->user()->isSuperAdmin()) {
+            abort(403, 'Akses khusus Pemilik Aplikasi Utama.');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'max_branches' => 'required|integer|min:1',
+            'max_users' => 'required|integer|min:1',
+            'max_products' => 'required|integer|min:1',
+        ]);
+
+        $plan = \App\Models\Plan::findOrFail($id);
+        $plan->update($validated);
+
+        return back()->with('success', 'Paket langganan berhasil diperbarui.');
     }
 }

@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Finance\StoreIncomeRequest;
 use App\Models\CashBook;
 use App\Services\FinanceService;
-use App\Http\Requests\Finance\StoreIncomeRequest;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class FinanceController extends Controller
 {
@@ -25,6 +25,7 @@ class FinanceController extends Controller
     public function incomes(Request $request): Response
     {
         $data = $this->financeService->getIncomesData($request->all());
+
         return Inertia::render('finance/incomes', $data);
     }
 
@@ -44,6 +45,7 @@ class FinanceController extends Controller
     public function cashBooks(Request $request): Response
     {
         $data = $this->financeService->getCashBooksData($request->all());
+
         return Inertia::render('finance/cash-books', $data);
     }
 
@@ -53,6 +55,7 @@ class FinanceController extends Controller
     public function profitLoss(Request $request): Response
     {
         $data = $this->financeService->getProfitLossData($request->all());
+
         return Inertia::render('finance/profit-loss', $data);
     }
 
@@ -62,6 +65,7 @@ class FinanceController extends Controller
     public function debtsReceivables(Request $request): Response
     {
         $data = $this->financeService->getDebtsReceivablesData();
+
         return Inertia::render('finance/debts-receivables', $data);
     }
 
@@ -71,6 +75,7 @@ class FinanceController extends Controller
     public function destroyCashBook(CashBook $cashBook): RedirectResponse
     {
         $cashBook->delete();
+
         return redirect()->back()->with('success', 'Catatan keuangan berhasil dihapus.');
     }
 
@@ -80,6 +85,7 @@ class FinanceController extends Controller
     public function accountingReports(Request $request): Response
     {
         $data = $this->financeService->getAccountingReportsData($request->all());
+
         return Inertia::render('finance/accounting-reports', $data);
     }
 }

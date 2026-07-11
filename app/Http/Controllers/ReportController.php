@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\ReportService;
-use App\Services\InsightService;
 use App\Http\Requests\Reports\ReportFilterRequest;
-use Illuminate\Http\Request;
+use App\Services\InsightService;
+use App\Services\ReportService;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ReportController extends Controller
 {
     protected ReportService $reportService;
+
     protected InsightService $insightService;
 
     /**
@@ -30,7 +30,7 @@ class ReportController extends Controller
     {
         $data = $this->reportService->getReportsData($request->all());
         $data['smartInsights'] = $this->insightService->getInventoryForecast($request->input('branch_id'));
-        
+
         return Inertia::render('reports/Index', $data);
     }
 }

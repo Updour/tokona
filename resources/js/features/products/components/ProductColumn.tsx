@@ -1,16 +1,96 @@
 import { router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal, ArrowUpDown, Edit, Trash, ImageOff, PackagePlus, Eye, Barcode, Tags, Layers, MapPin, Building2, AlignLeft } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, Edit, Trash, ImageOff, PackagePlus, Eye, Barcode, Tags, Layers, MapPin, Building2, AlignLeft, RotateCcw } from 'lucide-react';
 import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useProductStore  } from '@/pages/products/stores/useProductStore';
-import type {Product} from '@/pages/products/stores/useProductStore';
+import { useProductStore } from '@/pages/products/stores/useProductStore';
+import type { Product } from '@/pages/products/stores/useProductStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatRupiah, formatNumber } from '@/lib/helpers/format';
 
+import { toast } from 'sonner';
+
 const ActionsCell = ({ product }: { product: Product }) => {
     const { openForm, openRestock, openDetail, openDelete } = useProductStore();
+
+    const handlePrintBarcode = (prod: Product) => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            toast.error('Gagal membuka halaman cetak. Pastikan pop-up tidak diblokir.');
+            return;
+        }
+
+        const barcodeImageUrl = `https://barcodeapi.org/api/128/${prod.barcode}`;
+        const formattedPrice = formatRupiah(Number(prod.sell_price));
+
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Cetak Barcode - ${prod.name}</title>
+                <style>
+                    @page {
+                        size: auto;
+                        margin: 0mm;
+                    }
+                    body {
+                        font-family: 'Courier New', Courier, monospace;
+                        margin: 0;
+                        padding: 10px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        text-align: center;
+                    }
+                    .label-container {
+                        border: 1px dashed #ccc;
+                        padding: 8px;
+                        width: 200px;
+                        display: inline-block;
+                    }
+                    .product-name {
+                        font-size: 10px;
+                        font-weight: bold;
+                        margin-bottom: 4px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .barcode-img {
+                        width: 180px;
+                        height: 50px;
+                        object-fit: contain;
+                    }
+                    .barcode-text {
+                        font-size: 10px;
+                        letter-spacing: 2px;
+                        margin: 2px 0;
+                    }
+                    .price {
+                        font-size: 11px;
+                        font-weight: bold;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="label-container">
+                    <div class="product-name">${prod.name}</div>
+                    <img class="barcode-img" src="${barcodeImageUrl}" alt="Barcode" />
+                    <div class="barcode-text">${prod.barcode}</div>
+                    <div class="price">${formattedPrice}</div>
+                </div>
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        setTimeout(function() { window.close(); }, 500);
+                    };
+                </script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
 
     return (
         <TooltipProvider>
@@ -30,52 +110,91 @@ const ActionsCell = ({ product }: { product: Product }) => {
                     <TooltipContent>Detail Produk</TooltipContent>
                 </Tooltip>
 
-                {/* Edit button */}
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50"
-                            onClick={() => openForm(product)}
-                        >
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Edit Produk</TooltipContent>
-                </Tooltip>
-
-                {/* Restock button */}
-                {product.track_stock && (
+                {product.deleted_at ? (
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50"
-                                onClick={() => openRestock(product)}
+                                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/50"
+                                onClick={() => {
+                                    if (confirm(`Yakin ingin memulihkan produk "${product.name}"?`)) {
+                                        router.post(`/products/${product.id}/restore`);
+                                    }
+                                }}
                             >
-                                <PackagePlus className="h-4 w-4" />
+                                <RotateCcw className="h-4 w-4" />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Tambah Stok</TooltipContent>
+                        <TooltipContent>Pulihkan (Restore) Produk</TooltipContent>
                     </Tooltip>
-                )}
+                ) : (
+                    <>
+                        {/* Edit button */}
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                                    onClick={() => openForm(product)}
+                                >
+                                    <Edit className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Edit Produk</TooltipContent>
+                        </Tooltip>
 
-                {/* Delete button */}
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
-                            onClick={() => openDelete(product)}
-                        >
-                            <Trash className="h-4 w-4" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Hapus Produk</TooltipContent>
-                </Tooltip>
+                        {/* Restock button */}
+                        {product.track_stock && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+                                        onClick={() => openRestock(product)}
+                                    >
+                                        <PackagePlus className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Tambah Stok</TooltipContent>
+                            </Tooltip>
+                        )}
+
+                        {/* Print Barcode button */}
+                        {product.barcode && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-teal-600 hover:text-teal-700 hover:bg-teal-50 dark:hover:bg-teal-950/50"
+                                        onClick={() => handlePrintBarcode(product)}
+                                    >
+                                        <Barcode className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Cetak Label Barcode</TooltipContent>
+                            </Tooltip>
+                        )}
+
+                        {/* Delete button */}
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
+                                    onClick={() => openDelete(product)}
+                                >
+                                    <Trash className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Hapus Produk</TooltipContent>
+                        </Tooltip>
+                    </>
+                )}
             </div>
         </TooltipProvider>
     );
@@ -115,7 +234,10 @@ export const columns: ColumnDef<Product>[] = [
                     </div>
                     {/* Info */}
                     <div className="flex flex-col gap-0.5">
-                        <span className="font-medium text-sm leading-tight">{product.name}</span>
+                        <span className="font-medium text-sm leading-tight flex items-center gap-1.5">
+                            {product.name}
+                            {product.is_bundle && <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-indigo-500 text-indigo-600 bg-indigo-50 shrink-0">Bundle</Badge>}
+                        </span>
                         {product.sku && (
                             <span className="text-xs text-muted-foreground font-mono">SKU: {product.sku}</span>
                         )}

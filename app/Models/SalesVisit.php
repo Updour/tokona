@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SalesVisit extends Model
 {
+    use LogsActivity;
+
     use HasFactory, HasUuids;
 
     protected $table = 'sales_visits';
@@ -29,7 +33,7 @@ class SalesVisit extends Model
     protected static function booted()
     {
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+            if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
                 $builder->where('tenant_id', auth()->user()->tenant_id);
             }
         });

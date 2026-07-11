@@ -20,7 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { formatRupiah , formatNumber} from '@/lib/helpers/format';
+import { formatRupiah, formatNumber } from '@/lib/helpers/format';
 import { settle as consignmentsSettle } from '@/routes/consignments';
 import { useConsignmentStore } from '../stores/useConsignmentStore';
 
@@ -64,8 +64,8 @@ export function ConsignmentSettleDialog() {
         e.preventDefault();
 
         if (!selectedConsignment) {
-return;
-}
+            return;
+        }
 
         post(consignmentsSettle(selectedConsignment.id).url, {
             onSuccess: () => closeSettleForm(),
@@ -120,11 +120,11 @@ return;
                                                 <td className="px-4 py-2 font-medium">{item.product_name}</td>
                                                 <td className="px-4 py-2 text-center font-mono">{item.qty_received}</td>
                                                 <td className="px-2 py-1.5 bg-yellow-50 border-x">
-                                                    <Input 
-                                                        type="number" 
-                                                        min="0" 
+                                                    <Input
+                                                        type="number"
+                                                        min="0"
                                                         max={item.qty_received}
-                                                        className="h-7 text-xs font-mono text-center border-yellow-300 focus-visible:ring-yellow-500" 
+                                                        className="h-7 text-xs font-mono text-center border-yellow-300 focus-visible:ring-yellow-500"
                                                         value={item.qty_unsold}
                                                         onChange={(e) => updateItemUnsold(idx, parseInt(e.target.value) || 0)}
                                                     />
@@ -148,15 +148,15 @@ return;
                             </Label>
                             <div className="relative">
                                 <span className="absolute left-3 top-2.5 text-xs text-muted-foreground font-medium">Rp</span>
-                                <Input 
-                                    type="text" 
+                                <Input
+                                    type="text"
                                     className="font-mono text-right pl-8"
                                     placeholder="0"
-                                    value={data.total_discount === 0 ? '' : formatNumber(data.total_discount)} 
+                                    value={data.total_discount === 0 ? '' : formatNumber(data.total_discount)}
                                     onChange={(e) => {
                                         const rawValue = e.target.value.replace(/[^0-9]/g, '');
                                         setData('total_discount', rawValue ? parseInt(rawValue, 10) : 0);
-                                    }} 
+                                    }}
                                 />
                             </div>
                             {errors.total_discount && <span className="text-xs text-destructive">{errors.total_discount}</span>}
@@ -164,7 +164,7 @@ return;
                         <div className="space-y-1.5">
                             <Label className="text-[10px] font-bold uppercase text-muted-foreground">Tindakan Untuk Sisa Barang</Label>
                             <Select value={data.unsold_action} onValueChange={(v) => setData('unsold_action', v)}>
-                                <SelectTrigger>
+                                <SelectTrigger className='w-full'>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

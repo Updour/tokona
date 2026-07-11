@@ -73,12 +73,15 @@ export const getCustomerColumns = (onEdit: (c: any) => void, onView: (c: any) =>
     },
     {
         accessorKey: 'debt_balance',
-        header: 'Piutang',
-        cell: ({ row }) => (
-            <span className="text-red-600 font-semibold">
-                {formatRupiah(row.original.debt_balance)}
-            </span>
-        ),
+        header: 'Piutang Berjalan',
+        cell: ({ row }) => {
+            const debt = Number(row.original.debt_balance) || 0;
+            return (
+                <span className={`font-semibold ${debt > 0 ? 'text-red-600' : 'text-slate-500'}`}>
+                    {formatRupiah(debt)}
+                </span>
+            );
+        },
     },
     {
         id: 'registered_at',

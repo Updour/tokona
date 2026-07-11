@@ -34,7 +34,7 @@ export default function Index({ categories, types, suppliers, branches }: any) {
             <ProductRestockDialog />
             <ProductDetailSheet />
             <ProductDeleteDialog />
-            
+
             {/* Dialog Import Excel */}
             <ProductImportDialog open={isImportOpen} onOpenChange={(open) => !open && closeImport()} />
         </MainLayout>

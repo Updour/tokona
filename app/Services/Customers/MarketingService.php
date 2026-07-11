@@ -2,8 +2,9 @@
 
 namespace App\Services\Customers;
 
-use App\Models\MarketingCampaign;
 use App\Models\Customer;
+use App\Models\MarketingCampaign;
+use App\Models\Tenants;
 use Illuminate\Support\Facades\Auth;
 
 class MarketingService
@@ -28,8 +29,8 @@ class MarketingService
     public function storeCampaign(array $data): MarketingCampaign
     {
         $tenantId = $data['tenant_id'] ?? Auth::user()->tenant_id;
-        if (!$tenantId && Auth::user()->isSuperAdmin()) {
-            $tenantId = \App\Models\Tenants::first()->id ?? null;
+        if (! $tenantId && Auth::user()->isSuperAdmin()) {
+            $tenantId = Tenants::first()->id ?? null;
         }
         $data['tenant_id'] = $tenantId;
         $data['created_by'] = Auth::id();
@@ -37,7 +38,7 @@ class MarketingService
 
         // Calculate total target
         $targetQuery = Customer::where('tenant_id', $tenantId)->whereNotNull('phone')->where('phone', '!=', '');
-        
+
         if ($data['target_audience'] === 'tier_member') {
             $targetQuery->where('tier', 'member');
         } elseif ($data['target_audience'] === 'tier_wholesale') {
@@ -57,7 +58,7 @@ class MarketingService
     public function getCampaignQueue(MarketingCampaign $campaign): array
     {
         $targetQuery = Customer::where('tenant_id', $campaign->tenant_id)->whereNotNull('phone')->where('phone', '!=', '');
-        
+
         if ($campaign->target_audience === 'tier_member') {
             $targetQuery->where('tier', 'member');
         } elseif ($campaign->target_audience === 'tier_wholesale') {
@@ -81,7 +82,7 @@ class MarketingService
                 'phone' => $customer->phone,
                 'points' => $customer->points,
                 'message' => $message,
-                'status' => 'pending'
+                'status' => 'pending',
             ];
         }
 
@@ -94,11 +95,11 @@ class MarketingService
     public function updateProgress(MarketingCampaign $campaign, int $sentCount): void
     {
         $campaign->sent_count = $sentCount;
-        
+
         if ($sentCount > 0 && $campaign->status === 'draft') {
             $campaign->status = 'active';
         }
-        
+
         if ($sentCount >= $campaign->total_target && $campaign->total_target > 0) {
             $campaign->status = 'completed';
         }

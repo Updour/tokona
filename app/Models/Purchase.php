@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\LogsActivity;
 
 class Purchase extends Model
 {
@@ -23,13 +24,18 @@ class Purchase extends Model
         'global_discount',
         'status', // draft, received, paid
         'purchase_date',
+        'amount_paid',
+        'payment_status',
+        'due_date',
     ];
 
     protected function casts(): array
     {
         return [
-            'total_cost'    => 'decimal:2',
+            'total_cost' => 'decimal:2',
+            'amount_paid' => 'decimal:2',
             'purchase_date' => 'date',
+            'due_date' => 'date',
         ];
     }
 
@@ -53,6 +59,11 @@ class Purchase extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseItem::class, 'purchase_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(PurchasePayment::class, 'purchase_id');
     }
 
     // ─── Global Scope ─────────────────────────────────────────────────────────

@@ -2,23 +2,23 @@
 
 namespace App\Services;
 
-use App\Models\SalesPerson;
-use App\Models\SalesVisit;
+use App\Models\Branch;
+use App\Models\Customer;
+use App\Models\Products;
+use App\Models\Role;
 use App\Models\SalesLoadedStock;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
-use App\Models\Products;
-use App\Models\Branch;
-use App\Models\Customer;
-use App\Models\User;
+use App\Models\SalesPerson;
+use App\Models\SalesVisit;
 use App\Models\Tenants;
-use App\Models\Role;
+use App\Models\User;
+use Exception;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
-use Exception;
 
 class SalesService
 {
@@ -30,30 +30,43 @@ class SalesService
         $query = SalesPerson::filter($filters)->with(['branch', 'loadedStocks.product']);
 
         // Jika user bukan super admin, batasi berdasarkan tenant
-        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
             $query->where('tenant_id', auth()->user()->tenant_id);
         }
 
         $sales = $query->paginate($filters['per_page'] ?? 15);
 
-        // Tambah hitungan statistik kunjungan & order dinamis
+        // Ambil jumlah kunjungan dan pesanan sekaligus menggunakan aggregates untuk menghindari bottleneck N+1 query
+        $salesIds = $sales->pluck('id')->toArray();
+
+        $visitsCounts = SalesVisit::whereIn('sales_id', $salesIds)
+            ->groupBy('sales_id')
+            ->select('sales_id', DB::raw('count(*) as count'))
+            ->pluck('count', 'sales_id')
+            ->toArray();
+
+        $ordersCounts = SalesOrder::join('sales_visits', 'sales_orders.sales_visit_id', '=', 'sales_visits.id')
+            ->whereIn('sales_visits.sales_id', $salesIds)
+            ->groupBy('sales_visits.sales_id')
+            ->select('sales_visits.sales_id', DB::raw('count(*) as count'))
+            ->pluck('count', 'sales_visits.sales_id')
+            ->toArray();
+
         foreach ($sales as $s) {
-            $s->visits_count = SalesVisit::where('sales_id', $s->id)->count();
-            $s->orders_count = SalesOrder::whereHas('salesVisit', function ($q) use ($s) {
-                $q->where('sales_id', $s->id);
-            })->count();
+            $s->visits_count = $visitsCounts[$s->id] ?? 0;
+            $s->orders_count = $ordersCounts[$s->id] ?? 0;
         }
 
         // Ambil data cabang untuk dropdown modal tambah sales
         $branchQuery = Branch::orderBy('name');
-        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
             $branchQuery->where('tenant_id', auth()->user()->tenant_id);
         }
         $branches = $branchQuery->get();
 
         // Ambil produk untuk dropdown muat stok canvas
         $productQuery = Products::withCurrentStock()->orderBy('name');
-        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
             $productQuery->where('tenant_id', auth()->user()->tenant_id);
         }
         $products = $productQuery->get();
@@ -77,7 +90,7 @@ class SalesService
     public function storeSalesPerson(array $data)
     {
         return DB::transaction(function () use ($data) {
-            if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+            if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
                 $data['tenant_id'] = auth()->user()->tenant_id;
             } else {
                 // Jika super admin, gunakan tenant dari branch yang dipilih
@@ -90,22 +103,26 @@ class SalesService
 
             $salesPerson = SalesPerson::create($data);
 
+            // Cek keunikan email secara global untuk mencegah celah hijack lintas tenant
+            $existingUser = User::where('email', $data['email'])->first();
+            if ($existingUser) {
+                throw new \Exception("Email {$data['email']} sudah digunakan oleh pengguna lain di sistem.");
+            }
+
             // Otomatis buatkan User untuk login Sales
-            $user = User::firstOrCreate(
-                ['email' => $data['email']],
-                [
-                    'id' => Str::uuid()->toString(),
-                    'tenant_id' => $data['tenant_id'],
-                    'branch_id' => $data['branch_id'],
-                    'name' => $data['name'],
-                    'password' => Hash::make('password'),
-                    'status' => 'active',
-                ]
-            );
+            $user = User::create([
+                'id' => Str::uuid()->toString(),
+                'tenant_id' => $data['tenant_id'],
+                'branch_id' => $data['branch_id'],
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make('password'),
+                'status' => 'active',
+            ]);
 
             // Pastikan dia punya role 'sales'
             $role = Role::where('name', 'sales')->first();
-            if ($role && !$user->roles()->where('role_id', $role->id)->exists()) {
+            if ($role && ! $user->roles()->where('role_id', $role->id)->exists()) {
                 $user->roles()->attach($role->id);
             }
 
@@ -120,30 +137,30 @@ class SalesService
     {
         $query = SalesVisit::with(['salesPerson', 'customer', 'branch', 'salesOrder.items.product']);
 
-        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
             $query->where('tenant_id', auth()->user()->tenant_id);
         }
 
         // Filter by Sales Person
-        if (!empty($filters['sales_id']) && $filters['sales_id'] !== 'ALL') {
+        if (! empty($filters['sales_id']) && $filters['sales_id'] !== 'ALL') {
             $query->where('sales_id', $filters['sales_id']);
         }
 
         // Filter by Date Range
-        if (!empty($filters['start_date'])) {
+        if (! empty($filters['start_date'])) {
             $query->whereDate('visited_at', '>=', $filters['start_date']);
         }
-        if (!empty($filters['end_date'])) {
+        if (! empty($filters['end_date'])) {
             $query->whereDate('visited_at', '<=', $filters['end_date']);
         }
 
         // Filter by Search (Sales or Customer Name)
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $search = $filters['search'];
-            $query->where(function($q) use ($search) {
-                $q->whereHas('salesPerson', function($sq) use ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('salesPerson', function ($sq) use ($search) {
                     $sq->where('name', 'like', "%{$search}%");
-                })->orWhereHas('customer', function($cq) use ($search) {
+                })->orWhereHas('customer', function ($cq) use ($search) {
                     $cq->where('name', 'like', "%{$search}%");
                 });
             });
@@ -153,7 +170,7 @@ class SalesService
 
         // Fetch sales persons for filter dropdown
         $salesPersonsQuery = SalesPerson::orderBy('name');
-        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
             $salesPersonsQuery->where('tenant_id', auth()->user()->tenant_id);
         }
         $salesPersons = $salesPersonsQuery->get();
@@ -171,13 +188,13 @@ class SalesService
     public function getMapData(array $filters)
     {
         $customerQuery = Customer::whereNotNull('latitude')->whereNotNull('longitude');
-        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
             $customerQuery->where('tenant_id', auth()->user()->tenant_id);
         }
         $locations = $customerQuery->get();
 
         $activeVisitsQuery = SalesVisit::with(['salesPerson', 'customer'])->latest('visited_at');
-        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
             $activeVisitsQuery->where('tenant_id', auth()->user()->tenant_id);
         }
         $activeVisits = $activeVisitsQuery->take(10)->get();
@@ -201,7 +218,7 @@ class SalesService
         }
 
         // 1. Geofencing Validation (Radius 50 meter)
-        if (!empty($data['customer_id']) && !empty($data['latitude']) && !empty($data['longitude'])) {
+        if (! empty($data['customer_id']) && ! empty($data['latitude']) && ! empty($data['longitude'])) {
             $customer = Customer::find($data['customer_id']);
             if ($customer) {
                 if ($customer->latitude && $customer->longitude) {
@@ -211,7 +228,7 @@ class SalesService
                     );
 
                     if ($distance > 50) {
-                        throw new Exception("Check-In ditolak. Anda berada di luar radius toko (Jarak dari titik: " . round($distance) . " meter).");
+                        throw new Exception('Check-In ditolak. Anda berada di luar radius toko (Jarak dari titik: '.round($distance).' meter).');
                     }
                 } else {
                     // Simpan koordinat check-in pertama ini sebagai patokan titik toko
@@ -244,7 +261,7 @@ class SalesService
             'photo_url' => $photoUrl,
             'notes' => $data['notes'] ?? null,
         ]);
-        
+
         return $visit;
     }
 
@@ -254,7 +271,7 @@ class SalesService
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)
     {
         $earthRadius = 6371000; // Radius bumi dalam meter
-        
+
         $lat1 = deg2rad((float) $lat1);
         $lon1 = deg2rad((float) $lon1);
         $lat2 = deg2rad((float) $lat2);
@@ -325,7 +342,7 @@ class SalesService
 
             foreach ($loadedStocks as $loaded) {
                 $qtyToReturn = $loaded->current_stock;
-                
+
                 // Tambahkan kembali stok utama cabang/toko
                 $product = Products::find($loaded->product_id);
                 if ($product && $product->track_stock) {
@@ -368,9 +385,9 @@ class SalesService
                     ->where('product_id', $productId)
                     ->first();
 
-                if (!$loadedStock || $loadedStock->current_stock < $qty) {
+                if (! $loadedStock || $loadedStock->current_stock < $qty) {
                     $prodName = Products::find($productId)?->name ?? 'Produk';
-                    throw new Exception("Stok canvas sales untuk '{$prodName}' tidak mencukupi untuk disetorkan (Sisa: " . ($loadedStock?->current_stock ?? 0) . ").");
+                    throw new Exception("Stok canvas sales untuk '{$prodName}' tidak mencukupi untuk disetorkan (Sisa: ".($loadedStock?->current_stock ?? 0).').');
                 }
 
                 // Potong stok canvas sales
@@ -421,13 +438,14 @@ class SalesService
         $sales = SalesPerson::findOrFail($id);
 
         // Enforce tenant isolation
-        if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+        if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
             if ($sales->tenant_id !== auth()->user()->tenant_id) {
-                throw new Exception("Akses ditolak untuk mengubah data tenant lain.");
+                throw new Exception('Akses ditolak untuk mengubah data tenant lain.');
             }
         }
 
         $sales->update($data);
+
         return $sales;
     }
 
@@ -440,9 +458,9 @@ class SalesService
             $sales = SalesPerson::findOrFail($id);
 
             // Enforce tenant isolation
-            if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+            if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
                 if ($sales->tenant_id !== auth()->user()->tenant_id) {
-                    throw new Exception("Akses ditolak untuk menghapus data tenant lain.");
+                    throw new Exception('Akses ditolak untuk menghapus data tenant lain.');
                 }
             }
 
@@ -461,6 +479,7 @@ class SalesService
             }
 
             $sales->delete();
+
             return true;
         });
     }

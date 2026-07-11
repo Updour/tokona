@@ -3,6 +3,7 @@
 namespace App\Services\Suppliers;
 
 use App\Models\Supplier;
+use App\Models\Tenants;
 
 class SupplierService
 {
@@ -17,15 +18,15 @@ class SupplierService
 
         // Calculate stats
         $totalBelanja = $supplier->purchases->whereIn('status', ['received', 'paid'])->sum('total_cost');
-        $totalHutang = $supplier->purchases->where('status', 'received')->sum('total_cost');
+        $totalHutang = $supplier->purchases->whereIn('status', ['received'])->sum(fn ($p) => max(0, $p->total_cost - $p->amount_paid));
 
         return [
             'supplier' => $supplier,
             'stats' => [
                 'total_belanja' => $totalBelanja,
-                'total_hutang'  => $totalHutang,
-                'total_po'      => $supplier->purchases->count(),
-            ]
+                'total_hutang' => $totalHutang,
+                'total_po' => $supplier->purchases->count(),
+            ],
         ];
     }
 
@@ -35,10 +36,11 @@ class SupplierService
     public function storeSupplier(array $data): Supplier
     {
         $tenantId = $data['tenant_id'] ?? auth()->user()->tenant_id;
-        if (!$tenantId && auth()->user()->isSuperAdmin()) {
-            $tenantId = \App\Models\Tenants::first()->id ?? null;
+        if (! $tenantId && auth()->user()->isSuperAdmin()) {
+            $tenantId = Tenants::first()->id ?? null;
         }
         $data['tenant_id'] = $tenantId;
+
         return Supplier::create($data);
     }
 

@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Expense;
-use App\Services\ExpenseService;
 use App\Http\Requests\Expenses\StoreExpenseRequest;
 use App\Http\Requests\Expenses\UpdateExpenseRequest;
+use App\Models\Expense;
+use App\Services\ExpenseService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class ExpenseController extends Controller
 {
@@ -23,6 +23,7 @@ class ExpenseController extends Controller
     public function index(Request $request): Response
     {
         $data = $this->expenseService->getExpenseListData($request->all());
+
         return Inertia::render('expenses/index', $data);
     }
 

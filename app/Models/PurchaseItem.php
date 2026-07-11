@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PurchaseItem extends Model
 {
+    use LogsActivity;
+
     use HasUuids;
 
     protected $table = 'purchase_items';
@@ -27,9 +31,9 @@ class PurchaseItem extends Model
     protected function casts(): array
     {
         return [
-            'qty'       => 'integer',
+            'qty' => 'integer',
             'unit_cost' => 'decimal:2',
-            'subtotal'  => 'decimal:2',
+            'subtotal' => 'decimal:2',
         ];
     }
 

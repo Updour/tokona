@@ -140,8 +140,8 @@ export default function CreateTransferDialog({ branches, products, currentBranch
                                     <span className="text-xs font-normal text-muted-foreground">{data.items.length} item dipilih</span>
                                 </Label>
 
-                                <div className="flex gap-3 items-end">
-                                    <div className="flex-1 space-y-2">
+                                <div className="flex gap-3 items-center">
+                                    <div className="flex-1">
                                         <Select value={selectedProduct} onValueChange={setSelectedProduct}>
                                             <SelectTrigger className="bg-background w-full">
                                                 <SelectValue placeholder="Cari Produk..." />
@@ -155,7 +155,7 @@ export default function CreateTransferDialog({ branches, products, currentBranch
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="w-24 space-y-2">
+                                    <div className="w-24">
                                         <Input
                                             type="number"
                                             min="1"
@@ -164,7 +164,7 @@ export default function CreateTransferDialog({ branches, products, currentBranch
                                             className="bg-background text-center"
                                         />
                                     </div>
-                                    <Button type="button" onClick={handleAddItem} className="mb-0.5 gap-1 shadow-sm">
+                                    <Button type="button" onClick={handleAddItem} className="gap-1 shadow-sm">
                                         <Plus className="w-4 h-4" /> Tambah
                                     </Button>
                                 </div>

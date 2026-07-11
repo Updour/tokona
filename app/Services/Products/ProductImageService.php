@@ -22,21 +22,21 @@ class ProductImageService
     /** Upload array of UploadedFile, kembalikan jumlah yang berhasil. */
     public function upload(string $productId, array $files): int
     {
-        $product       = $this->findProduct($productId);
+        $product = $this->findProduct($productId);
         $existingCount = $product->images()->count();
 
         foreach ($files as $index => $file) {
             $path = $file->storeAs(
                 "products/{$product->tenant_id}",
-                Str::uuid() . '.' . $file->getClientOriginalExtension(),
+                Str::uuid().'.'.$file->getClientOriginalExtension(),
                 'public'
             );
 
             ProductImage::create([
-                'tenant_id'  => $product->tenant_id,
+                'tenant_id' => $product->tenant_id,
                 'product_id' => $product->id,
-                'url'        => Storage::disk('public')->url($path),
-                'path'       => $path,
+                'url' => Storage::disk('public')->url($path),
+                'path' => $path,
                 'is_primary' => ($existingCount === 0 && $index === 0),
                 'sort_order' => $existingCount + $index,
             ]);
@@ -66,8 +66,8 @@ class ProductImageService
     /** Hapus satu gambar (file fisik + record). */
     public function delete(string $productId, string $imageId): void
     {
-        $product    = $this->findProduct($productId);
-        $image      = $product->images()->findOrFail($imageId);
+        $product = $this->findProduct($productId);
+        $image = $product->images()->findOrFail($imageId);
         $wasPrimary = $image->is_primary;
 
         $image->delete(); // file fisik dihapus via model booted()

@@ -14,12 +14,12 @@ class BranchService
     {
         return DB::transaction(function () use ($data) {
             // Force tenant_id if not super admin
-            if (!auth()->user()->isSuperAdmin()) {
+            if (! auth()->user()->isSuperAdmin()) {
                 $data['tenant_id'] = auth()->user()->tenant_id;
             }
 
             // Handle main branch exclusivity
-            if (!empty($data['is_main'])) {
+            if (! empty($data['is_main'])) {
                 Branch::where('tenant_id', $data['tenant_id'])
                     ->where('is_main', true)
                     ->update(['is_main' => false]);
@@ -45,12 +45,12 @@ class BranchService
     public function updateBranch(Branch $branch, array $data): Branch
     {
         return DB::transaction(function () use ($branch, $data) {
-            if (!auth()->user()->isSuperAdmin()) {
+            if (! auth()->user()->isSuperAdmin()) {
                 $data['tenant_id'] = auth()->user()->tenant_id;
             }
 
             // Handle main branch exclusivity
-            if (!empty($data['is_main'])) {
+            if (! empty($data['is_main'])) {
                 Branch::where('tenant_id', $data['tenant_id'])
                     ->where('id', '!=', $branch->id)
                     ->where('is_main', true)

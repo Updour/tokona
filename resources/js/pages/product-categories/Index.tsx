@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { CategoryFormDialog } from '@/features/product-categories/components/CategoryFormDialog';
+import { CategoryDeleteDialog } from '@/features/product-categories/components/CategoryDeleteDialog';
 import { CategoryTable } from '@/features/product-categories/components/CategoryTable';
 import MainLayout from '@/layouts/app/app-main-layout';
 import { useCategoryStore } from '@/pages/product-categories/stores/useCategoryStore';
@@ -23,6 +24,7 @@ export default function Index() {
             </div>
 
             <CategoryFormDialog />
+            <CategoryDeleteDialog />
         </MainLayout>
     );
 }

@@ -149,9 +149,17 @@ export function CustomerDetailDialog() {
                     )}
                 </div>
 
-                <div className="mt-6 flex justify-end">
-                    <Button onClick={closeDetail} className="bg-slate-900 hover:bg-slate-800 text-white font-bold h-9">
-                        Tutup Detail
+                <div className="mt-6 flex justify-end gap-3">
+                    {Number(selectedCustomer.debt_balance ?? 0) > 0 && (
+                        <Button 
+                            onClick={() => window.location.href = `/pos?tab=transactions&search=${encodeURIComponent(selectedCustomer.name)}`}
+                            className="bg-rose-600 hover:bg-rose-700 text-white font-bold h-9"
+                        >
+                            Bayar Piutang di Kasir
+                        </Button>
+                    )}
+                    <Button onClick={closeDetail} variant="outline" className="h-9">
+                        Tutup
                     </Button>
                 </div>
             </DialogContent>

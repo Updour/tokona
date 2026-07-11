@@ -16,7 +16,7 @@ class ProductRestockController extends Controller
      */
     public function store(RestockProductRequest $request, string $productId): RedirectResponse
     {
-        $user    = auth()->user();
+        $user = auth()->user();
         $product = $user->isSuperAdmin()
             ? Products::withoutGlobalScope('tenant')->findOrFail($productId)
             : Products::withoutGlobalScope('tenant')
@@ -24,14 +24,14 @@ class ProductRestockController extends Controller
                 ->findOrFail($productId);
 
         StockMovement::create([
-            'tenant_id'   => $product->tenant_id,
-            'branch_id'   => $product->branch_id,
-            'product_id'  => $product->id,
-            'type'        => $request->validated('type'),   // IN | ADJUST | RETURN
-            'qty'         => $request->validated('qty'),
-            'unit_cost'   => $request->validated('unit_cost') ?? $product->base_cost,
+            'tenant_id' => $product->tenant_id,
+            'branch_id' => $product->branch_id,
+            'product_id' => $product->id,
+            'type' => $request->validated('type'),   // IN | ADJUST | RETURN
+            'qty' => $request->validated('qty'),
+            'unit_cost' => $request->validated('unit_cost') ?? $product->base_cost,
             'source_type' => 'manual',
-            'notes'       => $request->validated('notes'),
+            'notes' => $request->validated('notes'),
         ]);
 
         return back()->with('success', "Stok produk \"{$product->name}\" berhasil diperbarui.");

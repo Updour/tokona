@@ -1,11 +1,13 @@
 export interface ProductCategory {
     id: string;
     name: string;
+    tenant_id?: string;
 }
 
 export interface ProductType {
     id: string;
     name: string;
+    tenant_id?: string;
 }
 
 export interface ProductBranch {
@@ -45,15 +47,18 @@ export interface Product {
     min_sell_price: number | null;
     track_stock: boolean;
     allow_negative_stock: boolean;
+    is_bundle: boolean;
     source: string | null;
     is_active: boolean;
     created_at: string;
     updated_at: string;
+    deleted_at: string | null;
     // Relasi eager-loaded
     category: ProductCategory | null;
     type: ProductType | null;
     branch: ProductBranch | null;
     images: ProductImage[];
+    bundleItems?: { product_id: string; quantity: number; product?: Product }[];
     // Computed dari stock_movements (subquery)
     current_stock: number;
 }

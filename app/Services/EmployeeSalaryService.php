@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\User;
 use App\Models\EmployeeSalary;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -17,17 +17,17 @@ class EmployeeSalaryService
         $query = User::with(['employeeSalary', 'branch'])
             ->orderBy('name');
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $query->where('name', 'like', "%{$filters['search']}%");
         }
-        
-        if (!empty($filters['branch_id'])) {
+
+        if (! empty($filters['branch_id'])) {
             $query->where('branch_id', $filters['branch_id']);
         }
 
         // Handle Tenant filtering
         if (auth()->user()->isSuperAdmin()) {
-            if (!empty($filters['tenant_id'])) {
+            if (! empty($filters['tenant_id'])) {
                 $query->where('tenant_id', $filters['tenant_id']);
             }
         } else {

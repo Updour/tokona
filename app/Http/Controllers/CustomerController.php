@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Customer;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
 use App\Http\Requests\Customers\StoreCustomerRequest;
 use App\Http\Requests\Customers\UpdateCustomerRequest;
+use App\Models\Customer;
+use App\Services\ActivityLogger;
 use App\Services\Customers\CustomerService;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
@@ -21,12 +22,14 @@ class CustomerController extends Controller
     public function store(StoreCustomerRequest $request)
     {
         $this->customerService->create($request->validated());
+
         return back()->with('success', 'Data Pelanggan berhasil ditambahkan!');
     }
 
     public function update(UpdateCustomerRequest $request, Customer $customer)
     {
         $this->customerService->update($customer, $request->validated());
+
         return back()->with('success', 'Data Pelanggan berhasil diperbarui!');
     }
 
@@ -35,7 +38,7 @@ class CustomerController extends Controller
         $customerClone = clone $customer;
         $this->customerService->delete($customer);
 
-        \App\Services\ActivityLogger::log('Hapus Data Penting', "Menghapus pelanggan: {$customerClone->name}", $customerClone, ['customer_name' => $customerClone->name]);
+        ActivityLogger::log('Hapus Data Penting', "Menghapus pelanggan: {$customerClone->name}", $customerClone, ['customer_name' => $customerClone->name]);
 
         return back()->with('success', 'Data Pelanggan berhasil dinonaktifkan!');
     }
@@ -44,7 +47,7 @@ class CustomerController extends Controller
     {
         $customer = $this->customerService->restore($id);
 
-        \App\Services\ActivityLogger::log('Restore Data', "Memulihkan pelanggan: {$customer->name}", $customer, ['customer_name' => $customer->name]);
+        ActivityLogger::log('Restore Data', "Memulihkan pelanggan: {$customer->name}", $customer, ['customer_name' => $customer->name]);
 
         return back()->with('success', 'Data Pelanggan berhasil dipulihkan!');
     }
@@ -52,6 +55,7 @@ class CustomerController extends Controller
     public function membership(Request $request)
     {
         $data = $this->customerService->getMembershipPageData($request->all());
+
         return Inertia::render('customers/membership', $data);
     }
 }

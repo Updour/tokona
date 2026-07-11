@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PayrollComponent;
-use App\Models\Tenants;
 use App\Http\Requests\HRIS\StorePayrollComponentRequest;
 use App\Http\Requests\HRIS\UpdatePayrollComponentRequest;
+use App\Models\PayrollComponent;
+use App\Models\Tenants;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -46,7 +46,7 @@ class PayrollComponentController extends Controller
         } else {
             $validated['tenant_id'] = auth()->user()->tenant_id;
         }
-        
+
         $validated['is_taxable'] = $request->boolean('is_taxable', false);
 
         PayrollComponent::create($validated);
@@ -68,6 +68,7 @@ class PayrollComponentController extends Controller
     public function destroy(PayrollComponent $payrollComponent)
     {
         $payrollComponent->delete();
+
         return redirect()->back()->with('success', 'Komponen gaji berhasil dihapus.');
     }
 }

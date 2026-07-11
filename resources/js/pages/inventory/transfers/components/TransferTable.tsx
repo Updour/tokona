@@ -38,7 +38,7 @@ export default function TransferTable({ transfers, handleShip }: Props) {
                         <TableRow>
                             <TableHead className="font-semibold py-4">Tanggal</TableHead>
                             <TableHead className="font-semibold py-4">No Referensi</TableHead>
-                            <TableHead className="font-semibold py-4 w-[200px]">Rute Transfer</TableHead>
+                            <TableHead className="font-semibold py-4 min-w-[300px]">Rute Transfer</TableHead>
                             <TableHead className="font-semibold py-4 text-center">Jml Item</TableHead>
                             <TableHead className="font-semibold py-4">Status</TableHead>
                             <TableHead className="font-semibold py-4 text-right w-[80px]">Aksi</TableHead>
@@ -62,12 +62,14 @@ export default function TransferTable({ transfers, handleShip }: Props) {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-medium text-xs text-muted-foreground shrink-0 w-24 truncate" title={transfer.source_branch?.name || 'Pusat'}>
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-semibold text-sm text-slate-700 max-w-[180px] truncate" title={transfer.source_branch?.name || 'Pusat'}>
                                                 {transfer.source_branch?.name || 'Pusat'}
                                             </span>
-                                            <ArrowRightLeft className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-                                            <Badge variant="outline" className="font-normal bg-primary/5 text-primary border-primary/20 truncate max-w-[120px]" title={transfer.destination_branch?.name}>
+                                            <div className="flex items-center text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full shrink-0">
+                                                <ArrowRightLeft className="h-3 w-3" />
+                                            </div>
+                                            <Badge variant="outline" className="font-semibold bg-primary/10 text-primary border-primary/20 truncate max-w-[180px] py-1" title={transfer.destination_branch?.name}>
                                                 {transfer.destination_branch?.name}
                                             </Badge>
                                         </div>

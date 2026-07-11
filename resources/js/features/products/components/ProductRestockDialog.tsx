@@ -1,4 +1,4 @@
-import { formatNumber } from '@/lib/helpers/format';
+import { formatNumber, formatRupiah } from '@/lib/helpers/format';
 import { useForm } from '@inertiajs/react';
 import { PackagePlus, TrendingUp, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { useEffect } from 'react';
@@ -70,8 +70,8 @@ export function ProductRestockDialog() {
         e.preventDefault();
 
         if (!selectedProduct) {
-return;
-}
+            return;
+        }
 
         post(`/products/${selectedProduct.id}/restock`, {
             preserveScroll: true,
@@ -114,7 +114,7 @@ return;
                                 value={data.type}
                                 onValueChange={(v: any) => setData('type', v)}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger className='w-full'>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -150,7 +150,7 @@ return;
                                     value={data.qty}
                                     onChange={(e) => setData('qty', e.target.value)}
                                     placeholder={data.type === 'ADJUST' ? 'e.g. 10 atau -5' : 'e.g. 50'}
-                                    className="max-w-[160px] font-mono"
+                                    className="w-full font-mono"
                                     required
                                 />
                                 <span className="text-sm text-muted-foreground">unit</span>

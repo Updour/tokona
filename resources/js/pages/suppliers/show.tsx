@@ -17,20 +17,29 @@ interface Props {
 }
 
 export default function Show({ supplier, stats }: Props) {
-    const renderStatusBadge = (status: string) => {
-        if (status === 'draft') {
-return <Badge variant="outline" className="text-muted-foreground"><CircleDashed className="mr-1 h-3 w-3" /> Draft</Badge>;
-}
+    const renderStatusBadge = (po: any) => {
+        const status = po.status;
+        const paymentStatus = po.payment_status;
 
-        if (status === 'received') {
-return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200"><AlertCircle className="mr-1 h-3 w-3" /> Belum Lunas (Hutang)</Badge>;
-}
-
-        if (status === 'paid') {
-return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200"><CheckCircle2 className="mr-1 h-3 w-3" /> Lunas</Badge>;
-}
-
-        return <Badge>{status}</Badge>;
+        return (
+            <div className="flex flex-col gap-2 items-end">
+                {/* Status Barang */}
+                {status === 'draft' && <Badge variant="outline" className="text-muted-foreground"><CircleDashed className="mr-1 h-3 w-3" /> Draft</Badge>}
+                {status === 'received' && <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200"><CheckCircle2 className="mr-1 h-3 w-3" /> Diterima Gudang</Badge>}
+                {status === 'paid' && <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200"><Wallet className="mr-1 h-3 w-3" /> Selesai</Badge>}
+                
+                {/* Status Pembayaran */}
+                {status !== 'draft' && (
+                    paymentStatus === 'paid' ? (
+                        <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50 text-[10px] py-0">LUNAS</Badge>
+                    ) : paymentStatus === 'partial' ? (
+                        <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50 text-[10px] py-0">DICICIL / DP</Badge>
+                    ) : (
+                        <Badge variant="outline" className="text-destructive border-red-200 bg-red-50 text-[10px] py-0">BELUM DIBAYAR</Badge>
+                    )
+                )}
+            </div>
+        );
     };
 
     return (
@@ -38,15 +47,31 @@ return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 bo
             <Head title={`Profil Supplier: ${supplier.name}`} />
 
             {/* Header Actions */}
-            <div className="flex items-center gap-4 mb-6">
-                <Button variant="outline" size="icon" asChild>
-                    <Link href="/suppliers"><ArrowLeft className="h-4 w-4" /></Link>
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Profil Pemasok</h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Informasi lengkap dan rekap transaksi dengan {supplier.name}
-                    </p>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div className="flex items-center gap-4">
+                    <Button variant="outline" size="icon" asChild>
+                        <Link href="/suppliers"><ArrowLeft className="h-4 w-4" /></Link>
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">Profil Pemasok</h1>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Informasi lengkap dan rekap transaksi dengan {supplier.name}
+                        </p>
+                    </div>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    {stats.total_hutang > 0 && (
+                        <Button className="bg-rose-600 hover:bg-rose-700 font-bold" asChild>
+                            <Link href={`/purchases?supplier_id=${supplier.id}&status=partial`}>
+                                <Wallet className="mr-2 h-4 w-4" /> Bayar Hutang
+                            </Link>
+                        </Button>
+                    )}
+                    <Button variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-50" asChild>
+                        <Link href={`/purchases/create?supplier_id=${supplier.id}`}>
+                            Catat PO Baru
+                        </Link>
+                    </Button>
                 </div>
             </div>
 
@@ -141,25 +166,36 @@ return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 bo
                                 </TableHeader>
                                 <TableBody>
                                     {supplier.purchases?.length ? (
-                                        supplier.purchases.map((po: any) => (
-                                            <TableRow key={po.id}>
-                                                <TableCell className="text-sm">
-                                                    {new Date(po.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Link href={`/purchases/${po.id}`} className="font-mono font-medium text-primary hover:underline">
-                                                        {po.invoice_number || 'Draft...'}
-                                                    </Link>
-                                                </TableCell>
-                                                <TableCell className="text-sm">{po.branch?.name || '-'}</TableCell>
-                                                <TableCell className="text-right font-semibold">
-                                                    {formatRupiah(po.total_cost)}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    {renderStatusBadge(po.status)}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
+                                        supplier.purchases.map((po: any) => {
+                                            const total = Number(po.total_cost || 0);
+                                            const paid = Number(po.amount_paid || 0);
+                                            const remaining = Math.max(0, total - paid);
+
+                                            return (
+                                                <TableRow key={po.id}>
+                                                    <TableCell className="text-sm">
+                                                        {new Date(po.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Link href={`/purchases/${po.id}`} className="font-mono font-medium text-primary hover:underline">
+                                                            {po.invoice_number || 'Draft...'}
+                                                        </Link>
+                                                    </TableCell>
+                                                    <TableCell className="text-sm">{po.branch?.name || '-'}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex flex-col gap-1 items-end">
+                                                            <span className="font-bold">{formatRupiah(total)}</span>
+                                                            {remaining > 0 && po.status !== 'draft' ? (
+                                                                <span className="text-xs font-semibold text-destructive">Sisa: {formatRupiah(remaining)}</span>
+                                                            ) : null}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        {renderStatusBadge(po)}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })
                                     ) : (
                                         <TableRow>
                                             <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">

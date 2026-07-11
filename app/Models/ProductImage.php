@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +12,8 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductImage extends Model
 {
+    use LogsActivity;
+
     use HasFactory, HasUuids;
 
     protected $table = 'product_images';
@@ -26,8 +30,8 @@ class ProductImage extends Model
     protected function casts(): array
     {
         return [
-            'is_primary'  => 'boolean',
-            'sort_order'  => 'integer',
+            'is_primary' => 'boolean',
+            'sort_order' => 'integer',
         ];
     }
 
@@ -42,7 +46,7 @@ class ProductImage extends Model
 
     public function getUrlAttribute($value)
     {
-        return $this->path ? asset('storage/' . $this->path) : $value;
+        return $this->path ? asset('storage/'.$this->path) : $value;
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

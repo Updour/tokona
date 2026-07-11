@@ -2,13 +2,18 @@
 
 namespace App\Services;
 
-use App\Models\Transaction;
-use App\Models\Branch;
-use App\Exports\TransactionsExport;
+use App\Exports\InventoryExport;
+use App\Exports\ProductPerformanceExport;
+use App\Exports\SalesFieldExport;
 use App\Exports\SalesReportExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\StockValuationExport;
+use App\Exports\TransactionsExport;
+use App\Exports\CustomersExport;
+use App\Exports\ConsignmentExport;
+use App\Models\BranchTransfer;
+use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ExportService
@@ -19,38 +24,44 @@ class ExportService
 
     public function exportTransactionsToExcel(array $filters): BinaryFileResponse
     {
-        $filename = 'daftar-transaksi-' . now()->format('YmdHis') . '.xlsx';
+        $filename = 'daftar-transaksi-'.now()->format('YmdHis').'.xlsx';
+
         return Excel::download(new TransactionsExport($filters), $filename);
     }
 
     public function exportSalesReportToExcel(array $filters): BinaryFileResponse
     {
-        $filename = 'laporan-penjualan-' . now()->format('YmdHis') . '.xlsx';
+        $filename = 'laporan-penjualan-'.now()->format('YmdHis').'.xlsx';
+
         return Excel::download(new SalesReportExport($filters), $filename);
     }
 
     public function exportProductReportToExcel(array $filters): BinaryFileResponse
     {
-        $filename = 'laporan-performa-produk-' . now()->format('YmdHis') . '.xlsx';
-        return Excel::download(new \App\Exports\ProductPerformanceExport($filters), $filename);
+        $filename = 'laporan-performa-produk-'.now()->format('YmdHis').'.xlsx';
+
+        return Excel::download(new ProductPerformanceExport($filters), $filename);
     }
 
     public function exportStockReportToExcel(array $filters): BinaryFileResponse
     {
-        $filename = 'laporan-valuasi-stok-' . now()->format('YmdHis') . '.xlsx';
-        return Excel::download(new \App\Exports\StockValuationExport($filters), $filename);
+        $filename = 'laporan-valuasi-stok-'.now()->format('YmdHis').'.xlsx';
+
+        return Excel::download(new StockValuationExport($filters), $filename);
     }
 
     public function exportSalesFieldReportToExcel(array $filters): BinaryFileResponse
     {
-        $filename = 'laporan-sales-lapangan-' . now()->format('YmdHis') . '.xlsx';
-        return Excel::download(new \App\Exports\SalesFieldExport($filters), $filename);
+        $filename = 'laporan-sales-lapangan-'.now()->format('YmdHis').'.xlsx';
+
+        return Excel::download(new SalesFieldExport($filters), $filename);
     }
 
     public function exportInventoryToExcel(array $filters): BinaryFileResponse
     {
-        $filename = 'riwayat-mutasi-stok-' . now()->format('YmdHis') . '.xlsx';
-        return Excel::download(new \App\Exports\InventoryExport($filters), $filename);
+        $filename = 'riwayat-mutasi-stok-'.now()->format('YmdHis').'.xlsx';
+
+        return Excel::download(new InventoryExport($filters), $filename);
     }
 
     // =========================================================================
@@ -67,14 +78,15 @@ class ExportService
 
         $html = view('exports.transactions-pdf', [
             'transactions' => $transactions,
-            'filters'      => $filters,
-            'totalAmount'  => $totalAmount,
-            'branchName'   => auth()->user()->branch?->name ?? 'Semua Cabang',
-            'generatedAt'  => now()->format('d-m-Y H:i:s'),
+            'filters' => $filters,
+            'totalAmount' => $totalAmount,
+            'branchName' => auth()->user()->branch?->name ?? 'Semua Cabang',
+            'generatedAt' => now()->format('d-m-Y H:i:s'),
         ])->render();
 
         $pdf = Pdf::loadHTML($html);
-        return $pdf->download('daftar-transaksi-' . now()->format('YmdHis') . '.pdf');
+
+        return $pdf->download('daftar-transaksi-'.now()->format('YmdHis').'.pdf');
     }
 
     public function exportInvoiceToPdf(Transaction $transaction)
@@ -88,6 +100,34 @@ class ExportService
 
         $pdf = Pdf::loadHTML($html);
         $safeInvoiceNumber = str_replace(['/', '\\'], '-', $transaction->invoice_number);
-        return $pdf->download('invoice-' . $safeInvoiceNumber . '.pdf');
+
+        return $pdf->download('invoice-'.$safeInvoiceNumber.'.pdf');
+    }
+
+    public function exportDeliveryNoteToPdf(BranchTransfer $transfer)
+    {
+        $transfer->load(['items.product', 'sourceBranch', 'destinationBranch', 'creator', 'receiver']);
+
+        $html = view('exports.delivery-note-pdf', [
+            'transfer' => $transfer,
+            'generatedAt' => now()->format('d-m-Y H:i:s'),
+        ])->render();
+
+        $pdf = Pdf::loadHTML($html);
+        $safeRefNumber = str_replace(['/', '\\'], '-', $transfer->reference_number);
+
+        return $pdf->download('surat-jalan-'.$safeRefNumber.'.pdf');
+    }
+
+    public function exportCustomersToExcel(array $filters)
+    {
+        $filename = 'daftar-pelanggan-'.now()->format('YmdHis').'.xlsx';
+        return Excel::download(new CustomersExport($filters), $filename);
+    }
+
+    public function exportConsignmentsToExcel(array $filters)
+    {
+        $filename = 'rekap-barang-titipan-'.now()->format('YmdHis').'.xlsx';
+        return Excel::download(new ConsignmentExport($filters), $filename);
     }
 }

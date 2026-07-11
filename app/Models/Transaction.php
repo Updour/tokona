@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -28,6 +28,8 @@ class Transaction extends Model
         'paid_amount',
         'change_amount',
         'payment_method',
+        'payment_status',
+        'due_date',
         'status',
         'created_by',
     ];
@@ -79,6 +81,11 @@ class Transaction extends Model
     public function items(): HasMany
     {
         return $this->hasMany(TransactionItem::class, 'transaction_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(TransactionPayment::class, 'transaction_id');
     }
 
     public function scopeFilter($query, array $filters)

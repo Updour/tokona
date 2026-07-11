@@ -5,8 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import MainLayout from '@/layouts/app/app-main-layout';
+import PlanFormDialog from './components/PlanFormDialog';
 
-export default function Plans() {
+export default function Plans({ plans }: { plans: any[] }) {
+    const [selectedPlan, setSelectedPlan] = React.useState<any>(null);
+
     return (
         <MainLayout>
             <Head title="Manajemen Paket SaaS" />
@@ -24,139 +27,59 @@ export default function Plans() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                    {/* Free Plan */}
-                    <Card className="relative flex flex-col border-slate-200 bg-white/70 backdrop-blur-sm shadow-sm transition-all hover:shadow-md">
-                        <div className="absolute top-0 left-0 w-full h-[4px] bg-slate-400 rounded-t-xl" />
-                        <CardHeader className="text-center pb-4 pt-8">
-                            <CardTitle className="text-xl font-black text-slate-800">FREE TRIAL</CardTitle>
-                            <CardDescription className="text-xs font-semibold text-slate-500 mt-2">
-                                Paket dasar untuk uji coba platform
-                            </CardDescription>
-                            <div className="mt-4 flex items-center justify-center gap-1">
-                                <span className="text-4xl font-black text-slate-900">Rp 0</span>
-                                <span className="text-sm text-slate-500 font-semibold self-end mb-1">/ bulan</span>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="flex-1">
-                            <ul className="space-y-3 text-sm text-slate-600">
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                                    <span>Maksimal <strong>1 Cabang</strong> Toko</span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                                    <span>Maksimal <strong>3 Karyawan</strong></span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                                    <span>Maksimal <strong>100 Produk</strong> Master</span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                                    <span>Fitur POS Dasar</span>
-                                </li>
-                                <li className="flex items-center gap-2 opacity-50">
-                                    <X className="h-4 w-4 text-rose-500 shrink-0" />
-                                    <span className="line-through">Integrasi Digital Struk WA</span>
-                                </li>
-                                <li className="flex items-center gap-2 opacity-50">
-                                    <X className="h-4 w-4 text-rose-500 shrink-0" />
-                                    <span className="line-through">Laporan Finansial Advanced</span>
-                                </li>
-                            </ul>
-                        </CardContent>
-                    </Card>
-
-                    {/* Pro Plan */}
-                    <Card className="relative flex flex-col border-indigo-200 bg-indigo-50/30 backdrop-blur-sm shadow-md transition-all hover:shadow-lg scale-105 z-10 ring-1 ring-indigo-500/20">
-                        <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-t-xl" />
-                        
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
-                            <Star className="h-3 w-3" fill="currentColor" />
-                            Paling Populer
-                        </div>
-
-                        <CardHeader className="text-center pb-4 pt-8">
-                            <CardTitle className="text-xl font-black text-indigo-900">PRO</CardTitle>
-                            <CardDescription className="text-xs font-semibold text-indigo-600/70 mt-2">
-                                Untuk bisnis UMKM yang sedang berkembang
-                            </CardDescription>
-                            <div className="mt-4 flex items-center justify-center gap-1">
-                                <span className="text-4xl font-black text-indigo-950">199rb</span>
-                                <span className="text-sm text-indigo-600/70 font-semibold self-end mb-1">/ bulan</span>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="flex-1">
-                            <ul className="space-y-3 text-sm text-slate-700">
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-indigo-500 shrink-0" />
-                                    <span>Maksimal <strong>3 Cabang</strong> Toko</span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-indigo-500 shrink-0" />
-                                    <span>Maksimal <strong>15 Karyawan</strong></span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-indigo-500 shrink-0" />
-                                    <span>Maksimal <strong>1,000 Produk</strong> Master</span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-indigo-500 shrink-0" />
-                                    <span className="font-bold text-indigo-900">Digital Struk WhatsApp</span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-indigo-500 shrink-0" />
-                                    <span>Laporan Finansial Advanced</span>
-                                </li>
-                            </ul>
-                        </CardContent>
-                    </Card>
-
-                    {/* Enterprise Plan */}
-                    <Card className="relative flex flex-col border-rose-200 bg-white/70 backdrop-blur-sm shadow-sm transition-all hover:shadow-md">
-                        <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-rose-400 to-pink-500 rounded-t-xl" />
-                        <CardHeader className="text-center pb-4 pt-8">
-                            <CardTitle className="text-xl font-black text-slate-800">ENTERPRISE</CardTitle>
-                            <CardDescription className="text-xs font-semibold text-slate-500 mt-2">
-                                Akses tanpa batas untuk franchise besar
-                            </CardDescription>
-                            <div className="mt-4 flex items-center justify-center gap-1">
-                                <span className="text-4xl font-black text-slate-900">499rb</span>
-                                <span className="text-sm text-slate-500 font-semibold self-end mb-1">/ bulan</span>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="flex-1">
-                            <ul className="space-y-3 text-sm text-slate-600">
-                                <li className="flex items-center gap-2">
-                                    <Zap className="h-4 w-4 text-rose-500 shrink-0" />
-                                    <span className="font-bold text-slate-900">Cabang Tidak Terbatas</span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Zap className="h-4 w-4 text-rose-500 shrink-0" />
-                                    <span className="font-bold text-slate-900">Karyawan Tidak Terbatas</span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Zap className="h-4 w-4 text-rose-500 shrink-0" />
-                                    <span className="font-bold text-slate-900">Produk Tidak Terbatas</span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                                    <span>Digital Struk WhatsApp</span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                                    <span>Laporan Finansial Advanced</span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                                    <span>Prioritas Dukungan Teknis</span>
-                                </li>
-                            </ul>
-                        </CardContent>
-                    </Card>
+                    {plans.map((plan: any) => (
+                        <Card key={plan.id} className="relative flex flex-col border-slate-200 bg-white/70 backdrop-blur-sm shadow-sm transition-all hover:shadow-md">
+                            <div className={`absolute top-0 left-0 w-full h-[4px] rounded-t-xl ${plan.slug === 'pro' ? 'bg-indigo-500' : plan.slug === 'enterprise' ? 'bg-amber-500' : 'bg-slate-400'}`} />
+                            <CardHeader className="text-center pb-4 pt-8">
+                                <CardTitle className="text-xl font-black text-slate-800 uppercase">{plan.name}</CardTitle>
+                                <CardDescription className="text-xs font-semibold text-slate-500 mt-2">
+                                    {plan.description}
+                                </CardDescription>
+                                <div className="mt-4 flex items-center justify-center gap-1">
+                                    <span className="text-4xl font-black text-slate-900">Rp {Number(plan.price).toLocaleString('id-ID')}</span>
+                                    <span className="text-sm text-slate-500 font-semibold self-end mb-1">/ bulan</span>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="flex-1">
+                                <ul className="space-y-3 text-sm text-slate-600">
+                                    <li className="flex items-center gap-2">
+                                        <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                                        <span>Maksimal <strong>{plan.max_branches === 999999 ? 'Tanpa Batas' : plan.max_branches} Cabang</strong> Toko</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                                        <span>Maksimal <strong>{plan.max_users === 999999 ? 'Tanpa Batas' : plan.max_users} Karyawan</strong></span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                                        <span>Maksimal <strong>{plan.max_products === 999999 ? 'Tanpa Batas' : plan.max_products} Produk</strong></span>
+                                    </li>
+                                    
+                                    {(Array.isArray(plan.features) ? plan.features : (typeof plan.features === 'string' ? JSON.parse(plan.features) : [])).map((feature: string, idx: number) => (
+                                        <li key={idx} className="flex items-start gap-2">
+                                            <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                                            <span>{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                            <CardFooter>
+                                <Button variant="outline" className="w-full bg-white hover:bg-slate-50 border-dashed" onClick={() => setSelectedPlan(plan)}>
+                                    Edit Paket
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
                 </div>
+            </div>
 
-                {/* Footer Notice */}
+            <PlanFormDialog 
+                plan={selectedPlan} 
+                isOpen={!!selectedPlan} 
+                onClose={() => setSelectedPlan(null)} 
+            />
+
+            {/* Footer Notice */}
                 <div className="mt-6 p-4 rounded-xl bg-blue-50 border border-blue-100 flex items-start gap-3">
                     <Building2 className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                     <div>
@@ -174,8 +97,6 @@ export default function Plans() {
                         </Button>
                     </div>
                 </div>
-
-            </div>
         </MainLayout>
     );
 }

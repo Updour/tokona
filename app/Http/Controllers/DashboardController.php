@@ -19,12 +19,14 @@ class DashboardController extends Controller
     public function index(Request $request): Response
     {
         $data = $this->reportService->getReportsData($request->all());
+
         return Inertia::render('dashboard/index', $data);
     }
 
     public function sales(Request $request): Response
     {
         $data = $this->reportService->getSalesDashboardData($request->all());
+
         return Inertia::render('dashboard/sales', $data);
     }
 }

@@ -17,18 +17,35 @@ use Illuminate\Support\Facades\DB;
 class ProductQuery
 {
     private const ALLOWED_SORTS = [
-        'name', 'sku', 'sell_price', 'base_cost',
-        'created_at', 'is_active', 'current_stock',
+        'name',
+        'sku',
+        'sell_price',
+        'base_cost',
+        'created_at',
+        'is_active',
+        'current_stock',
     ];
 
     private const FILTER_KEYS = [
-        'search', 'sort', 'direction', 'per_page',
-        'category_id', 'type_id', 'is_active', 'low_stock',
-        'date_from', 'date_to', 'tenant_id', 'branch_id',
-        'price_min', 'price_max',
+        'search',
+        'sort',
+        'direction',
+        'per_page',
+        'category_id',
+        'type_id',
+        'is_active',
+        'low_stock',
+        'date_from',
+        'date_to',
+        'tenant_id',
+        'branch_id',
+        'price_min',
+        'price_max',
     ];
 
-    public function __construct(private readonly Request $request) {}
+    public function __construct(private readonly Request $request)
+    {
+    }
 
     /** Jalankan query dan kembalikan hasil paginasi. */
     public function paginate(): LengthAwarePaginator
@@ -60,6 +77,7 @@ class ProductQuery
         $this->applyDateRange($query);
         $this->applyLowStockFilter($query);
         $this->applyPriceRange($query);
+        $this->applyTrashedFilter($query);
         $this->applySort($query);
 
         return $query;
@@ -136,13 +154,23 @@ class ProductQuery
         );
     }
 
+    private function applyTrashedFilter($query): void
+    {
+        if ($this->request->input('trashed') === 'only') {
+            $query->onlyTrashed();
+        } elseif ($this->request->input('trashed') === 'with') {
+            $query->withTrashed();
+        }
+    }
+
     private function applySort($query): void
     {
-        $field     = $this->request->input('sort', 'created_at');
+        $field = $this->request->input('sort', 'created_at');
         $direction = $this->request->input('direction', 'desc') === 'asc' ? 'asc' : 'desc';
 
         if (!in_array($field, self::ALLOWED_SORTS)) {
             $query->orderBy('products.created_at', 'desc');
+
             return;
         }
 

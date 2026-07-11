@@ -1,5 +1,6 @@
-import { Edit, Trash2, GripVertical } from 'lucide-react';
+import { Edit, Trash2, GripVertical, ExternalLink } from 'lucide-react';
 import React from 'react';
+import { Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -45,7 +46,15 @@ export function MenuTable({ flatMenus }: { flatMenus: any[] }) {
                                         )}
                                     </div>
                                 </TableCell>
-                                <TableCell className="font-mono text-xs text-indigo-600">{m.href || '-'}</TableCell>
+                                <TableCell className="font-mono text-xs text-indigo-600">
+                                    {m.href && m.href !== '#' ? (
+                                        <Link href={m.href} className="flex items-center gap-1 hover:underline hover:text-indigo-800 w-fit">
+                                            {m.href} <ExternalLink className="h-3 w-3" />
+                                        </Link>
+                                    ) : (
+                                        <span className="text-slate-400">{m.href || '-'}</span>
+                                    )}
+                                </TableCell>
                                 <TableCell>
                                     {m.permission_key ? (
                                         <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-1 text-[10px] font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">

@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreRoleRequest;
+use App\Http\Requests\UpdateRoleRequest;
 use App\Models\Role;
 use App\Services\RoleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
-
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class RoleController extends Controller implements HasMiddleware
 {
@@ -25,9 +26,10 @@ class RoleController extends Controller implements HasMiddleware
     {
         return [
             new Middleware(function ($request, $next) {
-                if (!auth()->user()->isSuperAdmin() && !auth()->user()->isOwner()) {
+                if (! auth()->user()->isSuperAdmin() && ! auth()->user()->isOwner()) {
                     abort(403, 'Akses ditolak. Hanya Super Admin dan Pemilik Toko yang dapat mengelola hak akses dan peran.');
                 }
+
                 return $next($request);
             }),
         ];
@@ -39,24 +41,27 @@ class RoleController extends Controller implements HasMiddleware
     public function index(Request $request): Response
     {
         $data = $this->roleService->getRoleListData($request->all());
+
         return Inertia::render('roles/Index', $data);
     }
 
     /**
      * Simpan role baru.
      */
-    public function store(\App\Http\Requests\StoreRoleRequest $request): RedirectResponse
+    public function store(StoreRoleRequest $request): RedirectResponse
     {
         $this->roleService->createRole($request->validated());
+
         return redirect()->back()->with('success', 'Role baru berhasil dibuat.');
     }
 
     /**
      * Update role & sync permissions.
      */
-    public function update(\App\Http\Requests\UpdateRoleRequest $request, Role $role): RedirectResponse
+    public function update(UpdateRoleRequest $request, Role $role): RedirectResponse
     {
         $this->roleService->updateRole($role, $request->validated());
+
         return redirect()->back()->with('success', 'Role & Hak Akses berhasil diperbarui.');
     }
 

@@ -20,9 +20,11 @@ export function EmployeeDeleteDialog() {
 
     const handleDelete = () => {
         setIsDeleting(true);
+        closeDelete(); // Tutup popup seketika agar terasa instan (optimistic close)
+        
         router.delete(employeesDestroy(employee.id).url, {
             preserveScroll: true,
-            onSuccess: () => closeDelete(),
+            preserveState: true,
             onFinish: () => setIsDeleting(false),
         });
     };

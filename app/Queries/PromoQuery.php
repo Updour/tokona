@@ -16,7 +16,7 @@ class PromoQuery
             ->withQueryString();
 
         return [
-            'promos'  => $promos,
+            'promos' => $promos,
             'filters' => $this->request->only(['search', 'type', 'status']),
         ];
     }
@@ -28,6 +28,7 @@ class PromoQuery
         $this->applyTypeFilter($query);
         $this->applyStatusFilter($query);
         $query->orderBy('created_at', 'desc');
+
         return $query;
     }
 

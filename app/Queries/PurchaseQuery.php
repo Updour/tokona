@@ -2,6 +2,7 @@
 
 namespace App\Queries;
 
+use App\Models\Branch;
 use App\Models\Purchase;
 use Illuminate\Http\Request;
 
@@ -15,12 +16,12 @@ class PurchaseQuery
             ->paginate($this->request->integer('per_page', 15))
             ->withQueryString();
 
-        $branches = \App\Models\Branch::select('id', 'name')->orderBy('name')->get();
+        $branches = Branch::select('id', 'name')->orderBy('name')->get();
 
         return [
             'purchases' => $purchases,
-            'branches'  => $branches,
-            'filters'   => $this->request->only(['search', 'status', 'branch_id', 'start_date', 'end_date']),
+            'branches' => $branches,
+            'filters' => $this->request->only(['search', 'status', 'branch_id', 'start_date', 'end_date', 'supplier_id']),
         ];
     }
 
@@ -33,9 +34,17 @@ class PurchaseQuery
         $this->applyStatusFilter($query);
         $this->applyBranchFilter($query);
         $this->applyDateFilter($query);
+        $this->applySupplierFilter($query);
         $this->applySort($query);
 
         return $query;
+    }
+
+    private function applySupplierFilter($query): void
+    {
+        if ($this->request->filled('supplier_id') && $this->request->input('supplier_id') !== 'ALL') {
+            $query->where('supplier_id', $this->request->input('supplier_id'));
+        }
     }
 
     private function applySearch($query): void

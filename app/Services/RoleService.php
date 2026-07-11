@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\Role;
 use App\Models\Permission;
+use App\Models\Role;
+use App\Models\Tenants;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -15,15 +16,15 @@ class RoleService
     public function getRoleListData(array $filters): array
     {
         $tenantId = auth()->user()->tenant_id;
-        if (auth()->user()->isSuperAdmin() && !$tenantId) {
-            $tenantId = \App\Models\Tenants::first()?->id;
+        if (auth()->user()->isSuperAdmin() && ! $tenantId) {
+            $tenantId = Tenants::first()?->id;
         }
 
         // Scoped by tenant
         $rolesQuery = Role::where('tenant_id', $tenantId)
             ->with('permissions');
 
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $rolesQuery->where('name', '!=', 'super-admin');
         }
 
@@ -32,7 +33,7 @@ class RoleService
         // Get all available permissions grouped by module for the UI
         $permissionsQuery = Permission::orderBy('module')->orderBy('name');
 
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $permissionsQuery->where('key', '!=', 'superadmin.access');
         }
 
@@ -51,8 +52,8 @@ class RoleService
     {
         return DB::transaction(function () use ($data) {
             $tenantId = auth()->user()->tenant_id;
-            if (auth()->user()->isSuperAdmin() && !$tenantId) {
-                $tenantId = \App\Models\Tenants::first()?->id;
+            if (auth()->user()->isSuperAdmin() && ! $tenantId) {
+                $tenantId = Tenants::first()?->id;
             }
 
             $role = Role::create([
@@ -61,7 +62,7 @@ class RoleService
                 'description' => $data['description'] ?? null,
             ]);
 
-            if (!empty($data['permissions'])) {
+            if (! empty($data['permissions'])) {
                 $role->permissions()->sync($data['permissions']);
             }
 

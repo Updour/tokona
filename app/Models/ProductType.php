@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductType extends Model
 {
+    use LogsActivity;
+
     use HasFactory, HasUuids;
 
     protected $table = 'product_types';
@@ -28,7 +32,7 @@ class ProductType extends Model
     /** Hanya ambil kolom yang dibutuhkan untuk dropdown form. */
     public function scopeForDropdown(Builder $query): Builder
     {
-        return $query->select('id', 'name')->orderBy('name');
+        return $query->select('id', 'name', 'tenant_id')->orderBy('name');
     }
 
     /** Filter berdasarkan pencarian nama. */
@@ -40,7 +44,7 @@ class ProductType extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('tenant', function ($query) {
-            if (auth()->check() && !auth()->user()->isSuperAdmin()) {
+            if (auth()->check() && ! auth()->user()->isSuperAdmin()) {
                 $query->where('product_types.tenant_id', auth()->user()->tenant_id);
             }
         });

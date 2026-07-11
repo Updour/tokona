@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Tenants;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
-
 use App\Http\Requests\Tenants\StoreTenantRequest;
 use App\Http\Requests\Tenants\UpdateTenantRequest;
+use App\Models\Branch;
+use App\Models\Tenants;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class TenantsController extends Controller
 {
@@ -19,7 +19,6 @@ class TenantsController extends Controller
     public function index(Request $request)
     {
         $query = Tenants::with('location');
-
 
         if (auth()->user()->isSuperAdmin()) {
             $query->withoutGlobalScopes();
@@ -85,15 +84,34 @@ class TenantsController extends Controller
         ]);
 
         // Auto-create default branch (HQ) for this tenant
-        \App\Models\Branch::create([
+        $words = preg_split('/\s+/', trim($tenant->name));
+        $initials = '';
+        if (count($words) > 1) {
+            foreach ($words as $w) {
+                $initials .= strtoupper(substr($w, 0, 1));
+            }
+            $initials = substr(preg_replace('/[^A-Z0-9]/', '', $initials), 0, 3);
+        } else {
+            $noVowels = str_ireplace(['a', 'e', 'i', 'o', 'u'], '', $tenant->name);
+            if (empty(trim($noVowels))) {
+                $noVowels = $tenant->name;
+            }
+            $initials = strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $noVowels), 0, 3));
+        }
+
+        if (empty($initials)) {
+            $initials = '001';
+        }
+
+        Branch::create([
             'tenant_id' => $tenant->id,
-            'name' => 'Cabang Pusat (HQ)',
-            'code' => 'HQ-01',
+            'name' => 'Cabang Pusat (HQ) - ' . $tenant->name,
+            'code' => 'HQ-' . $initials,
             'is_main' => true,
         ]);
 
         return redirect()->route('tenants.index')
-            ->with('success', 'Tenant created successfully.');
+            ->with('success', 'Tenant ' . $tenant->name . ' created successfully.');
     }
 
     /**
@@ -155,6 +173,6 @@ class TenantsController extends Controller
         $tenant = Tenants::withoutGlobalScopes()->findOrFail($id);
         $tenant->delete();
 
-        return back()->with('success', 'Tenant deleted successfully.');
+        return back()->with('success', 'Tenant "' . $tenant->name . '" deleted successfully.');
     }
 }

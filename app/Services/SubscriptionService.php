@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\Tenants;
+use App\Models\Branch;
 use App\Models\Products;
-use App\Models\User;
-use App\Models\Branch; // or TenantLocations
+use App\Models\Tenants;
+use App\Models\User; // or TenantLocations
 
 class SubscriptionService
 {
@@ -30,9 +30,26 @@ class SubscriptionService
     /**
      * Get active plan limits for a tenant.
      */
-    public function getLimits(string $plan): array
+    public function getLimits(string $planSlug): array
     {
-        return self::PLAN_LIMITS[$plan] ?? self::PLAN_LIMITS['free'];
+        $limits = \Illuminate\Support\Facades\Cache::rememberForever('plan_limits_' . $planSlug, function () use ($planSlug) {
+            $plan = \App\Models\Plan::where('slug', $planSlug)->first();
+            if ($plan) {
+                return [
+                    'branches' => $plan->max_branches,
+                    'products' => $plan->max_products,
+                    'users' => $plan->max_users,
+                ];
+            }
+            return null;
+        });
+
+        if ($limits) {
+            return $limits;
+        }
+
+        // Fallback if not found in db
+        return self::PLAN_LIMITS[$planSlug] ?? self::PLAN_LIMITS['free'];
     }
 
     /**
@@ -42,6 +59,7 @@ class SubscriptionService
     {
         $limits = $this->getLimits($tenant->plan);
         $currentCount = Branch::where('tenant_id', $tenant->id)->count();
+
         return $currentCount < $limits['branches'];
     }
 
@@ -51,9 +69,10 @@ class SubscriptionService
     public function canAddProduct(Tenants $tenant): bool
     {
         $limits = $this->getLimits($tenant->plan);
-        
+
         // Count products for this tenant
         $currentCount = Products::where('tenant_id', $tenant->id)->count();
+
         return $currentCount < $limits['products'];
     }
 
@@ -63,9 +82,10 @@ class SubscriptionService
     public function canAddUser(Tenants $tenant): bool
     {
         $limits = $this->getLimits($tenant->plan);
-        
+
         // Count users for this tenant
         $currentCount = User::where('tenant_id', $tenant->id)->count();
+
         return $currentCount < $limits['users'];
     }
 }

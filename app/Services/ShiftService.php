@@ -2,14 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\Account;
+use App\Models\Branch;
+use App\Models\CashBook;
 use App\Models\CashRegisterShift;
 use App\Models\Transaction;
-use App\Models\Expense;
-use App\Models\CashBook;
-use App\Models\Branch;
-use App\Services\AccountingService;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
-use Illuminate\Support\Facades\DB;
 
 class ShiftService
 {
@@ -26,11 +25,11 @@ class ShiftService
         $query = CashRegisterShift::with(['user:id,name', 'branch:id,name'])
             ->withCount('transactions');
 
-        if (!empty($filters['status']) && $filters['status'] !== 'ALL') {
+        if (! empty($filters['status']) && $filters['status'] !== 'ALL') {
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $query->whereHas('user', fn ($q) => $q->where('name', 'like', "%{$filters['search']}%"));
         }
 
@@ -40,7 +39,7 @@ class ShiftService
             ->withQueryString();
 
         return [
-            'shifts'  => $shifts,
+            'shifts' => $shifts,
             'filters' => collect($filters)->only(['search', 'status', 'per_page'])->toArray(),
         ];
     }
@@ -86,20 +85,20 @@ class ShiftService
         }
 
         $shift = CashRegisterShift::create([
-            'tenant_id'       => $tenantId,
-            'branch_id'       => $branchId,
-            'user_id'         => auth()->id(),
-            'opened_at'       => now(),
+            'tenant_id' => $tenantId,
+            'branch_id' => $branchId,
+            'user_id' => auth()->id(),
+            'opened_at' => now(),
             'opening_balance' => $data['opening_balance'] ?? 0,
-            'notes'           => $data['notes'] ?? null,
-            'status'          => 'open',
+            'notes' => $data['notes'] ?? null,
+            'status' => 'open',
         ]);
 
         // Auto clock-in for the cashier
         try {
             $this->attendanceService->clockIn([
                 'notes' => 'Auto clock-in via Buka Shift Kasir',
-                'branch_id' => $branchId
+                'branch_id' => $branchId,
             ]);
         } catch (\Exception $e) {
             // Silently ignore if they are already clocked in
@@ -114,20 +113,30 @@ class ShiftService
 
     public function closeShift(CashRegisterShift $shift, array $data): CashRegisterShift
     {
-        // Hitung expected balance = opening + total penjualan kas dalam shift ini
-        $cashSales = Transaction::where('shift_id', $shift->id)
+        // Hitung expected balance = opening + total penjualan kas langsung + split payment tunai + cicilan piutang tunai dalam shift ini
+        $directCashSales = Transaction::where('shift_id', $shift->id)
             ->where('status', 'paid')
             ->where('payment_method', 'cash')
             ->sum('total');
 
-        $expectedBalance = (float) $shift->opening_balance + (float) $cashSales;
+        $splitCashSales = Transaction::where('shift_id', $shift->id)
+            ->where('status', 'paid')
+            ->where('payment_method', 'split')
+            ->sum('cash_amount');
+
+        $cashDebtPayments = \App\Models\TransactionPayment::where('created_by', $shift->user_id)
+            ->where('payment_method', 'cash')
+            ->whereBetween('created_at', [$shift->opened_at, now()])
+            ->sum('amount');
+
+        $expectedBalance = (float) $shift->opening_balance + (float) $directCashSales + (float) $splitCashSales + (float) $cashDebtPayments;
 
         $shift->update([
-            'closed_at'        => now(),
-            'closing_balance'  => $data['closing_balance'] ?? 0,
+            'closed_at' => now(),
+            'closing_balance' => $data['closing_balance'] ?? 0,
             'expected_balance' => $expectedBalance,
-            'notes'            => $data['notes'] ?? $shift->notes,
-            'status'           => 'closed',
+            'notes' => $data['notes'] ?? $shift->notes,
+            'status' => 'closed',
         ]);
 
         // AKUNTANSI KEUANGAN: Catat setoran fisik dari Laci (Shift) ke Buku Kas (Perusahaan)
@@ -144,7 +153,7 @@ class ShiftService
                 'amount' => $cashToDeposit,
                 'reference_type' => 'shift',
                 'reference_id' => $shift->id,
-                'note' => 'Setoran Tunai Shift Kasir: ' . auth()->user()->name,
+                'note' => 'Setoran Tunai Shift Kasir: '.auth()->user()->name,
                 'created_by' => auth()->id() ?? $shift->tenant_id,
             ]);
         }
@@ -161,7 +170,7 @@ class ShiftService
                 'amount' => $shortage,
                 'reference_type' => 'shift',
                 'reference_id' => $shift->id,
-                'note' => 'Selisih Kurang Setoran Shift Kasir: ' . auth()->user()->name,
+                'note' => 'Selisih Kurang Setoran Shift Kasir: '.auth()->user()->name,
                 'created_by' => auth()->id() ?? $shift->tenant_id,
             ]);
         }
@@ -172,16 +181,16 @@ class ShiftService
             $this->accountingService->generateDefaultCOA($shift->tenant_id, $shift->branch_id);
 
             // Jurnal 1: Penjualan Tunai (Kas bertambah, Pendapatan bertambah)
-            // HANYA JIKA transaksi belum di-jurnal secara individual. Jika sudah di-jurnal individual, 
+            // HANYA JIKA transaksi belum di-jurnal secara individual. Jika sudah di-jurnal individual,
             // kita sebenarnya tidak perlu menjurnal lagi agar tidak terjadi double-counting.
             // Namun untuk saat ini kita perbaiki error pemanggilan fungsinya:
-            $accounts = \App\Models\Account::where('tenant_id', $shift->tenant_id)->get()->keyBy('code');
+            $accounts = Account::where('tenant_id', $shift->tenant_id)->get()->keyBy('code');
 
             if ($cashSales > 0 && isset($accounts['111']) && isset($accounts['411'])) {
                 $this->accountingService->storeManualJournal([
                     'branch_id' => $shift->branch_id,
                     'date' => now()->toDateString(),
-                    'description' => "Jurnal Tutup Shift Kasir: " . auth()->user()->name,
+                    'description' => 'Jurnal Tutup Shift Kasir: '.auth()->user()->name,
                     'source_type' => 'pos_shift',
                     'source_id' => $shift->id,
                     'entries' => [
@@ -189,26 +198,26 @@ class ShiftService
                             'account_id' => $accounts['111']->id,
                             'debit' => $cashSales,
                             'credit' => 0,
-                            'description' => 'Kas dari Penjualan Tunai Shift'
+                            'description' => 'Kas dari Penjualan Tunai Shift',
                         ],
                         [
                             'account_id' => $accounts['411']->id,
                             'debit' => 0,
                             'credit' => $cashSales,
-                            'description' => 'Pendapatan Penjualan Tunai Shift'
-                        ]
-                    ]
+                            'description' => 'Pendapatan Penjualan Tunai Shift',
+                        ],
+                    ],
                 ]);
             }
         } catch (\Exception $e) {
             // Log error tapi biarkan shift tertutup agar tidak memblokir operasional
-            \Illuminate\Support\Facades\Log::error('Gagal membuat jurnal shift: ' . $e->getMessage());
+            Log::error('Gagal membuat jurnal shift: '.$e->getMessage());
         }
 
         // Auto Clock-Out saat tutup shift (Praktik Terbaik)
         try {
             $this->attendanceService->clockOut([
-                'notes' => 'Auto clock-out via Tutup Shift Kasir'
+                'notes' => 'Auto clock-out via Tutup Shift Kasir',
             ]);
         } catch (\Exception $e) {
             // Ignore jika sudah absen keluar
@@ -225,21 +234,39 @@ class ShiftService
     {
         $transactions = Transaction::where('shift_id', $shift->id)->where('status', 'paid');
 
-        $totalSales       = (float) $transactions->sum('total');
-        $cashSales        = (float) $transactions->clone()->where('payment_method', 'cash')->sum('total');
-        $nonCashSales     = $totalSales - $cashSales;
-        $txCount          = $transactions->clone()->count();
-        $expectedBalance  = (float) $shift->opening_balance + $cashSales;
-        $difference       = $shift->closing_balance !== null ? (float) $shift->closing_balance - $expectedBalance : null;
+        $totalSales = (float) $transactions->sum('total');
+        $cashSales = (float) $transactions->clone()->where('payment_method', 'cash')->sum('total');
+        
+        // Breakdown Non-Tunai
+        $qrisSales = (float) $transactions->clone()->where('payment_method', 'qris')->sum('total');
+        $transferSales = (float) $transactions->clone()->where('payment_method', 'transfer')->sum('total');
+        $nonCashSales = $totalSales - $cashSales;
+        
+        $txCount = $transactions->clone()->count();
+        $expectedBalance = (float) $shift->opening_balance + $cashSales;
+        $difference = $shift->closing_balance !== null ? (float) $shift->closing_balance - $expectedBalance : null;
+
+        // Kalkulasi HPP & Laba Kotor
+        $totalHpp = 0;
+        $allTxIds = $transactions->pluck('id');
+        if ($allTxIds->isNotEmpty()) {
+            $totalHpp = (float) \App\Models\TransactionItem::whereIn('transaction_id', $allTxIds)
+                ->sum(\Illuminate\Support\Facades\DB::raw('base_cost * quantity'));
+        }
+        $grossProfit = $totalSales - $totalHpp;
 
         return [
-            'shift'            => $shift->load(['user:id,name', 'branch:id,name']),
-            'total_sales'      => $totalSales,
-            'cash_sales'       => $cashSales,
-            'non_cash_sales'   => $nonCashSales,
-            'tx_count'         => $txCount,
+            'shift' => $shift->load(['user:id,name', 'branch:id,name']),
+            'total_sales' => $totalSales,
+            'cash_sales' => $cashSales,
+            'qris_sales' => $qrisSales,
+            'transfer_sales' => $transferSales,
+            'non_cash_sales' => $nonCashSales,
+            'tx_count' => $txCount,
             'expected_balance' => $expectedBalance,
-            'difference'       => $difference,
+            'difference' => $difference,
+            'total_hpp' => $totalHpp,
+            'gross_profit' => $grossProfit,
         ];
     }
 }

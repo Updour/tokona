@@ -45,6 +45,7 @@ class MenuAndPermissionSeeder extends Seeder
             // Pembelian & Supplier
             ['key' => 'purchases.index', 'name' => 'Akses Pembelian', 'module' => 'Pembelian'],
             ['key' => 'suppliers.index', 'name' => 'Akses Supplier', 'module' => 'Pembelian'],
+            ['key' => 'consignments.index', 'name' => 'Akses Konsinyasi', 'module' => 'Pembelian'],
 
             // Keuangan
             ['key' => 'finance.index', 'name' => 'Akses Keuangan', 'module' => 'Keuangan'],
@@ -55,6 +56,12 @@ class MenuAndPermissionSeeder extends Seeder
             // Karyawan
             ['key' => 'users.index', 'name' => 'Akses Karyawan & User', 'module' => 'Karyawan'],
             ['key' => 'roles.index', 'name' => 'Akses Role & Permission', 'module' => 'Karyawan'],
+
+            // Audit
+            ['key' => 'audit.index', 'name' => 'Akses Log & Audit', 'module' => 'Audit'],
+
+            // Audit
+            ['key' => 'audit.index', 'name' => 'Akses Log & Audit', 'module' => 'Audit'],
 
             // Toko / Tenant
             ['key' => 'tenants.index', 'name' => 'Akses Toko & Tenant', 'module' => 'Toko'],
@@ -166,6 +173,7 @@ class MenuAndPermissionSeeder extends Seeder
                     'vouchers.index',
                     'purchases.index',
                     'suppliers.index',
+                    'consignments.index',
                     'finance.index',
                     'reports.index',
                     'users.index',
@@ -282,6 +290,8 @@ class MenuAndPermissionSeeder extends Seeder
                     ['title' => 'Stok & Inventori', 'href' => '/inventory', 'permission_key' => 'inventory.index', 'order' => 4],
                     ['title' => 'Stok Kritis', 'href' => '/inventory/low-stock', 'permission_key' => 'inventory.index', 'order' => 5],
                     ['title' => 'Audit Stok (Opname)', 'href' => '/inventory/opname', 'permission_key' => 'inventory.index', 'order' => 6],
+                    ['title' => 'Transfer Stok', 'href' => '/inventory/transfers', 'permission_key' => 'inventory.index', 'order' => 7],
+                    ['title' => 'Produk Terhapus', 'href' => '/products?trashed=only', 'permission_key' => 'products.delete', 'order' => 8],
                 ]
             ],
             // Parent: CRM
@@ -318,6 +328,7 @@ class MenuAndPermissionSeeder extends Seeder
                 'children' => [
                     ['title' => 'Semua Pembelian', 'href' => '/purchases', 'permission_key' => 'purchases.index', 'order' => 1],
                     ['title' => 'Data Supplier', 'href' => '/suppliers', 'permission_key' => 'suppliers.index', 'order' => 2],
+                    ['title' => 'Barang Titipan', 'href' => '/consignments', 'permission_key' => 'consignments.index', 'order' => 3],
                 ]
             ],
             // Parent: Sales Lapangan
@@ -403,6 +414,19 @@ class MenuAndPermissionSeeder extends Seeder
                     ['title' => 'Billing', 'href' => '/superadmin/billing', 'permission_key' => 'superadmin.access', 'order' => 3],
                     ['title' => 'Monitoring toko', 'href' => '/superadmin/monitoring', 'permission_key' => 'superadmin.access', 'order' => 4],
                     ['title' => 'Manajemen Menu', 'href' => '/superadmin/menus', 'permission_key' => 'superadmin.access', 'order' => 5],
+                ]
+            ],
+            // Parent: Audit & Log
+            [
+                'title' => 'Audit & Log',
+                'href' => '#',
+                'icon' => 'Activity',
+                'permission_key' => 'audit.index',
+                'order' => 13,
+                'children' => [
+                    ['title' => 'Log Aktivitas', 'href' => '/audit/activity-logs', 'permission_key' => 'audit.index', 'order' => 1],
+                    ['title' => 'Log Sistem', 'href' => '/audit/system-logs', 'permission_key' => 'superadmin.access', 'order' => 2],
+                    ['title' => 'Anomali Stok', 'href' => '/audit/stock-anomalies', 'permission_key' => 'audit.index', 'order' => 3],
                 ]
             ],
         ];

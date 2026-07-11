@@ -11,6 +11,7 @@ import MainLayout from '@/layouts/app/app-main-layout';
 import CreateTransferDialog from './components/CreateTransferDialog';
 import ReceiveTransferDialog from './components/ReceiveTransferDialog';
 import TransferDetailDialog from './components/TransferDetailDialog';
+import ConfirmShipDialog from './components/ConfirmShipDialog';
 import { toast } from 'sonner';
 import { useTransferStore } from './stores/useTransferStore';
 import { Label } from '@/components/ui/label';
@@ -31,7 +32,7 @@ import TransferTable from './components/TransferTable';
 
 export default function BranchTransfersIndex({ transfers, branches, products, filters, tenants, is_super_admin }: any) {
     const [search, setSearch] = useState(filters?.search || '');
-    const { openCreate } = useTransferStore();
+    const { openCreate, openShip } = useTransferStore();
     const [localFilters, setLocalFilters] = useState({
         branch_id: filters?.branch_id || '',
         tenant_id: filters?.tenant_id || '',
@@ -82,18 +83,7 @@ export default function BranchTransfersIndex({ transfers, branches, products, fi
     };
 
     const handleShip = (transfer: any) => {
-        toast(`Apakah Anda yakin ingin mengirim transfer ${transfer.reference_number}? Stok cabang ini akan dikurangi.`, {
-            action: {
-                label: 'Ya, Kirim',
-                onClick: () => {
-                    router.put(`/inventory/transfers/${transfer.id}/ship`, {}, {
-                        onSuccess: () => toast.success('Transfer berhasil dikirim'),
-                        onError: () => toast.error('Gagal mengirim transfer')
-                    });
-                }
-            },
-            cancel: { label: 'Batal', onClick: () => {} }
-        });
+        openShip(transfer);
     };
 
     const getStatusBadge = (status: string) => {
@@ -158,6 +148,8 @@ export default function BranchTransfersIndex({ transfers, branches, products, fi
             <ReceiveTransferDialog />
 
             <TransferDetailDialog />
+
+            <ConfirmShipDialog />
         </MainLayout>
     );
 }

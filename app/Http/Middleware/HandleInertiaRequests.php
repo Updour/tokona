@@ -3,8 +3,12 @@
 namespace App\Http\Middleware;
 
 use App\Models\Branch;
+use App\Models\Menu;
+use App\Models\Products;
 use App\Models\Tenants;
+use App\Models\User;
 use App\Services\Products\ProductService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -72,54 +76,54 @@ class HandleInertiaRequests extends Middleware
             $enableAttendance = $posSettings['enable_attendance'] ?? false;
 
             // Load parent menus from DB
-            $dbMenus = \App\Models\Menu::whereNull('parent_id')
+            $dbMenus = Menu::whereNull('parent_id')
                 ->orderBy('order', 'asc')
                 ->get();
 
             foreach ($dbMenus as $menu) {
-                if ($menu->permission_key && !$isSuperAdmin && !in_array($menu->permission_key, $permissions)) {
+                if ($menu->permission_key && ! $isSuperAdmin && ! in_array($menu->permission_key, $permissions)) {
                     continue;
                 }
-                
+
                 // Filter berdasarkan pos_settings (Modul Opsional) - SuperAdmin bypass ini
-                if (!$isSuperAdmin) {
-                    if (!$requireShift && $menu->title === 'Shift Kasir') {
+                if (! $isSuperAdmin) {
+                    if (! $requireShift && $menu->title === 'Shift Kasir') {
                         continue;
                     }
-                    if (!$enableCanvas && $menu->title === 'Aplikasi Canvas') {
+                    if (! $enableCanvas && $menu->title === 'Aplikasi Canvas') {
                         continue;
                     }
-                    if (!$enableConsignment && $menu->title === 'Barang Titipan') {
+                    if (! $enableConsignment && $menu->title === 'Barang Titipan') {
                         continue;
                     }
-                    if (!$enableAttendance && $menu->title === 'Absensi Pegawai') {
+                    if (! $enableAttendance && $menu->title === 'Absensi Pegawai') {
                         continue;
                     }
                 }
 
                 // Filter submenus (children)
-                $children = \App\Models\Menu::where('parent_id', $menu->id)
+                $children = Menu::where('parent_id', $menu->id)
                     ->orderBy('order', 'asc')
                     ->get();
 
                 $filteredChildren = [];
                 foreach ($children as $child) {
-                    if ($child->permission_key && !$isSuperAdmin && !in_array($child->permission_key, $permissions)) {
+                    if ($child->permission_key && ! $isSuperAdmin && ! in_array($child->permission_key, $permissions)) {
                         continue;
                     }
-                    
+
                     // Filter berdasarkan pos_settings (Modul Opsional) - SuperAdmin bypass ini
-                    if (!$isSuperAdmin) {
-                        if (!$requireShift && $child->title === 'Shift Kasir') {
+                    if (! $isSuperAdmin) {
+                        if (! $requireShift && $child->title === 'Shift Kasir') {
                             continue;
                         }
-                        if (!$enableCanvas && $child->title === 'Aplikasi Canvas') {
+                        if (! $enableCanvas && $child->title === 'Aplikasi Canvas') {
                             continue;
                         }
-                        if (!$enableConsignment && $child->title === 'Barang Titipan') {
+                        if (! $enableConsignment && $child->title === 'Barang Titipan') {
                             continue;
                         }
-                        if (!$enableAttendance && $child->title === 'Absensi Pegawai') {
+                        if (! $enableAttendance && $child->title === 'Absensi Pegawai') {
                             continue;
                         }
                     } else {
@@ -150,16 +154,16 @@ class HandleInertiaRequests extends Middleware
             $activeTenant = Tenants::find($user->tenant_id);
             $subscription = null;
             if ($activeTenant) {
-                $subService = new \App\Services\SubscriptionService();
+                $subService = new SubscriptionService;
                 $limits = $subService->getLimits($activeTenant->plan ?? 'free');
                 $subscription = [
                     'plan' => $activeTenant->plan ?? 'free',
                     'expires_at' => $activeTenant->expires_at ? $activeTenant->expires_at->toIso8601String() : null,
                     'limits' => $limits,
                     'usage' => [
-                        'branches' => \App\Models\Branch::where('tenant_id', $activeTenant->id)->count(),
-                        'products' => \App\Models\Products::where('tenant_id', $activeTenant->id)->count(),
-                        'users' => \App\Models\User::where('tenant_id', $activeTenant->id)->count(),
+                        'branches' => Branch::where('tenant_id', $activeTenant->id)->count(),
+                        'products' => Products::where('tenant_id', $activeTenant->id)->count(),
+                        'users' => User::where('tenant_id', $activeTenant->id)->count(),
                     ],
                 ];
             }
@@ -167,25 +171,27 @@ class HandleInertiaRequests extends Middleware
 
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
+            'name' => config('app.current_tenant') ? config('app.current_tenant')->name : config('app.name'),
+            'currentTenant' => config('app.current_tenant'),
             'auth' => [
                 'user' => $user ? array_merge($user->toArray(), [
-                    'role'           => $user->load('role')->role?->name ?? 'cashier',
+                    'role' => $user->load('role')->role?->name ?? 'cashier',
                     'is_super_admin' => $isSuperAdmin,
-                    'permissions'    => $permissions,
+                    'permissions' => $permissions,
                 ]) : null,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
-                'error'   => fn () => $request->session()->get('error'),
+                'error' => fn () => $request->session()->get('error'),
             ],
             // Tersedia global di semua halaman
-            'tenants'  => $tenants,
+            'tenants' => $tenants,
             'branches' => $branches,
-            'menus'    => $menus,
+            'menus' => $menus,
             'subscription' => $subscription ?? null,
-            'sidebarOpen' => !$request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'low_stock_count' => $user ? fn () => app(ProductService::class)->getLowStockCount() : 0,
+            'alerts' => fn () => app(\App\Services\NotificationService::class)->getUnreadAlerts(),
         ];
     }
 }

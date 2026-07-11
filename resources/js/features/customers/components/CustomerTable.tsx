@@ -17,29 +17,9 @@ export function CustomerTable({ customers, onEdit, onView, onAddClick }: any) {
     });
 
     const handleExport = () => {
-        if (!customers?.data?.length) {
-return;
-}
-
-        const rows = customers.data.map((c: any) => ({
-            Nama: c.name,
-            Kontak: `${c.phone} | ${c.email}`,
-            Tier: c.tier,
-            Poin: c.points,
-            Hutang: c.debt_balance,
-        }));
-        const headers = Object.keys(rows[0]);
-        const csv = [
-            headers.join(','),
-            ...rows.map((r: any) =>
-                headers.map((h) => `"${String(r[h] || '').replace(/"/g, '""')}"`).join(',')
-            ),
-        ].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'pelanggan_export.csv';
-        link.click();
+        const params = new URLSearchParams();
+        if (filters.search) params.append('search', filters.search);
+        window.open(`/export/customers?${params.toString()}`, '_blank');
     };
 
     return (

@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Purchases\StorePurchaseRequest;
+use App\Http\Requests\Purchases\UpdatePurchaseStatusRequest;
+use App\Models\Branch;
+use App\Models\Products;
+use App\Models\Purchase;
+use App\Models\Supplier;
 use App\Queries\PurchaseQuery;
+use App\Services\PurchaseService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Services\PurchaseService;
-use App\Http\Requests\Purchases\StorePurchaseRequest;
-use App\Http\Requests\Purchases\UpdatePurchaseStatusRequest;
 
 class PurchaseController extends Controller
 {
@@ -18,6 +22,7 @@ class PurchaseController extends Controller
     {
         $this->purchaseService = $purchaseService;
     }
+
     public function index(Request $request): Response
     {
         return Inertia::render('purchases/index', (new PurchaseQuery($request))->indexData());
@@ -26,33 +31,34 @@ class PurchaseController extends Controller
     public function create(): Response
     {
         // Global scopes otomatis handle filter tenant
-        $branches = \App\Models\Branch::select('id', 'name')->orderBy('name')->get();
-        
+        $branches = Branch::select('id', 'name')->orderBy('name')->get();
+
         // Ambil produk yang aktif
-        $products = \App\Models\Products::active()
+        $products = Products::active()
             ->select('id', 'name', 'sku', 'barcode', 'base_cost', 'track_stock')
             ->orderBy('name')
             ->get();
 
         // Ambil data supplier
-        $suppliers = \App\Models\Supplier::active()
+        $suppliers = Supplier::active()
             ->select('id', 'name')
             ->orderBy('name')
             ->get();
 
         return Inertia::render('purchases/create', [
-            'branches'  => $branches,
-            'products'  => $products,
+            'branches' => $branches,
+            'products' => $products,
             'suppliers' => $suppliers,
         ]);
     }
 
-    public function show(\App\Models\Purchase $purchase)
+    public function show(Purchase $purchase)
     {
         $purchase->load([
             'branch:id,name,address,phone',
             'supplier:id,name,phone,address',
-            'items.product:id,name,sku'
+            'items.product:id,name,sku',
+            'payments.creator:id,name',
         ]);
 
         return Inertia::render('purchases/show', [
@@ -60,13 +66,14 @@ class PurchaseController extends Controller
         ]);
     }
 
-    public function updateStatus(UpdatePurchaseStatusRequest $request, \App\Models\Purchase $purchase)
+    public function updateStatus(UpdatePurchaseStatusRequest $request, Purchase $purchase)
     {
         try {
             $this->purchaseService->updateStatus($purchase, $request->validated('status'));
+
             return back()->with('success', "Status PO berhasil diubah menjadi {$request->validated('status')}!");
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengubah status: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengubah status: '.$e->getMessage());
         }
     }
 
@@ -74,9 +81,28 @@ class PurchaseController extends Controller
     {
         try {
             $this->purchaseService->storePurchase($request->validated());
+
             return redirect()->route('purchases.index')->with('success', 'Transaksi pembelian berhasil disimpan!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menyimpan: '.$e->getMessage());
+        }
+    }
+
+    public function addPayment(Request $request, Purchase $purchase)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:1',
+            'payment_date' => 'required|date',
+            'payment_method' => 'required|string',
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            $this->purchaseService->addPayment($purchase, $validated);
+
+            return back()->with('success', 'Pembayaran berhasil dicatat!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mencatat pembayaran: '.$e->getMessage());
         }
     }
 }

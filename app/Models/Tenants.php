@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -9,8 +11,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne; // Tambahkan import ini
 use Illuminate\Support\Str;
-// use App\Models\TenantMedia;
 
+// use App\Models\TenantMedia;
 
 #[Fillable([
     'id',
@@ -27,6 +29,8 @@ use Illuminate\Support\Str;
 ])]
 class Tenants extends Model
 {
+    use LogsActivity;
+
     use HasFactory, HasUuids;
 
     protected static function booted()
@@ -41,6 +45,31 @@ class Tenants extends Model
                 // Set default trial to 30 days
                 $tenant->expires_at = now()->addDays(30);
             }
+        });
+        
+        static::deleting(function ($tenant) {
+            // Hapus semua cabang milik tenant (ini juga bisa mentrigger event deleting di Branch jika diperlukan)
+            $tenant->branches->each(function ($branch) {
+                // Bypass is_main check dengan menggunakan query langsung atau pastikan BranchController saja yang mengeceknya
+                $branch->delete();
+            });
+
+            // Hapus pengguna milik tenant
+            $tenant->users()->delete();
+            
+            // Hapus data transaksional utama (opsional, sesuaikan dengan kebutuhan)
+            \App\Models\Transaction::where('tenant_id', $tenant->id)->delete();
+            \App\Models\Purchase::where('tenant_id', $tenant->id)->delete();
+            \App\Models\Expense::where('tenant_id', $tenant->id)->delete();
+
+            // Hapus master data milik tenant
+            $tenant->products()->delete();
+            $tenant->productCategories()->delete();
+            $tenant->productTypes()->delete();
+            
+            // Hapus lokasi
+            $tenant->locations()->delete();
+            $tenant->media()->delete();
         });
     }
 
@@ -64,25 +93,44 @@ class Tenants extends Model
         return $this->hasOne(TenantLocations::class, 'tenant_id');
     }
 
-
     public function users()
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(User::class, 'tenant_id');
     }
 
     public function roles()
     {
-        return $this->hasMany(Role::class);
+        return $this->hasMany(Role::class, 'tenant_id');
     }
 
     public function locations()
     {
-        return $this->hasMany(TenantLocations::class);
+        return $this->hasMany(TenantLocations::class, 'tenant_id');
     }
 
     public function media()
     {
         return $this->hasMany(TenantMedia::class, 'tenant_id');
+    }
+
+    public function branches()
+    {
+        return $this->hasMany(Branch::class, 'tenant_id');
+    }
+
+    public function products()
+    {
+        return $this->hasMany(Products::class, 'tenant_id');
+    }
+
+    public function productCategories()
+    {
+        return $this->hasMany(ProductCategory::class, 'tenant_id');
+    }
+
+    public function productTypes()
+    {
+        return $this->hasMany(ProductType::class, 'tenant_id');
     }
 
     // =========================================================================
@@ -101,10 +149,11 @@ class Tenants extends Model
     public function getLoyaltySettings(): array
     {
         $settings = $this->settings ?? [];
+
         return [
             // Default: Tiap kelipatan Rp 10.000 dapat 1 Poin
             'earn_amount' => $settings['loyalty_earn_amount'] ?? 10000,
-            
+
             // Default: 1 Poin ditukar diskon Rp 1
             'redeem_rate' => $settings['loyalty_redeem_rate'] ?? 1,
         ];
@@ -116,6 +165,7 @@ class Tenants extends Model
     public function getAccountingSettings(): array
     {
         $settings = $this->settings ?? [];
+
         return [
             // Default: false (Gunakan Simple Cash-Basis untuk kemudahan)
             'enable_advanced_accounting' => filter_var($settings['enable_advanced_accounting'] ?? false, FILTER_VALIDATE_BOOLEAN),

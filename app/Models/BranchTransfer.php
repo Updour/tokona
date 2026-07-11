@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BranchTransfer extends Model
 {
+    use LogsActivity;
+
     use HasFactory, HasUuids;
 
     protected $table = 'branch_transfers';
@@ -64,17 +68,25 @@ class BranchTransfer extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('tenant', function (Builder $query) {
-            if (auth()->check() && !auth()->user()->isSuperAdmin()) {
-                $query->where('branch_transfers.tenant_id', auth()->user()->tenant_id);
+            if (auth()->check() && auth()->user()->isSuperAdmin()) {
+                return;
+            }
+
+            if (config('app.current_tenant')) {
+                $query->where('branch_transfers.tenant_id', config('app.current_tenant')->id);
             }
         });
 
         static::creating(function ($model) {
-            if (auth()->check() && empty($model->tenant_id)) {
-                $model->tenant_id = auth()->user()->tenant_id;
+            if (empty($model->tenant_id)) {
+                if (config('app.current_tenant')) {
+                    $model->tenant_id = config('app.current_tenant')->id;
+                } elseif (auth()->check()) {
+                    $model->tenant_id = auth()->user()->tenant_id;
+                }
             }
             if (empty($model->reference_number)) {
-                $model->reference_number = 'TRF-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
+                $model->reference_number = 'TRF-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -5));
             }
         });
     }

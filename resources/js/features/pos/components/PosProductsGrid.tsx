@@ -1,4 +1,4 @@
-import { Search, Settings, Sparkles, AlertCircle, ShoppingCart } from 'lucide-react';
+import { Search, Settings, Sparkles, AlertCircle, ShoppingCart, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,8 +39,10 @@ export function PosProductsGrid({
     isSavingDb,
     cart
 }: PosProductsGridProps) {
+    const isCartEmpty = cart.length === 0;
+
     return (
-        <div className="xl:col-span-7 flex flex-col gap-4 h-full min-w-0">
+        <div className={`${isCartEmpty ? 'xl:col-span-12' : 'xl:col-span-9'} flex flex-col gap-4 h-full min-w-0 transition-all duration-500`}>
             {/* Pencarian & Pengaturan */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-white p-3 rounded-xl border shadow-sm shrink-0">
                 <div className="relative flex-1 w-full">
@@ -51,6 +53,32 @@ export function PosProductsGrid({
                         className="pl-9 h-10 border-slate-200"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const trimmed = searchQuery.trim();
+                                if (!trimmed) return;
+                                
+                                // Cari yang barcode-nya sama persis dulu
+                                let match = products.find(p => p.barcode && p.barcode.toLowerCase() === trimmed.toLowerCase());
+                                // Jika tidak ada, cari yang SKU-nya sama persis
+                                if (!match) {
+                                    match = products.find(p => p.sku && p.sku.toLowerCase() === trimmed.toLowerCase());
+                                }
+                                // Jika tidak ada juga, cari yang namanya sama persis
+                                if (!match) {
+                                    match = products.find(p => p.name.toLowerCase() === trimmed.toLowerCase());
+                                }
+                                
+                                if (match) {
+                                    handleAddToCart(match);
+                                    setSearchQuery('');
+                                    toast.success(`Berhasil menambahkan "${match.name}" ke keranjang.`);
+                                } else {
+                                    toast.error(`Produk dengan SKU/Barcode "${trimmed}" tidak ditemukan.`);
+                                }
+                            }
+                        }}
                     />
                 </div>
 
@@ -300,12 +328,19 @@ export function PosProductsGrid({
                                         )}
                                     </div>
                                     <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-100 shrink-0">
-                                        <span className="text-xs font-black text-indigo-600 font-semibold font-mono">
+                                        <span className="text-xs font-black text-indigo-600 font-mono">
                                             {formatRupiah(p.sell_price)}
                                         </span>
-                                        <span className="text-[9px] font-bold text-slate-400 capitalize px-1.5 py-0.5 bg-slate-100 rounded">
-                                            {p.category}
-                                        </span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-[9px] font-bold text-slate-400 capitalize px-1.5 py-0.5 bg-slate-100 rounded">
+                                                {p.category}
+                                            </span>
+                                            {!isOutOfStock && (
+                                                <div className="h-6 w-6 rounded-full bg-slate-50 border border-slate-200 text-slate-550 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 flex items-center justify-center transition-all duration-200 shadow-sm">
+                                                    <Plus className="h-3.5 w-3.5" />
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

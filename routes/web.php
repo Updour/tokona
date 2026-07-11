@@ -69,7 +69,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/stock-report', 'stockReport')->name('stock-report');
         Route::get('/sales-field-report', 'salesFieldReport')->name('sales-field-report');
         Route::get('/invoice/{transaction}', 'invoice')->name('invoice');
+        Route::get('/delivery-note/{transfer}', 'deliveryNote')->name('delivery-note');
         Route::get('/inventory', 'inventory')->name('inventory');
+        Route::get('/customers', 'customers')->name('customers');
+        Route::get('/consignments', 'consignments')->name('consignments');
     });
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -110,6 +113,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::controller(ProductController::class)->prefix('products')->name('products.')->group(function () {
         Route::get('pricing', 'pricing')->name('pricing');
         Route::post('bulk-markup', 'bulkMarkup')->name('bulk-markup');
+        Route::post('import/preview', 'importPreview')->name('import.preview');
         Route::post('import', 'import')->name('import');
         Route::post('{id}/restore', 'restore')->name('restore');
     });
@@ -156,13 +160,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ── Stock Opname ───────────────────────────────────────────────────────
-    Route::controller(OpnameController::class)->prefix('inventory/opname')->name('opname.')->group(function () {
+    Route::controller(OpnameController::class)->prefix('inventory/opname')->name('inventory.opname.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
+        Route::get('/export', 'export')->name('export');
+        Route::get('/download-template', 'downloadTemplate')->name('download-template');
+        Route::post('/import-preview', 'importPreview')->name('import-preview');
+        Route::post('/import', 'import')->name('import');
+        Route::post('/{id}/approve', 'approve')->name('approve');
+        Route::post('/{id}/cancel', 'cancel')->name('cancel');
     });
 
     // ── Pembelian / Purchases ──────────────────────────────────────────────
     Route::put('purchases/{purchase}/status', [PurchaseController::class, 'updateStatus'])->name('purchases.status');
+    Route::post('purchases/{purchase}/payments', [PurchaseController::class, 'addPayment'])->name('purchases.payments.store');
     Route::resource('purchases', PurchaseController::class);
     Route::resource('suppliers', SupplierController::class);
     Route::resource('purchase-returns', PurchaseReturnController::class)->except(['edit', 'update', 'destroy', 'show']);
@@ -173,7 +184,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', 'store')->name('store');
         Route::put('/{id}', 'update')->name('update');
         Route::post('/{id}/settle', 'settle')->name('settle');
-        Route::get('/{id}/pdf', 'exportPdf')->name('pdf');
+        Route::get('/{id}/print', 'print')->name('print');
     });
 
     // ── Absensi Pegawai (Attendances) ──────────────────────────────────────
@@ -185,12 +196,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ── Penggajian (Payroll) ────────────────────────────────────────────────
-    Route::controller(PayrollController::class)->prefix('hris/payrolls')->name('payrolls.')->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/generate', 'generate')->name('generate');
-        Route::post('/bulk-generate', 'bulkGenerate')->name('bulk-generate');
-        Route::put('/{payroll}/paid', 'markAsPaid')->name('paid');
-        Route::get('/{payroll}/print', 'print')->name('print');
+    Route::prefix('hris')->name('hris.')->group(function () {
+        Route::resource('payrolls', \App\Http\Controllers\PayrollController::class);
+        Route::post('payrolls/bulk-generate', [\App\Http\Controllers\PayrollController::class, 'bulkGenerate'])->name('payroll.bulk-generate');
+        Route::post('payrolls/{payroll}/pay', [\App\Http\Controllers\PayrollController::class, 'markAsPaid'])->name('payroll.pay');
+        Route::get('payrolls/{payroll}/print', [\App\Http\Controllers\PayrollController::class, 'print'])->name('payroll.print');
+        
+        Route::resource('cash-advances', \App\Http\Controllers\Hris\CashAdvanceController::class)->only(['index', 'store', 'destroy']);
     });
 
     Route::resource('hris/payroll-components', PayrollComponentController::class)
@@ -252,6 +264,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('superadmin')->name('superadmin.')->group(function () {
         Route::controller(SuperAdminController::class)->group(function () {
             Route::get('plans', 'plans')->name('plans');
+            Route::put('plans/{id}', 'updatePlan')->name('plans.update');
             Route::get('billing', 'billing')->name('billing');
             Route::get('monitoring', 'monitoring')->name('monitoring');
         });

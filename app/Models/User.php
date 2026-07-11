@@ -2,27 +2,38 @@
 
 namespace App\Models;
 
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo; // Tambahkan import ini
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable; // Tambahkan import ini
+use App\Traits\LogsActivity;
 
-
-
-#[Fillable(['id', 'name', 'email', 'email_verified_at', 'password', 'tenant_id', 'branch_id',
-        'nip',
-        'position',
-        'employment_status',
-        'join_date', 'phone', 'avatar', 'status', 'last_login_at', 'remember_token'])]
+#[Fillable([
+    'id',
+    'name',
+    'email',
+    'email_verified_at',
+    'password',
+    'tenant_id',
+    'branch_id',
+    'nip',
+    'position',
+    'employment_status',
+    'join_date',
+    'phone',
+    'avatar',
+    'status',
+    'last_login_at',
+    'remember_token'
+])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
+    use LogsActivity;
     use HasFactory, HasUuids, Notifiable;
 
     protected function casts(): array
@@ -46,6 +57,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
     }
+
     public function getRoleAttribute()
     {
         return $this->roles->first();
@@ -56,7 +68,7 @@ class User extends Authenticatable
      */
     public function isSuperAdmin(): bool
     {
-        return $this->roles()->where('name', 'super-admin')->exists();
+        return $this->roles->contains('name', 'super-admin');
     }
 
     /**
@@ -64,7 +76,7 @@ class User extends Authenticatable
      */
     public function isOwner(): bool
     {
-        return $this->roles()->where('name', 'owner')->exists();
+        return $this->roles->contains('name', 'owner');
     }
 
     /**
@@ -76,12 +88,16 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->roles()
-            ->whereHas('permissions', function ($query) use ($permissionKey) {
-                $query->where('key', $permissionKey);
-            })
-            ->exists();
+        // Gunakan pemuatan relasi ter-cache untuk mencegah pembengkakan N+1 query database
+        if (!$this->relationLoaded('roles') || !$this->roles->every(fn($r) => $r->relationLoaded('permissions'))) {
+            $this->load('roles.permissions');
+        }
+
+        return $this->roles->contains(function ($role) use ($permissionKey) {
+            return $role->permissions->contains('key', $permissionKey);
+        });
     }
+
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenants::class, 'tenant_id');

@@ -84,9 +84,29 @@ export const columns: ColumnDef<Tenant>[] = [
     {
         accessorKey: 'slug',
         header: 'Slug/Domain',
-        cell: ({ row }) => (
-            <span className="text-muted-foreground font-mono text-sm">/{row.getValue('slug')}</span>
-        ),
+        cell: ({ row }) => {
+            const slug = row.getValue('slug') as string;
+            let baseHost = typeof window !== 'undefined' ? window.location.host : 'localhost:8000';
+            
+            // Fix invalid URL when using IP address (subdomains don't work on IPs)
+            if (baseHost.includes('127.0.0.1')) {
+                baseHost = baseHost.replace('127.0.0.1', 'localhost');
+            }
+            
+            const loginUrl = `http://${slug}.${baseHost}/login`;
+
+            return (
+                <a 
+                    href={loginUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-indigo-600 hover:text-indigo-800 hover:underline font-mono text-sm font-medium flex items-center gap-1 w-fit"
+                    title={`Buka Halaman Login ${row.original.name}`}
+                >
+                    {slug} <span className="text-xs opacity-70">↗</span>
+                </a>
+            );
+        },
     },
     {
         accessorKey: 'email',

@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Products extends Model
 {
@@ -34,18 +34,20 @@ class Products extends Model
         'allow_negative_stock',
         'min_stock',
         'source',
+        'is_bundle',
         'is_active',
     ];
 
     protected function casts(): array
     {
         return [
-            'base_cost'            => 'decimal:2',
-            'sell_price'           => 'decimal:2',
-            'min_sell_price'       => 'decimal:2',
-            'track_stock'          => 'boolean',
+            'base_cost' => 'decimal:2',
+            'sell_price' => 'decimal:2',
+            'min_sell_price' => 'decimal:2',
+            'track_stock' => 'boolean',
             'allow_negative_stock' => 'boolean',
-            'is_active'            => 'boolean',
+            'is_bundle' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -82,6 +84,11 @@ class Products extends Model
     {
         return $this->hasMany(ProductImage::class, 'product_id')
             ->orderBy('sort_order');
+    }
+
+    public function bundleItems(): HasMany
+    {
+        return $this->hasMany(ProductBundleItem::class, 'bundle_id');
     }
 
     // =========================================================================
@@ -125,7 +132,7 @@ class Products extends Model
             'category:id,name',
             'type:id,name',
             'branch:id,name,code',
-            'images' => fn ($q) => $q
+            'images' => fn($q) => $q
                 ->where('is_primary', true)
                 ->select('id', 'product_id', 'url', 'path', 'is_primary'),
         ]);
@@ -148,10 +155,11 @@ class Products extends Model
     /** Cari berdasarkan nama, SKU, atau barcode. */
     public function scopeSearch(Builder $query, string $term): Builder
     {
-        return $query->where(fn ($q) => $q
-            ->where('products.name', 'like', "%{$term}%")
-            ->orWhere('products.sku', 'like', "%{$term}%")
-            ->orWhere('products.barcode', 'like', "%{$term}%")
+        return $query->where(
+            fn($q) => $q
+                ->where('products.name', 'like', "%{$term}%")
+                ->orWhere('products.sku', 'like', "%{$term}%")
+                ->orWhere('products.barcode', 'like', "%{$term}%")
         );
     }
 
@@ -159,16 +167,16 @@ class Products extends Model
     public function scopeCreatedBetween(Builder $query, ?string $from, ?string $to): Builder
     {
         return $query
-            ->when($from, fn ($q) => $q->whereDate('products.created_at', '>=', $from))
-            ->when($to,   fn ($q) => $q->whereDate('products.created_at', '<=', $to));
+            ->when($from, fn($q) => $q->whereDate('products.created_at', '>=', $from))
+            ->when($to, fn($q) => $q->whereDate('products.created_at', '<=', $to));
     }
 
     /** Filter berdasarkan rentang harga jual. */
     public function scopePriceBetween(Builder $query, ?string $min, ?string $max): Builder
     {
         return $query
-            ->when($min, fn ($q) => $q->where('products.sell_price', '>=', $min))
-            ->when($max, fn ($q) => $q->where('products.sell_price', '<=', $max));
+            ->when($min, fn($q) => $q->where('products.sell_price', '>=', $min))
+            ->when($max, fn($q) => $q->where('products.sell_price', '<=', $max));
     }
 
     /**
@@ -194,11 +202,11 @@ class Products extends Model
     public function recordStockMovement(string $type, int $qty, array $extra = []): void
     {
         $this->stockMovements()->create(array_merge([
-            'tenant_id'   => $this->tenant_id,
-            'branch_id'   => $this->branch_id,
-            'type'        => $type,
-            'qty'         => $qty,
-            'unit_cost'   => $this->base_cost,
+            'tenant_id' => $this->tenant_id,
+            'branch_id' => $this->branch_id,
+            'type' => $type,
+            'qty' => $qty,
+            'unit_cost' => $this->base_cost,
             'source_type' => 'manual',
         ], $extra));
     }
@@ -216,9 +224,9 @@ class Products extends Model
         // Ambil stok saat ini. Jika produk tidak di-load dengan withCurrentStock(), anggap stok 0.
         // Abaikan stok negatif (anggap 0) untuk perhitungan WAC agar harga tidak hancur.
         $currentStock = max(0, (int) ($this->current_stock ?? 0));
-        
+
         $totalQty = $currentStock + $addedQty;
-        
+
         if ($totalQty > 0) {
             $newBaseCost = (($currentStock * (float) $this->base_cost) + ($addedQty * $newUnitCost)) / $totalQty;
             $this->update(['base_cost' => $newBaseCost]);

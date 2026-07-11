@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Branches\StoreBranchRequest;
+use App\Http\Requests\Branches\UpdateBranchRequest;
 use App\Models\Branch;
 use App\Models\Tenants;
 use App\Services\BranchService;
-use App\Http\Requests\Branches\StoreBranchRequest;
-use App\Http\Requests\Branches\UpdateBranchRequest;
+use App\Services\SubscriptionService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
 
 class BranchController extends Controller
@@ -49,10 +50,10 @@ class BranchController extends Controller
      */
     public function store(StoreBranchRequest $request): RedirectResponse
     {
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $tenant = Tenants::find(auth()->user()->tenant_id);
-            $subService = new \App\Services\SubscriptionService();
-            if ($tenant && !$subService->canAddBranch($tenant)) {
+            $subService = new SubscriptionService;
+            if ($tenant && ! $subService->canAddBranch($tenant)) {
                 return back()->with('error', 'Limit jumlah cabang tercapai! Silakan upgrade paket langganan Anda untuk menambah cabang baru.');
             }
         }

@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatRupiah } from '@/lib/helpers/format';
 import { usePurchaseStore } from '../stores/usePurchaseStore';
 
-export function PurchaseForm({ branches, products, suppliers }: { branches: any[], products: any[], suppliers: any[] }) {
+export function PurchaseForm({ branches, products, suppliers, initialSupplierId }: { branches: any[], products: any[], suppliers: any[], initialSupplierId?: string }) {
     const { auth, errors: pageErrors } = usePage<any>().props;
     const isSuperAdmin = auth?.user?.is_super_admin || auth?.user?.role === 'super-admin';
     const [processing, setProcessing] = useState(false);
@@ -19,9 +19,15 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
     // Zustand Store
     const state = usePurchaseStore();
     const { 
-        branch_id, supplier_id, invoice_number, purchase_date, status, global_discount, items,
+        branch_id, supplier_id, invoice_number, purchase_date, status, global_discount, due_date, initial_payment, payment_method, items,
         setField, addItem, removeItem, updateItem, totalProductCost, totalBill
     } = state;
+
+    React.useEffect(() => {
+        if (initialSupplierId && !supplier_id) {
+            setField('supplier_id', initialSupplierId);
+        }
+    }, [initialSupplierId]);
 
     // Fix TypeScript 'any' type index error for nested errors
     const formErrors = pageErrors as Record<string, string>;
@@ -62,7 +68,10 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
             supplier_id,
             invoice_number,
             purchase_date,
+            due_date: status !== 'paid' ? due_date : null,
             status,
+            initial_payment: status === 'paid' ? 0 : Number(initial_payment),
+            payment_method,
             global_discount,
             items: items as any[]
         }, {
@@ -140,7 +149,7 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <Label>Tanggal Beli <span className="text-red-500">*</span></Label>
                                 <Input
@@ -159,12 +168,25 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="draft">PO / Draft (Stok tidak berubah)</SelectItem>
-                                        <SelectItem value="received">Diterima (Otomatis masuk stok)</SelectItem>
-                                        <SelectItem value="paid">Lunas (Otomatis masuk stok)</SelectItem>
+                                        <SelectItem value="draft">PO / Draft</SelectItem>
+                                        <SelectItem value="received">Diterima Gudang (Hutang)</SelectItem>
+                                        <SelectItem value="paid">Langsung Lunas</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
+
+                            {status !== 'paid' && (
+                                <div className="space-y-2">
+                                    <Label>Jatuh Tempo (Opsional)</Label>
+                                    <Input
+                                        type="date"
+                                        value={due_date}
+                                        onChange={(e) => setField('due_date', e.target.value)}
+                                        className={formErrors.due_date ? 'border-red-500' : ''}
+                                    />
+                                    {formErrors.due_date && <span className="text-xs text-red-500">{formErrors.due_date}</span>}
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -313,9 +335,55 @@ export function PurchaseForm({ branches, products, suppliers }: { branches: any[
                         </div>
                     </div>
 
-                    <div className="flex flex-col items-end mt-4 pt-4 border-t border-dashed border-muted-foreground/30 w-full sm:w-1/2">
-                        <span className="text-muted-foreground text-sm font-semibold tracking-widest uppercase mb-1">Total Tagihan Bersih</span>
-                        <span className="text-4xl font-extrabold text-primary">{formatRupiah(totalBill())}</span>
+                    <div className="flex flex-col sm:flex-row items-end justify-between mt-4 pt-4 border-t border-dashed border-muted-foreground/30 w-full gap-6">
+                        {/* DP / Metode Bayar */}
+                        <div className="w-full sm:w-1/2 flex flex-col gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-muted-foreground">Metode Pembayaran</Label>
+                                <Select value={payment_method} onValueChange={(val) => setField('payment_method', val)}>
+                                    <SelectTrigger className="w-full sm:w-48 bg-white border-muted">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Cash">Cash / Tunai</SelectItem>
+                                        <SelectItem value="Transfer Bank">Transfer Bank</SelectItem>
+                                        <SelectItem value="E-Wallet">E-Wallet (OVO/Dana)</SelectItem>
+                                        <SelectItem value="Giro/Cek">Giro / Cek</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {status !== 'paid' && (
+                                <div className="space-y-2">
+                                    <Label className="text-muted-foreground">Bayar Uang Muka (DP)</Label>
+                                    <div className="w-full sm:w-48">
+                                        <Input
+                                            type="text"
+                                            value={initial_payment ? formatRupiah(initial_payment) : ''}
+                                            onChange={(e) => {
+                                                const raw = parseFloat(e.target.value.replace(/\D/g, '')) || 0;
+                                                setField('initial_payment', raw);
+                                            }}
+                                            className="font-bold text-emerald-600 bg-white"
+                                            placeholder="Rp 0"
+                                        />
+                                        <span className="text-[10px] text-muted-foreground block mt-1">Kosongkan jika belum bayar sama sekali</span>
+                                    </div>
+                                    {formErrors.initial_payment && <span className="text-xs text-red-500">{formErrors.initial_payment}</span>}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Total Bill */}
+                        <div className="flex flex-col items-end w-full sm:w-1/2">
+                            <span className="text-muted-foreground text-sm font-semibold tracking-widest uppercase mb-1">Total Tagihan Bersih</span>
+                            <span className="text-4xl font-extrabold text-primary">{formatRupiah(totalBill())}</span>
+                            {status !== 'paid' && initial_payment > 0 && (
+                                <span className="text-sm font-semibold text-destructive mt-2">
+                                    Sisa Hutang: {formatRupiah(Math.max(0, totalBill() - initial_payment))}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
 

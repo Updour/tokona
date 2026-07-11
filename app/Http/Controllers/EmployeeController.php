@@ -4,13 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Users\StoreUserRequest;
 use App\Http\Requests\Users\UpdateUserRequest;
-use App\Models\User;
 use App\Models\Branch;
 use App\Models\Role;
 use App\Models\Tenants;
+use App\Models\User;
+use App\Services\EmployeeSalaryService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
 
 class EmployeeController extends Controller
 {
@@ -22,8 +24,10 @@ class EmployeeController extends Controller
         $query = User::with(['roles', 'branch:id,name', 'tenant:id,name']);
 
         if (!auth()->user()->isSuperAdmin()) {
+            $query->where('tenant_id', auth()->user()->tenant_id);
+
             $query->whereDoesntHave('roles', function ($q) {
-                $q->where('name', 'super-admin');
+                $q->whereIn('name', ['super-admin', 'owner']);
             });
         }
 
@@ -32,8 +36,8 @@ class EmployeeController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
@@ -53,7 +57,7 @@ class EmployeeController extends Controller
         // Sorting logic
         $sortField = $request->input('sort', 'created_at');
         $sortDirection = $request->input('direction', 'desc');
-        
+
         $allowedSorts = ['name', 'email', 'status', 'created_at'];
         if (in_array($sortField, $allowedSorts)) {
             $query->orderBy($sortField, $sortDirection === 'asc' ? 'asc' : 'desc');
@@ -88,6 +92,7 @@ class EmployeeController extends Controller
             'users' => $users,
             'branches' => $branches,
             'roles' => $roles,
+            'tenants' => $tenants,
             'filters' => $request->only(['search', 'sort', 'direction', 'per_page', 'branch_id', 'status']),
         ]);
     }
@@ -103,10 +108,10 @@ class EmployeeController extends Controller
         // Determine tenant_id
         if (!auth()->user()->isSuperAdmin()) {
             $validated['tenant_id'] = auth()->user()->tenant_id;
-            
+
             // Check subscription limit for employees
             $tenant = Tenants::find(auth()->user()->tenant_id);
-            $subService = new \App\Services\SubscriptionService();
+            $subService = new SubscriptionService;
             if ($tenant && !$subService->canAddUser($tenant)) {
                 return redirect()->back()->with('error', 'Limit jumlah karyawan tercapai! Silakan upgrade paket langganan Anda untuk menambah karyawan baru.');
             }
@@ -137,8 +142,8 @@ class EmployeeController extends Controller
 
         // Save Basic Salary if provided
         if (isset($validated['basic_salary'])) {
-            app(\App\Services\EmployeeSalaryService::class)->setSalary($user->id, [
-                'basic_salary' => $validated['basic_salary']
+            app(EmployeeSalaryService::class)->setSalary($user->id, [
+                'basic_salary' => $validated['basic_salary'],
             ]);
         }
 
@@ -150,6 +155,17 @@ class EmployeeController extends Controller
      */
     public function update(UpdateUserRequest $request, User $employee)
     {
+        // Protect against modifying Super Admin
+        if ($employee->isSuperAdmin()) {
+            return redirect()->back()->with('error', 'Keamanan Sistem: Akun Super Admin tidak dapat diubah melalui form karyawan.');
+        }
+
+        // Protect against modifying other tenants' employees
+        if (!auth()->user()->isSuperAdmin() && $employee->tenant_id !== auth()->user()->tenant_id) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk mengubah karyawan ini.');
+        }
+
+
         $validated = $request->validated();
 
         if (isset($validated['password']) && $validated['password']) {
@@ -181,8 +197,8 @@ class EmployeeController extends Controller
 
         // Save Basic Salary if provided
         if (isset($validated['basic_salary'])) {
-            app(\App\Services\EmployeeSalaryService::class)->setSalary($employee->id, [
-                'basic_salary' => $validated['basic_salary']
+            app(EmployeeSalaryService::class)->setSalary($employee->id, [
+                'basic_salary' => $validated['basic_salary'],
             ]);
         }
 
@@ -194,6 +210,16 @@ class EmployeeController extends Controller
      */
     public function destroy(User $employee)
     {
+        // Protect against deleting Super Admin
+        if ($employee->isSuperAdmin()) {
+            return redirect()->back()->with('error', 'Keamanan Sistem: Akun Super Admin tidak dapat dihapus.');
+        }
+
+        // Protect against deleting other tenants' employees
+        if (!auth()->user()->isSuperAdmin() && $employee->tenant_id !== auth()->user()->tenant_id) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk menghapus karyawan ini.');
+        }
+
         // Protect against deleting yourself
         if (auth()->id() === $employee->id) {
             return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
@@ -201,6 +227,6 @@ class EmployeeController extends Controller
 
         $employee->delete();
 
-        return redirect()->route('employees.index')->with('success', 'Karyawan berhasil dihapus.');
+        return redirect()->route('employees.index')->with('success', 'Karyawan "' . $employee->name . '" berhasil dihapus.');
     }
 }

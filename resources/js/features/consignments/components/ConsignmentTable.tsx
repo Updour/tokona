@@ -41,31 +41,13 @@ export function ConsignmentTable() {
     });
 
     const handleExport = () => {
-        if (!consignments?.data?.length) {
-return;
-}
-
-        const rows = consignments.data.map((c) => ({
-            'No. Referensi': c.reference_number,
-            'Supplier': c.supplier?.name || '',
-            'Cabang': c.branch?.name || '',
-            'Status': c.status === 'active' ? 'Berjalan' : 'Selesai',
-            'Total Nilai': c.total_value || 0,
-            'Total Dibayar': c.total_paid || 0,
-            'Tanggal Dibuat': c.created_at,
-        }));
-        const headers = Object.keys(rows[0]);
-        const csv = [
-            headers.join(','),
-            ...rows.map((r) =>
-                headers.map((h) => `"${String((r as any)[h]).replace(/"/g, '""')}"`).join(',')
-            ),
-        ].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'barang_titipan_export.csv';
-        link.click();
+        const params = new URLSearchParams();
+        if (filters.status) params.append('status', filters.status);
+        if (filters.supplier_id) params.append('supplier_id', filters.supplier_id);
+        if (filters.search) params.append('search', filters.search);
+        if (filters.date_from) params.append('date_from', filters.date_from);
+        if (filters.date_to) params.append('date_to', filters.date_to);
+        window.open(`/export/consignments?${params.toString()}`, '_blank');
     };
 
     return (

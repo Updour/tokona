@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 use App\Models\MarketingCampaign;
 use App\Services\Customers\MarketingService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class MarketingController extends Controller
 {
@@ -16,6 +16,7 @@ class MarketingController extends Controller
     public function index(Request $request): Response
     {
         $data = $this->marketingService->getCampaignsData($request->all());
+
         return Inertia::render('customers/marketing/Index', $data);
     }
 
@@ -44,14 +45,14 @@ class MarketingController extends Controller
 
         return Inertia::render('customers/marketing/Show', [
             'campaign' => $campaign,
-            'queue' => $queue
+            'queue' => $queue,
         ]);
     }
 
-    public function updateProgress(Request $request, MarketingCampaign $campaign): \Illuminate\Http\RedirectResponse
+    public function updateProgress(Request $request, MarketingCampaign $campaign): RedirectResponse
     {
         $validated = $request->validate([
-            'sent_count' => 'required|integer|min:0'
+            'sent_count' => 'required|integer|min:0',
         ]);
 
         $this->marketingService->updateProgress($campaign, $validated['sent_count']);

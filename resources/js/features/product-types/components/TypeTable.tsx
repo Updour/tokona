@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/tooltip';
 import { TypeFilters } from './TypeFilters';
 import type { ProductType } from '@/pages/product-types/types';
+import { useTypeStore } from '@/pages/product-types/stores/useTypeStore';
 
 interface PageProps {
     [key: string]: any;
@@ -36,15 +37,10 @@ export function TypeTable({
 }) {
     const { props } = usePage<PageProps>();
     const { types, filters } = props;
+    const { openDelete } = useTypeStore();
 
     const handleDelete = (type: ProductType) => {
-        toast(`Hapus tipe "${type.name}"?`, {
-            action: {
-                label: 'Ya, Hapus',
-                onClick: () => router.delete(`/product-types/${type.id}`, { preserveScroll: true })
-            },
-            cancel: { label: 'Batal', onClick: () => {} }
-        });
+        openDelete(type);
     };
 
     return (

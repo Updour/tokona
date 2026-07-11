@@ -11,13 +11,12 @@ use Inertia\Response;
 
 class AttendanceController extends Controller
 {
-    public function __construct(private AttendanceService $attendanceService)
-    {
-    }
+    public function __construct(private AttendanceService $attendanceService) {}
 
     public function index(Request $request): Response
     {
         $data = $this->attendanceService->getAttendanceListData($request->all());
+
         return Inertia::render('attendances/index', $data);
     }
 
@@ -25,6 +24,7 @@ class AttendanceController extends Controller
     {
         try {
             $this->attendanceService->clockIn($request->validated());
+
             return back()->with('success', 'Absensi masuk berhasil dicatat.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -35,6 +35,7 @@ class AttendanceController extends Controller
     {
         try {
             $this->attendanceService->clockOut($request->validated());
+
             return back()->with('success', 'Absensi pulang berhasil dicatat.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());

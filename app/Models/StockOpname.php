@@ -8,14 +8,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\LogsActivity;
 
 class StockOpname extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, LogsActivity;
 
     protected $fillable = [
-        'tenant_id', 'branch_id', 'created_by', 'reference_number', 
-        'opname_date', 'notes', 'status'
+        'tenant_id',
+        'branch_id',
+        'created_by',
+        'reference_number',
+        'opname_date',
+        'notes',
+        'status',
     ];
 
     protected $casts = [

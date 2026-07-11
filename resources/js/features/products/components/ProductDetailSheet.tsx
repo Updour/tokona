@@ -1,5 +1,5 @@
 import { formatRupiah, formatNumber } from '@/lib/helpers/format';
-import { AlignLeft, Barcode, Building2, ImageOff, Layers, MapPin, Tags } from 'lucide-react';
+import { AlignLeft, Barcode, Building2, ImageOff, Layers, MapPin, Tags, PackageOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -25,6 +25,7 @@ export function ProductDetailSheet() {
                         <Badge variant={product.is_active ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
                             {product.is_active ? 'Active' : 'Inactive'}
                         </Badge>
+                        {product.is_bundle && <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-indigo-500 text-indigo-600 bg-indigo-50">Bundle</Badge>}
                         <span className="font-mono text-xs">{product.sku || '-'}</span>
                     </SheetDescription>
                 </SheetHeader>
@@ -57,7 +58,19 @@ export function ProductDetailSheet() {
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div className="space-y-1">
                                 <span className="text-muted-foreground text-xs flex items-center gap-1.5"><Barcode className="h-3.5 w-3.5" /> Barcode</span>
-                                <p className="font-medium font-mono">{product.barcode || '-'}</p>
+                                <div className="flex flex-col gap-1">
+                                    <p className="font-medium font-mono">{product.barcode || '-'}</p>
+                                    {product.barcode && (
+                                        <div className="mt-1 p-1 bg-white rounded border w-fit">
+                                            <img
+                                                src={`https://barcodeapi.org/api/128/${product.barcode}`}
+                                                alt={`Barcode ${product.barcode}`}
+                                                className="h-8 object-contain"
+                                                onError={(e) => (e.currentTarget.style.display = 'none')}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div className="space-y-1">
                                 <span className="text-muted-foreground text-xs flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" /> Kategori</span>
@@ -96,6 +109,34 @@ export function ProductDetailSheet() {
                                 <p className="font-medium flex items-center gap-1"><MapPin className="h-3 w-3" /> {product.branch?.name || '-'}</p>
                             </div>
                         </div>
+
+                        {/* Komponen Bundle */}
+                        {product.is_bundle && product.bundleItems && product.bundleItems.length > 0 && (
+                            <>
+                                <Separator />
+                                <div className="space-y-3">
+                                    <h4 className="text-sm font-semibold flex items-center gap-2 text-indigo-700"><PackageOpen className="h-4 w-4" /> Komponen Paket</h4>
+                                    <div className="rounded-lg border border-indigo-100 overflow-hidden text-sm">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-indigo-50">
+                                                <tr>
+                                                    <th className="px-3 py-2 font-medium text-indigo-800 text-xs uppercase tracking-wide">Nama Barang</th>
+                                                    <th className="px-3 py-2 font-medium text-indigo-800 text-xs uppercase tracking-wide w-24 text-center">Qty</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-indigo-100">
+                                                {product.bundleItems.map((b: any, idx: number) => (
+                                                    <tr key={idx}>
+                                                        <td className="px-3 py-2">{b.product?.name || `Produk ID: ${b.product_id}`}</td>
+                                                        <td className="px-3 py-2 text-center font-medium">{b.quantity}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </>
+                        )}
 
                         {/* Deskripsi */}
                         {product.description && (

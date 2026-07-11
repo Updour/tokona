@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\CashBook;
-use App\Models\Expense;
 use App\Models\Branch;
+use App\Models\CashBook;
+use App\Models\ConsignmentItem;
 use App\Models\Customer;
+use App\Models\Expense;
+use App\Models\Products;
 use App\Models\Purchase;
 use App\Models\Transaction;
-use App\Models\ConsignmentItem;
-use App\Models\Products;
 use Carbon\Carbon;
 
 class FinanceService
@@ -35,7 +35,7 @@ class FinanceService
 
         // Dropdown branches
         $branchesQuery = Branch::select('id', 'name')->orderBy('name');
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $branchesQuery->where('tenant_id', auth()->user()->tenant_id);
         }
 
@@ -58,7 +58,7 @@ class FinanceService
         $data['type'] = 'in';
         $data['created_by'] = auth()->id();
 
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $data['tenant_id'] = auth()->user()->tenant_id;
         } else {
             $branch = Branch::findOrFail($data['branch_id']);
@@ -81,21 +81,21 @@ class FinanceService
 
         // Calculate Ledger stats
         $allCash = CashBook::filter($filters);
-        
+
         $totalCashIn = (clone $allCash)->where('type', 'in')->sum('amount');
         $totalCashOut = (clone $allCash)->where('type', 'out')->sum('amount');
-        
-        // Sum total expenses
-        $expensesQuery = Expense::query();
+
+        // Sum total expenses (Hanya Beban Tunai, abaikan beban non-tunai seperti penyusutan)
+        $expensesQuery = Expense::whereNotIn('category', ['Penyusutan Persediaan', 'Penyusutan Aset']);
         if (isset($filters['branch_id']) && $filters['branch_id'] !== 'ALL') {
             $expensesQuery->where('branch_id', $filters['branch_id']);
         }
         $totalExpenses = $expensesQuery->sum('amount');
-        
+
         $netBalance = $totalCashIn - ($totalCashOut + $totalExpenses);
 
         $branches = Branch::select('id', 'name')->orderBy('name');
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $branches->where('tenant_id', auth()->user()->tenant_id);
         }
 
@@ -119,10 +119,19 @@ class FinanceService
         $year = intval($filters['year'] ?? Carbon::now()->year);
         $branchId = $filters['branch_id'] ?? 'ALL';
 
-        // Revenue (Accrual): Total penjualan dari POS (Kas + Hutang) + Pemasukan Manual
+        // Revenue (Accrual): Total penjualan dari POS (Kas + Hutang) + Pemasukan Manual (Operasional)
         $posRevenueQuery = Transaction::whereIn('status', ['paid', 'partial', 'debt'])->whereYear('created_at', $year);
-        $manualRevenueQuery = CashBook::where('type', 'in')->where('category', 'penjualan')->whereNull('reference_id')->whereYear('created_at', $year);
-        
+
+        $nonRevenueCategories = [
+            'Pelunasan Piutang Karyawan', 'Pelunasan Piutang', 'Investasi', 'Pendanaan',
+            'Modal Masuk', 'Pinjaman Bank',
+        ];
+
+        $manualRevenueQuery = CashBook::where('type', 'in')
+            ->whereNotIn('category', $nonRevenueCategories)
+            ->whereNull('reference_id')
+            ->whereYear('created_at', $year);
+
         if ($branchId !== 'ALL') {
             $posRevenueQuery->where('branch_id', $branchId);
             $manualRevenueQuery->where('branch_id', $branchId);
@@ -135,7 +144,7 @@ class FinanceService
             $cogsQuery->where('branch_id', $branchId);
         }
         $cogs = (clone $cogsQuery)->sum('total_cogs');
-        
+
         // Operational Expenses: From expenses table
         $expensesQuery = Expense::whereYear('expense_date', $year);
         if ($branchId !== 'ALL') {
@@ -147,11 +156,11 @@ class FinanceService
         $monthlyBreakdown = [];
         for ($m = 1; $m <= 12; $m++) {
             $monthName = Carbon::create($year, $m, 1)->locale('id')->isoFormat('MMM');
-            
+
             $mRevPos = (clone $posRevenueQuery)->whereMonth('created_at', $m)->sum('total');
             $mRevManual = (clone $manualRevenueQuery)->whereMonth('created_at', $m)->sum('amount');
             $mRev = $mRevPos + $mRevManual;
-            
+
             $mCogs = (clone $cogsQuery)->whereMonth('created_at', $m)->sum('total_cogs');
             $mExp = (clone $expensesQuery)->whereMonth('expense_date', $m)->sum('amount');
             $mNet = $mRev - ($mCogs + $mExp);
@@ -166,7 +175,7 @@ class FinanceService
         }
 
         $branches = Branch::select('id', 'name')->orderBy('name');
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $branches->where('tenant_id', auth()->user()->tenant_id);
         }
 
@@ -193,18 +202,21 @@ class FinanceService
         $totalReceivables = $receivablesQuery->sum('debt_balance');
         $receivablesList = $receivablesQuery->orderBy('debt_balance', 'desc')->take(10)->get();
 
-        $debtsQuery = Purchase::with('supplier:id,name')->where('status', 'received');
-        $totalDebts = $debtsQuery->sum('total_cost');
-        $debtsList = $debtsQuery->orderBy('total_cost', 'desc')->take(10)->get();
+        $totalDebts = Purchase::where('status', 'received')
+            ->selectRaw('SUM(CASE WHEN total_cost > amount_paid THEN total_cost - amount_paid ELSE 0 END) as total')
+            ->value('total') ?? 0;
+            
+        $debtsList = Purchase::with('supplier:id,name')
+            ->where('status', 'received')
+            ->orderByRaw('total_cost - amount_paid DESC')
+            ->take(10)
+            ->get();
 
         // Hutang Konsinyasi (Titipan belum dibayar)
-        // Diambil dari Sesi Titipan yang Selesai tapi belum Lunas, atau sesi Aktif (opsional).
-        // Karena sistem kini langsung memotong kas saat Selesai, sisa yang belum disetor dianggap hutang potensial.
-        $consignmentDebts = ConsignmentItem::whereHas('consignment', function($q) {
+        // Agregasi SQL langsung untuk menghindari kebocoran memori (OOM)
+        $consignmentDebts = ConsignmentItem::whereHas('consignment', function ($q) {
             $q->where('status', 'active');
-        })->get()->sum(function($item) {
-            return ($item->qty_received - $item->qty_unsold) * $item->base_cost;
-        });
+        })->sum(\Illuminate\Support\Facades\DB::raw('(qty_received - qty_unsold) * base_cost')) ?? 0;
 
         return [
             'stats' => [
@@ -213,7 +225,7 @@ class FinanceService
                 'net_balance' => $totalReceivables - ($totalDebts + $consignmentDebts),
                 'receivables' => $receivablesList,
                 'debts' => $debtsList,
-            ]
+            ],
         ];
     }
 
@@ -222,14 +234,14 @@ class FinanceService
      */
     public function getAccountingReportsData(array $filters): array
     {
-        $startDate = !empty($filters['start_date']) ? Carbon::parse($filters['start_date'])->startOfDay() : Carbon::now()->startOfMonth();
-        $endDate = !empty($filters['end_date']) ? Carbon::parse($filters['end_date'])->endOfDay() : Carbon::now()->endOfDay();
+        $startDate = ! empty($filters['start_date']) ? Carbon::parse($filters['start_date'])->startOfDay() : Carbon::now()->startOfMonth();
+        $endDate = ! empty($filters['end_date']) ? Carbon::parse($filters['end_date'])->endOfDay() : Carbon::now()->endOfDay();
         $branchId = $filters['branch_id'] ?? 'ALL';
 
         // 1. QUERY DAN HITUNG GENERAL LEDGER (BUKU BESAR MUTASI KAS)
         $cashBooksQuery = CashBook::with('branch:id,name')
             ->whereBetween('created_at', [$startDate, $endDate]);
-        
+
         $expensesQuery = Expense::with('branch:id,name')
             ->whereBetween('expense_date', [$startDate, $endDate]);
 
@@ -267,7 +279,7 @@ class FinanceService
                 'date' => Carbon::parse($exp->expense_date)->toIso8601String(),
                 'type' => 'Biaya',
                 'category' => $exp->category,
-                'description' => $exp->title . ($exp->note ? ' (' . $exp->note . ')' : ''),
+                'description' => $exp->title.($exp->note ? ' ('.$exp->note.')' : ''),
                 'branch' => $exp->branch->name ?? 'Pusat',
                 'debit' => 0,
                 'credit' => floatval($exp->amount),
@@ -280,7 +292,7 @@ class FinanceService
                 'date' => Carbon::parse($p->purchase_date)->toIso8601String(),
                 'type' => 'Pembelian',
                 'category' => 'HPP Pembelian',
-                'description' => 'Pembelian ke ' . ($p->supplier->name ?? 'Pemasok') . ' - Status: ' . $p->status,
+                'description' => 'Pembelian ke '.($p->supplier->name ?? 'Pemasok').' - Status: '.$p->status,
                 'branch' => $p->branch->name ?? 'Pusat',
                 'debit' => 0,
                 'credit' => floatval($p->total_cost),
@@ -295,6 +307,7 @@ class FinanceService
         $ledgerWithBalance = $ledgerEntries->map(function ($entry) use (&$runningBalance) {
             $runningBalance += $entry['debit'] - $entry['credit'];
             $entry['balance'] = $runningBalance;
+
             return $entry;
         });
 
@@ -304,7 +317,7 @@ class FinanceService
         $cashOut = CashBook::where('type', 'out');
         $totalExp = Expense::query();
         $purchasesPaid = Purchase::where('status', 'paid');
-        
+
         if ($branchId !== 'ALL') {
             $cashIn->where('branch_id', $branchId);
             $cashOut->where('branch_id', $branchId);
@@ -312,7 +325,10 @@ class FinanceService
             $purchasesPaid->where('branch_id', $branchId);
         }
 
-        $cashBalance = $cashIn->sum('amount') - ($cashOut->sum('amount') + $totalExp->sum('amount') + $purchasesPaid->sum('total_cost'));
+        // For Cash Balance, purchasesPaid is no longer needed in this formula since all payments
+        // (including partial/full) are already recorded in CashBook as 'out'
+        // so $cashOut->sum('amount') ALREADY includes them.
+        $cashBalance = $cashIn->sum('amount') - ($cashOut->sum('amount') + $totalExp->sum('amount'));
         if ($cashBalance < 0) {
             $cashBalance = 0;
         }
@@ -326,7 +342,7 @@ class FinanceService
         if ($branchId !== 'ALL') {
             $inventoryQuery->where('branch_id', $branchId);
         }
-        $totalInventoryValue = $inventoryQuery->get()->sum(fn($p) => floatval($p->base_cost) * floatval($p->current_stock));
+        $totalInventoryValue = $inventoryQuery->get()->sum(fn ($p) => floatval($p->base_cost) * floatval($p->current_stock));
 
         $totalAssets = $cashBalance + $totalReceivables + $totalInventoryValue;
 
@@ -335,20 +351,29 @@ class FinanceService
         if ($branchId !== 'ALL') {
             $debtsQuery->where('branch_id', $branchId);
         }
-        $totalDebts = $debtsQuery->sum('total_cost');
+        $totalDebts = $debtsQuery->get()->sum(fn ($p) => max(0, $p->total_cost - $p->amount_paid));
 
         // Laba Ditahan = Pendapatan Penjualan (Accrual) - HPP Penjualan - Biaya
         $posRevenueQuery = Transaction::whereIn('status', ['paid', 'partial', 'debt'])->whereBetween('created_at', [$startDate, $endDate]);
-        $manualRevenueQuery = CashBook::where('type', 'in')->where('category', 'penjualan')->whereNull('reference_id')->whereBetween('created_at', [$startDate, $endDate]);
-        
+
+        $nonRevenueCategories = [
+            'Pelunasan Piutang Karyawan', 'Pelunasan Piutang', 'Investasi', 'Pendanaan',
+            'Modal Masuk', 'Pinjaman Bank',
+        ];
+
+        $manualRevenueQuery = CashBook::where('type', 'in')
+            ->whereNotIn('category', $nonRevenueCategories)
+            ->whereNull('reference_id')
+            ->whereBetween('created_at', [$startDate, $endDate]);
+
         $cogsQuery = Transaction::whereIn('status', ['paid', 'partial', 'debt'])->whereBetween('created_at', [$startDate, $endDate]);
-        
+
         if ($branchId !== 'ALL') {
             $posRevenueQuery->where('branch_id', $branchId);
             $manualRevenueQuery->where('branch_id', $branchId);
             $cogsQuery->where('branch_id', $branchId);
         }
-        
+
         $revenue = $posRevenueQuery->sum('total') + $manualRevenueQuery->sum('amount');
         $totalCogs = $cogsQuery->sum('total_cogs');
         $retainedEarnings = $revenue - ($totalCogs + $totalExp->sum('amount'));
@@ -386,7 +411,7 @@ class FinanceService
         $netCashFlow = $operatingCashFlow + $investingCashFlow + $financingCashFlow;
 
         $branches = Branch::select('id', 'name')->orderBy('name');
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             $branches->where('tenant_id', auth()->user()->tenant_id);
         }
 
@@ -421,7 +446,7 @@ class FinanceService
                 'start_date' => $startDate->toDateString(),
                 'end_date' => $endDate->toDateString(),
                 'branch_id' => $branchId,
-            ]
+            ],
         ];
     }
 }

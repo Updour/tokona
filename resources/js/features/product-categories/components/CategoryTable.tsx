@@ -14,6 +14,7 @@ import {
 import { usePermission } from '@/hooks/use-permission';
 import { CategoryFilters } from './CategoryFilters';
 import type { ProductCategory } from '@/pages/product-categories/types';
+import { useCategoryStore } from '@/pages/product-categories/stores/useCategoryStore';
 
 interface PageProps {
     [key: string]: any;
@@ -38,15 +39,10 @@ export function CategoryTable({
     const { hasPermission } = usePermission();
     const { props } = usePage<PageProps>();
     const { categories, filters } = props;
+    const { openDelete } = useCategoryStore();
 
     const handleDelete = (cat: ProductCategory) => {
-        toast(`Hapus kategori "${cat.name}"?`, {
-            action: {
-                label: 'Ya, Hapus',
-                onClick: () => router.delete(`/product-categories/${cat.id}`, { preserveScroll: true })
-            },
-            cancel: { label: 'Batal', onClick: () => {} }
-        });
+        openDelete(cat);
     };
 
     return (

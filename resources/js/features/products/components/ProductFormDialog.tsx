@@ -32,6 +32,8 @@ import type {ProductCategory, ProductType, ProductBranch, ProductTenant} from '@
 import { store as productsStore, update as productsUpdate } from '@/routes/products';
 import { ProductImageUploader } from './ProductImageUploader';
 import { compressImage } from '@/lib/helpers/image-compression';
+import { Plus, Trash2 } from 'lucide-react';
+import { SearchableCreatableSelect } from './SearchableCreatableSelect';
 
 // ─── Komponen pembantu ────────────────────────────────────────────────────────
 
@@ -79,22 +81,27 @@ export function ProductFormDialog() {
         types: ProductType[];
         branches: ProductBranch[];
         tenants: ProductTenant[] | null;
+        all_products: {id: string, name: string, base_cost: number}[];
         is_super_admin: boolean;
         auth: { user: { branch_id: string; tenant_id: string; is_super_admin: boolean } };
     }>();
 
-    const { categories = [], types = [], branches = [], tenants, auth } = props;
+    const { categories = [], types = [], branches = [], tenants, all_products = [], auth } = props;
     const isSuperAdmin = props.is_super_admin ?? auth?.user?.is_super_admin ?? false;
     const isEdit = !!selectedProduct;
 
     // Branches yang difilter berdasarkan tenant yang dipilih (untuk super admin)
     const [filteredBranches, setFilteredBranches] = React.useState<ProductBranch[]>(branches);
+    const [filteredCategories, setFilteredCategories] = React.useState<ProductCategory[]>(categories);
+    const [filteredTypes, setFilteredTypes] = React.useState<ProductType[]>(types);
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         tenant_id: '',
         branch_id: '',
         category_id: '',
+        new_category_name: '',
         type_id: '',
+        new_type_name: '',
         supplier_id: '',
         name: '',
         sku: '',
@@ -105,6 +112,8 @@ export function ProductFormDialog() {
         min_sell_price: '',
         track_stock: true,
         allow_negative_stock: false,
+        is_bundle: false,
+        bundle_items: [] as {product_id: string, quantity: number}[],
         source: '',
         is_active: true,
         initial_stock: '',
@@ -162,14 +171,18 @@ export function ProductFormDialog() {
         setData('sku', skuParts.join('-'));
     }
 
-    // Filter branches saat tenant berubah (super admin)
+    // Filter data saat tenant berubah (super admin)
     useEffect(() => {
         if (isSuperAdmin && data.tenant_id) {
-            setFilteredBranches(branches.filter((b) => b.tenant_id === data.tenant_id));
+            setFilteredBranches(branches.filter((b) => !b.tenant_id || b.tenant_id === data.tenant_id));
+            setFilteredCategories(categories.filter((c) => !c.tenant_id || c.tenant_id === data.tenant_id));
+            setFilteredTypes(types.filter((t) => !t.tenant_id || t.tenant_id === data.tenant_id));
         } else {
             setFilteredBranches(branches);
+            setFilteredCategories(categories);
+            setFilteredTypes(types);
         }
-    }, [data.tenant_id, branches, isSuperAdmin]);
+    }, [data.tenant_id, branches, categories, types, isSuperAdmin]);
 
     useEffect(() => {
         if (selectedProduct) {
@@ -177,7 +190,9 @@ export function ProductFormDialog() {
                 tenant_id: selectedProduct.tenant_id ?? '',
                 branch_id: selectedProduct.branch_id ?? auth?.user?.branch_id ?? '',
                 category_id: selectedProduct.category_id ?? '',
+                new_category_name: '',
                 type_id: selectedProduct.type_id ?? '',
+                new_type_name: '',
                 supplier_id: selectedProduct.supplier_id ?? '',
                 name: selectedProduct.name ?? '',
                 sku: selectedProduct.sku ?? '',
@@ -188,6 +203,8 @@ export function ProductFormDialog() {
                 min_sell_price: selectedProduct.min_sell_price?.toString() ?? '',
                 track_stock: selectedProduct.track_stock ?? true,
                 allow_negative_stock: selectedProduct.allow_negative_stock ?? false,
+                is_bundle: selectedProduct.is_bundle ?? false,
+                bundle_items: selectedProduct.bundleItems?.map((b: any) => ({ product_id: b.product_id, quantity: b.quantity })) ?? [],
                 source: selectedProduct.source ?? '',
                 is_active: selectedProduct.is_active ?? true,
                 initial_stock: '',
@@ -218,6 +235,20 @@ export function ProductFormDialog() {
     const margin = data.base_cost && data.sell_price && Number(data.sell_price) > 0
         ? (((Number(data.sell_price) - Number(data.base_cost)) / Number(data.sell_price)) * 100).toFixed(1)
         : null;
+
+    // Calculate bundle total base cost automatically
+    useEffect(() => {
+        if (data.is_bundle && data.bundle_items.length > 0) {
+            let totalCost = 0;
+            data.bundle_items.forEach(item => {
+                const prod = all_products.find(p => p.id === item.product_id);
+                if (prod) {
+                    totalCost += (Number(prod.base_cost) * item.quantity);
+                }
+            });
+            setData('base_cost', totalCost.toString());
+        }
+    }, [data.is_bundle, data.bundle_items, all_products]);
 
     return (
         <Dialog open={isFormOpen} onOpenChange={(open) => !open && closeForm()}>
@@ -310,37 +341,37 @@ export function ProductFormDialog() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <Field label="Kategori" error={errors.category_id}>
-                                    <Select
-                                        value={data.category_id || '__none__'}
+                                <Field label="Kategori" error={errors.category_id || errors.new_category_name}>
+                                    <SearchableCreatableSelect
+                                        options={filteredCategories.map(c => ({
+                                            id: c.id, 
+                                            name: c.name, 
+                                            tenantName: isSuperAdmin && c.tenant_id && tenants ? tenants.find(t => t.id === c.tenant_id)?.name : undefined
+                                        }))}
+                                        value={data.category_id}
+                                        newValue={data.new_category_name}
                                         onValueChange={(v) => {
-                                            setData('category_id', v === '__none__' ? '' : v);
+                                            setData('category_id', v);
                                             generateSKU({ category_id: v, name: data.name });
                                         }}
-                                    >
-                                        <SelectTrigger className='w-full'><SelectValue placeholder="Pilih kategori..." /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="__none__"><span className="text-muted-foreground">Tanpa kategori</span></SelectItem>
-                                            {categories.map((c) => (
-                                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        onNewValueChange={(v) => setData('new_category_name', v)}
+                                        placeholder="Pilih kategori..."
+                                    />
                                 </Field>
 
-                                <Field label="Tipe Produk" error={errors.type_id}>
-                                    <Select
-                                        value={data.type_id || '__none__'}
-                                        onValueChange={(v) => setData('type_id', v === '__none__' ? '' : v)}
-                                    >
-                                        <SelectTrigger className='w-full'><SelectValue placeholder="Pilih tipe..." /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="__none__"><span className="text-muted-foreground">Tanpa tipe</span></SelectItem>
-                                            {types.map((t) => (
-                                                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                <Field label="Tipe Produk" error={errors.type_id || errors.new_type_name}>
+                                    <SearchableCreatableSelect
+                                        options={filteredTypes.map(t => ({
+                                            id: t.id, 
+                                            name: t.name, 
+                                            tenantName: isSuperAdmin && t.tenant_id && tenants ? tenants.find(te => te.id === t.tenant_id)?.name : undefined
+                                        }))}
+                                        value={data.type_id}
+                                        newValue={data.new_type_name}
+                                        onValueChange={(v) => setData('type_id', v)}
+                                        onNewValueChange={(v) => setData('new_type_name', v)}
+                                        placeholder="Pilih tipe..."
+                                    />
                                 </Field>
                             </div>
 
@@ -429,6 +460,63 @@ export function ProductFormDialog() {
                                         <div className="flex items-center gap-3 mt-2">
                                             <Input type="number" min="0" step="1" value={data.initial_stock} onChange={(e) => setData('initial_stock', e.target.value)} placeholder="0" className="max-w-[140px]" />
                                             <span className="text-sm text-muted-foreground">unit</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <label className="flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer hover:bg-muted/40 transition-colors">
+                                    <Checkbox id="is_bundle" checked={data.is_bundle} onCheckedChange={(c) => setData('is_bundle', !!c)} className="mt-0.5" />
+                                    <div>
+                                        <p className="text-sm font-semibold text-indigo-600">Jadikan sebagai Produk Bundling / Paket</p>
+                                        <p className="text-xs text-muted-foreground mt-0.5">Produk ini terdiri dari beberapa barang lain (contoh: Parcel, Promo Bundling). Stok akan mengikuti komponen terkecil.</p>
+                                    </div>
+                                </label>
+
+                                {data.is_bundle && (
+                                    <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-4 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-xs font-semibold uppercase text-indigo-700 tracking-wide">Komponen Paket</p>
+                                            <Button type="button" size="sm" variant="outline" className="h-8 text-indigo-700 border-indigo-200 hover:bg-indigo-100" onClick={() => setData('bundle_items', [...data.bundle_items, { product_id: '', quantity: 1 }])}>
+                                                <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Barang
+                                            </Button>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {data.bundle_items.length === 0 && (
+                                                <p className="text-xs text-center text-muted-foreground py-2">Belum ada barang di paket ini.</p>
+                                            )}
+                                            {data.bundle_items.map((item, idx) => (
+                                                <div key={idx} className="flex items-start gap-2">
+                                                    <div className="flex-1">
+                                                        <Select value={item.product_id} onValueChange={(v) => {
+                                                            const newItems = [...data.bundle_items];
+                                                            newItems[idx].product_id = v;
+                                                            setData('bundle_items', newItems);
+                                                        }}>
+                                                            <SelectTrigger className="bg-white"><SelectValue placeholder="Pilih produk komponen..." /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {all_products.map(p => (
+                                                                    <SelectItem key={p.id} value={p.id}>{p.name} ({formatRupiah(p.base_cost)})</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="w-24">
+                                                        <Input type="number" min="1" value={item.quantity} className="bg-white" onChange={(e) => {
+                                                            const newItems = [...data.bundle_items];
+                                                            newItems[idx].quantity = parseInt(e.target.value) || 1;
+                                                            setData('bundle_items', newItems);
+                                                        }} />
+                                                    </div>
+                                                    <Button type="button" variant="destructive" size="icon" className="shrink-0" onClick={() => {
+                                                        const newItems = [...data.bundle_items];
+                                                        newItems.splice(idx, 1);
+                                                        setData('bundle_items', newItems);
+                                                    }}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                            {errors.bundle_items && <p className="text-xs text-destructive">{errors.bundle_items}</p>}
                                         </div>
                                     </div>
                                 )}

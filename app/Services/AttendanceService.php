@@ -5,8 +5,8 @@ namespace App\Services;
 use App\Models\Attendance;
 use App\Models\Branch;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 
 class AttendanceService
 {
@@ -23,7 +23,7 @@ class AttendanceService
 
         // Stats for the current view (all branches or specific branch)
         $statsQuery = Attendance::filter($filters);
-        
+
         $stats = [
             'total_present' => (clone $statsQuery)->where('status', 'present')->count(),
             'total_late' => (clone $statsQuery)->where('status', 'late')->count(),
@@ -58,9 +58,9 @@ class AttendanceService
         }
 
         $now = Carbon::now();
-        
+
         // Determine if late (standard check-in time is 08:15 AM)
-        $standardInTime = Carbon::today()->setHour(8)->setMinute(15); 
+        $standardInTime = Carbon::today()->setHour(8)->setMinute(15);
         $status = $now->greaterThan($standardInTime) ? 'late' : 'present';
 
         // Override status if specified (e.g. sick, leave)
@@ -71,14 +71,14 @@ class AttendanceService
         $branchId = $data['branch_id'] ?? $user->branch_id;
         $tenantId = $user->tenant_id;
 
-        if (!$tenantId && $branchId) {
+        if (! $tenantId && $branchId) {
             $branch = Branch::find($branchId);
             if ($branch) {
                 $tenantId = $branch->tenant_id;
             }
         }
 
-        if (!$tenantId) {
+        if (! $tenantId) {
             throw new Exception('Gagal melakukan absensi: Tidak dapat menentukan tenant/toko aktif.');
         }
 
@@ -107,7 +107,7 @@ class AttendanceService
             ->whereDate('date', $today)
             ->first();
 
-        if (!$attendance) {
+        if (! $attendance) {
             throw new Exception('Anda belum melakukan absen masuk hari ini.');
         }
 
@@ -135,7 +135,7 @@ class AttendanceService
             ->latest('check_in_time')
             ->get();
 
-        $filename = 'Laporan_Absensi_' . Carbon::now()->format('Ymd_His') . '.csv';
+        $filename = 'Laporan_Absensi_'.Carbon::now()->format('Ymd_His').'.csv';
 
         $headers = [
             'Content-Type' => 'text/csv',
@@ -147,10 +147,10 @@ class AttendanceService
 
         $callback = function () use ($attendances) {
             $file = fopen('php://output', 'w');
-            
+
             // Add UTF-8 BOM for Excel compatibility
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            
+            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
             // Header
             fputcsv($file, [
                 'Tanggal',
@@ -159,7 +159,7 @@ class AttendanceService
                 'Jam Masuk',
                 'Jam Pulang',
                 'Status',
-                'Catatan'
+                'Catatan',
             ]);
 
             foreach ($attendances as $row) {
@@ -178,7 +178,7 @@ class AttendanceService
                     $row->check_in_time ? Carbon::parse($row->check_in_time)->format('H:i') : '-',
                     $row->check_out_time ? Carbon::parse($row->check_out_time)->format('H:i') : '-',
                     $statusMap[$row->status] ?? $row->status,
-                    $row->notes ?? '-'
+                    $row->notes ?? '-',
                 ]);
             }
 
