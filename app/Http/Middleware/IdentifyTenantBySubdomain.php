@@ -17,13 +17,34 @@ class IdentifyTenantBySubdomain
     public function handle(Request $request, Closure $next): Response
     {
         $host = $request->getHost();
-        $parts = explode('.', $host);
 
-        // Jika hanya localhost atau tokona.com tanpa subdomain, biarkan lolos
-        // Biasanya hitungan array part: 1 (localhost), 2 (tokona.com), >2 (toko-budi.tokona.com)
-        if (count($parts) > 1 && $parts[0] !== 'www') {
-            $subdomain = $parts[0];
+        // Jika host adalah alamat IP, abaikan (bukan subdomain)
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            return $next($request);
+        }
 
+        $appUrl = config('app.url');
+        $mainHost = parse_url($appUrl, PHP_URL_HOST) ?? 'localhost';
+
+        $subdomain = null;
+
+        // 1. Cek apakah host diakhiri dengan main host (misal: .tokona.com atau .localhost)
+        if (str_ends_with($host, '.' . $mainHost)) {
+            $subdomain = substr($host, 0, -strlen('.' . $mainHost));
+        } else {
+            // 2. Fallback: deteksi berdasarkan jumlah segmentasi domain
+            $parts = explode('.', $host);
+            if (count($parts) === 2 && in_array(end($parts), ['localhost', 'test'])) {
+                // Di lokal development menggunakan format toko-budi.localhost atau toko-budi.test
+                $subdomain = $parts[0];
+            } elseif (count($parts) > 2) {
+                // Di production atau env lain dengan format toko-budi.tokona.com
+                $subdomain = $parts[0];
+            }
+        }
+
+        // Jika ada subdomain dan bukan 'www', identifikasi sebagai tenant
+        if ($subdomain && $subdomain !== 'www') {
             $tenant = Tenants::where('slug', $subdomain)->first();
 
             if ($tenant) {
