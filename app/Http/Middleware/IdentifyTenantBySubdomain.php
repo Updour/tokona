@@ -26,6 +26,11 @@ class IdentifyTenantBySubdomain
         $appUrl = config('app.url');
         $mainHost = parse_url($appUrl, PHP_URL_HOST) ?? 'localhost';
 
+        // Jika host yang diakses sama dengan main host, maka tidak ada subdomain (bukan tenant)
+        if ($host === $mainHost) {
+            return $next($request);
+        }
+
         $subdomain = null;
 
         // 1. Cek apakah host diakhiri dengan main host (misal: .tokona.com atau .localhost)
@@ -34,12 +39,24 @@ class IdentifyTenantBySubdomain
         } else {
             // 2. Fallback: deteksi berdasarkan jumlah segmentasi domain
             $parts = explode('.', $host);
-            if (count($parts) === 2 && in_array(end($parts), ['localhost', 'test'])) {
-                // Di lokal development menggunakan format toko-budi.localhost atau toko-budi.test
-                $subdomain = $parts[0];
-            } elseif (count($parts) > 2) {
-                // Di production atau env lain dengan format toko-budi.tokona.com
-                $subdomain = $parts[0];
+            
+            // Cek apakah menggunakan domain bawaan Render (*.onrender.com)
+            $isRender = str_ends_with($host, '.onrender.com');
+
+            if ($isRender) {
+                // Di Render, domain utama memiliki 3 segment: nama-app.onrender.com
+                // Subdomain baru ada jika jumlah segment > 3 (misal: toko.nama-app.onrender.com)
+                if (count($parts) > 3) {
+                    $subdomain = $parts[0];
+                }
+            } else {
+                if (count($parts) === 2 && in_array(end($parts), ['localhost', 'test'])) {
+                    // Di lokal development menggunakan format toko-budi.localhost atau toko-budi.test
+                    $subdomain = $parts[0];
+                } elseif (count($parts) > 2) {
+                    // Di production atau env lain dengan format toko-budi.tokona.com (3 segment)
+                    $subdomain = $parts[0];
+                }
             }
         }
 
