@@ -15,25 +15,28 @@ class UsersTableSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('users')->delete();
+        $userId = '019e445c-c0c5-7074-b147-eb856272f55d';
+        $exists = DB::table('users')->where('id', $userId)->exists();
 
-        DB::table('users')->insert([
-            [
-                'id' => '019e445c-c0c5-7074-b147-eb856272f55d',
-                'name' => 'Super Admin Tokona',
-                'email' => 'superadmin@tokona.com',
-                'email_verified_at' => null,
-                'password' => Hash::make('password'),
-                'tenant_id' => null,
-                'branch_id' => null,
-                'phone' => null,
-                'avatar' => null,
-                'status' => 'active',
-                'last_login_at' => null,
-                'remember_token' => null,
-                'created_at' => '2026-05-20 07:49:49',
-                'updated_at' => '2026-05-20 07:49:49',
-            ],
-        ]);
+        if (!$exists) {
+            DB::table('users')->insert([
+                [
+                    'id' => $userId,
+                    'name' => 'Super Admin Tokona',
+                    'email' => 'superadmin@tokona.com',
+                    'email_verified_at' => null,
+                    'password' => Hash::make('password'),
+                    'tenant_id' => null,
+                    'branch_id' => null,
+                    'phone' => null,
+                    'avatar' => null,
+                    'status' => 'active',
+                    'last_login_at' => null,
+                    'remember_token' => null,
+                    'created_at' => '2026-05-20 07:49:49',
+                    'updated_at' => '2026-05-20 07:49:49',
+                ],
+            ]);
+        }
     }
 }

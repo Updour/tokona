@@ -60,9 +60,6 @@ class MenuAndPermissionSeeder extends Seeder
             // Audit
             ['key' => 'audit.index', 'name' => 'Akses Log & Audit', 'module' => 'Audit'],
 
-            // Audit
-            ['key' => 'audit.index', 'name' => 'Akses Log & Audit', 'module' => 'Audit'],
-
             // Toko / Tenant
             ['key' => 'tenants.index', 'name' => 'Akses Toko & Tenant', 'module' => 'Toko'],
             ['key' => 'branches.index', 'name' => 'Akses Cabang Toko', 'module' => 'Toko'],

@@ -10,9 +10,8 @@ class TenantSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('tenants')->insert([
+        $tenants = [
             [
-                'id' => Str::uuid(),
                 'name' => 'Kopi Kita',
                 'slug' => 'kopi-kita',
                 'email' => 'kopi@tokona.com',
@@ -22,11 +21,8 @@ class TenantSeeder extends Seeder
                 'status' => 'active',
                 'plan' => 'pro',
                 'expires_at' => now()->addDays(365),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
-                'id' => Str::uuid(),
                 'name' => 'Sembako Barokah',
                 'slug' => 'sembako-barokah',
                 'email' => 'sembako@tokona.com',
@@ -36,9 +32,18 @@ class TenantSeeder extends Seeder
                 'status' => 'trial',
                 'plan' => 'free',
                 'expires_at' => now()->addDays(30),
-                'created_at' => now(),
-                'updated_at' => now(),
             ]
-        ]);
+        ];
+
+        foreach ($tenants as $t) {
+            $existing = DB::table('tenants')->where('slug', $t['slug'])->first();
+            if (!$existing) {
+                DB::table('tenants')->insert(array_merge([
+                    'id' => Str::uuid(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ], $t));
+            }
+        }
     }
 }

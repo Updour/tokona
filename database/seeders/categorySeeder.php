@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\ProductCategory;
+use Illuminate\Support\Facades\DB;
 
 class categorySeeder extends Seeder
 {
@@ -12,6 +13,11 @@ class categorySeeder extends Seeder
      */
     public function run(): void
     {
+        $tenant = DB::table('tenants')->first();
+        if (!$tenant) {
+            return;
+        }
+
         $categories = [
             'Minuman',
             'Makanan',
@@ -19,8 +25,9 @@ class categorySeeder extends Seeder
         ];
 
         foreach ($categories as $cat) {
-            Category::create([
-                'name' => $cat
+            ProductCategory::firstOrCreate([
+                'tenant_id' => $tenant->id,
+                'name' => $cat,
             ]);
         }
     }

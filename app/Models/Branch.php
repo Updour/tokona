@@ -59,7 +59,7 @@ class Branch extends Model
     // =========================================================================
 
     /** Filter cabang milik tenant tertentu. */
-    public function scopeForTenant(Builder $query, string $tenantId): Builder
+    public function scopeForTenant(Builder $query, ?string $tenantId): Builder
     {
         return $query->where('tenant_id', $tenantId);
     }
