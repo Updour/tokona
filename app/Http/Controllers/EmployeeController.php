@@ -174,6 +174,10 @@ class EmployeeController extends Controller
             unset($validated['password']);
         }
 
+        if (! auth()->user()->isSuperAdmin()) {
+            unset($validated['tenant_id']);
+        }
+
         // Update the user
         $employee->update($validated);
 
