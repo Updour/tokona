@@ -1,6 +1,6 @@
 // @/features/tenants/components/TenantColumn.tsx
 
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, Eye, Edit, Trash } from 'lucide-react';
 import * as React from 'react';
@@ -174,6 +174,9 @@ return <span className="text-muted-foreground">—</span>;
         cell: ({ row }) => {
             const tenant = row.original;
             const { openForm, openView, openDelete } = useTenantStore();
+            const { auth } = usePage().props as any;
+            const isSuperAdmin = auth?.user?.roles?.some((r: any) => r.name === 'super-admin') || auth?.user?.tenant_id === null;
+            const isOwnTenant = auth?.user?.tenant_id === tenant.id;
 
             return (
                 <TooltipProvider>
@@ -209,19 +212,21 @@ return <span className="text-muted-foreground">—</span>;
                         </Tooltip>
 
                         {/* Delete button */}
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
-                                    onClick={() => openDelete(tenant)}
-                                >
-                                    <Trash className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Delete Tenant</TooltipContent>
-                        </Tooltip>
+                        {isSuperAdmin && !isOwnTenant && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
+                                        onClick={() => openDelete(tenant)}
+                                    >
+                                        <Trash className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete Tenant</TooltipContent>
+                            </Tooltip>
+                        )}
                     </div>
                 </TooltipProvider>
             );
