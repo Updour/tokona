@@ -116,6 +116,12 @@ class UserController extends Controller
         } else {
             // Super Admin
             $validated['tenant_id'] = $request->input('tenant_id');
+            if (empty($validated['tenant_id']) && !empty($validated['branch_id'])) {
+                $branch = Branch::find($validated['branch_id']);
+                if ($branch) {
+                    $validated['tenant_id'] = $branch->tenant_id;
+                }
+            }
         }
 
         // Create the user
@@ -163,6 +169,14 @@ class UserController extends Controller
 
         if (! auth()->user()->isSuperAdmin()) {
             unset($validated['tenant_id']);
+        } else {
+            // Super Admin: auto-fill tenant_id from branch if not set
+            if (empty($validated['tenant_id']) && !empty($validated['branch_id'])) {
+                $branch = Branch::find($validated['branch_id']);
+                if ($branch) {
+                    $validated['tenant_id'] = $branch->tenant_id;
+                }
+            }
         }
 
         // Update the user
