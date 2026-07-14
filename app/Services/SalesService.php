@@ -78,7 +78,7 @@ class SalesService
             'stats' => [
                 'total_sales' => $query->count(),
                 'total_visits' => SalesVisit::count(),
-                'total_orders' => SalesOrder::count(),
+                'total_orders' => SalesOrder::whereHas('salesVisit')->count(),
             ],
             'filters' => $filters,
         ];
