@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -236,6 +237,18 @@ class Products extends Model
     // =========================================================================
     // Global Scopes & Model Hooks
     // =========================================================================
+
+    /**
+     * Mutator untuk memformat nama produk menjadi Title Case secara otomatis.
+     * Mencegah nama berhuruf kapital penuh (UPPERCASE) atau berantakan.
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn (string $value) => ucwords(strtolower($value)),
+            set: fn (string $value) => ucwords(strtolower($value)),
+        );
+    }
 
     protected static function booted(): void
     {
