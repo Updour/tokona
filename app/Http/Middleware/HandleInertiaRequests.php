@@ -75,8 +75,9 @@ class HandleInertiaRequests extends Middleware
             $enableConsignment = $posSettings['enable_consignment'] ?? false;
             $enableAttendance = $posSettings['enable_attendance'] ?? false;
 
-            // Load parent menus from DB
-            $dbMenus = Menu::whereNull('parent_id')
+            // Load parent menus from DB with their children to avoid N+1 query
+            $dbMenus = Menu::with('children')
+                ->whereNull('parent_id')
                 ->orderBy('order', 'asc')
                 ->get();
 
@@ -101,10 +102,8 @@ class HandleInertiaRequests extends Middleware
                     }
                 }
 
-                // Filter submenus (children)
-                $children = Menu::where('parent_id', $menu->id)
-                    ->orderBy('order', 'asc')
-                    ->get();
+                // Filter submenus (children) already eager loaded
+                $children = $menu->children;
 
                 $filteredChildren = [];
                 foreach ($children as $child) {
@@ -192,6 +191,13 @@ class HandleInertiaRequests extends Middleware
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'low_stock_count' => $user ? fn () => app(ProductService::class)->getLowStockCount() : 0,
             'alerts' => fn () => app(\App\Services\NotificationService::class)->getUnreadAlerts(),
+            'sys_health_degraded' => (function() {
+                try {
+                    return !\App\Services\SystemHealthService::check();
+                } catch (\Exception $e) {
+                    return false;
+                }
+            })(),
         ];
     }
 }

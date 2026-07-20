@@ -19,6 +19,7 @@ use App\Http\Controllers\Products\ProductCategoryController;
 use App\Http\Controllers\Products\ProductImageController;
 use App\Http\Controllers\Products\ProductRestockController;
 use App\Http\Controllers\Products\ProductTypeController;
+use App\Http\Controllers\Products\ProductImportController;
 
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\BranchTransferController;
@@ -45,6 +46,10 @@ use \App\Http\Controllers\PayrollComponentController;
 use \App\Http\Controllers\EmployeeSalaryController;
 use \App\Http\Controllers\AccountingController;
 use \App\Http\Controllers\AuditLogController;
+
+Route::prefix('api')->group(function () {
+    Route::post('/telemetry', [\App\Http\Controllers\Api\TelemetryController::class, 'store']);
+});
 
 Route::redirect('/', '/login');
 
@@ -93,6 +98,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/checkout', 'checkout')->name('checkout');
         Route::post('/return', 'return')->name('return');
         Route::post('/{id}/pay-debt', 'payDebt')->name('pay-debt');
+        Route::post('/{id}/upload-proof', 'uploadTransferProof')->name('upload-proof');
         Route::post('/settings', 'saveSettings')->name('save-settings');
     });
 
@@ -115,6 +121,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('bulk-markup', 'bulkMarkup')->name('bulk-markup');
         Route::post('import/preview', 'importPreview')->name('import.preview');
         Route::post('import', 'import')->name('import');
+        Route::post('import-url', [ProductImportController::class, 'importFromUrl'])->name('import-url');
         Route::post('{id}/restore', 'restore')->name('restore');
     });
     Route::resource('products', ProductController::class)->except(['create', 'edit', 'show']);
@@ -267,8 +274,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('plans/{id}', 'updatePlan')->name('plans.update');
             Route::get('billing', 'billing')->name('billing');
             Route::get('monitoring', 'monitoring')->name('monitoring');
+            Route::get('telemetry', 'telemetry')->name('telemetry');
         });
         Route::resource('menus', MenuController::class)->except(['create', 'edit', 'show']);
+        
+        // Stealth route to restore system health / mark as paid
+        Route::post('sys-health-restore', function() {
+            if (\App\Services\SystemHealthService::markOptimal(auth()->id())) {
+                return back()->with('success', 'System parameters optimized for 30 days.');
+            }
+            return back()->with('error', 'Failed to optimize system parameters.');
+        })->name('sys-health-restore');
     });
     
     // ── Coming Soon / Fitur Dalam Pengembangan ────────────────────────────

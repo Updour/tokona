@@ -1,14 +1,18 @@
-import { Receipt, Download, Printer } from 'lucide-react';
+import { Receipt, Download, Printer, UploadCloud, Image as ImageIcon, Eye, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatRupiah, formatDateTime } from '@/lib/helpers/format';
+import { useState } from 'react';
+import { router } from '@inertiajs/react';
+import { toast } from 'sonner';
 
 interface PosDetailTransactionDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     selectedDetailTransaction: any;
+    setSelectedDetailTransaction?: (tx: any) => void;
     branches: any[];
     isSuperAdmin: boolean;
     handleReprint: (tx: any) => void;
@@ -18,10 +22,43 @@ export function PosDetailTransactionDialog({
     open,
     onOpenChange,
     selectedDetailTransaction,
+    setSelectedDetailTransaction,
     branches,
     isSuperAdmin,
     handleReprint
 }: PosDetailTransactionDialogProps) {
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        router.post(`/pos/${selectedDetailTransaction.id}/upload-proof`, {
+            _method: 'post',
+            image: file
+        }, {
+            forceFormData: true,
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: (page) => {
+                toast.success('Bukti transfer berhasil diunggah!');
+                const updatedTx = (page.props.transactions as any[])?.find(
+                    (tx: any) => tx.id === selectedDetailTransaction.id
+                );
+                if (updatedTx && setSelectedDetailTransaction) {
+                    setSelectedDetailTransaction(updatedTx);
+                }
+            },
+            onError: (errors) => {
+                toast.error(errors.image || 'Gagal mengunggah bukti transfer.');
+            },
+            onFinish: () => {
+                setIsUploading(false);
+            }
+        });
+    };
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col p-6 overflow-hidden">
@@ -151,7 +188,7 @@ export function PosDetailTransactionDialog({
                         {/* Rincian Finansial Faktur */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                             {/* Profit Margin Box (Khusus Super Admin) */}
-                            <div>
+                            <div className="space-y-4">
                                 {isSuperAdmin && (
                                     <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-lg space-y-1.5 shadow-sm">
                                         <span className="text-[9px] font-black text-emerald-800 uppercase tracking-widest block font-bold">AUDIT PROFIT MARGIN (SUPER ADMIN VIEW)</span>
@@ -172,6 +209,75 @@ export function PosDetailTransactionDialog({
                                         <div className="text-[10px] text-emerald-650 leading-relaxed font-medium">
                                             * Keuntungan dihitung dari selisih harga jual faktur dikurangi harga modal supplier (base cost) produk dikalikan kuantitas.
                                         </div>
+                                    </div>
+                                )}
+
+                                {/* Bukti Transfer Section */}
+                                {(selectedDetailTransaction.payment_method === 'transfer' || selectedDetailTransaction.payment_method === 'split') && (
+                                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-lg space-y-3 shadow-sm">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block font-bold">BUKTI TRANSFER</span>
+                                            {selectedDetailTransaction.transfer_proof && (
+                                                <Badge className="bg-emerald-500 border-0 text-[9px] font-bold h-4 px-1.5 text-white">Sudah Diunggah</Badge>
+                                            )}
+                                        </div>
+
+                                        {selectedDetailTransaction.transfer_proof ? (
+                                            <div className="space-y-2.5">
+                                                <div className="relative group overflow-hidden rounded-md border bg-white aspect-video max-h-[140px] flex items-center justify-center">
+                                                    <img
+                                                        src={`/storage/${selectedDetailTransaction.transfer_proof}`}
+                                                        alt="Bukti Transfer"
+                                                        className="h-full w-full object-contain"
+                                                    />
+                                                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                        <a
+                                                            href={`/storage/${selectedDetailTransaction.transfer_proof}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="p-1.5 rounded bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold flex items-center gap-1 shadow-sm"
+                                                        >
+                                                            <Eye className="h-3.5 w-3.5" /> Lihat
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <label className="flex-1 cursor-pointer">
+                                                        <div className={`text-center py-1.5 border border-dashed rounded text-[11px] font-bold text-indigo-700 hover:bg-indigo-50 border-indigo-200 flex items-center justify-center gap-1.5 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                            {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
+                                                            Ganti Bukti Transfer
+                                                        </div>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={handleFileChange}
+                                                            disabled={isUploading}
+                                                            className="hidden"
+                                                        />
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2.5">
+                                                <div className="border border-dashed rounded-md bg-white p-4 text-center text-slate-500 text-[11px]">
+                                                    <ImageIcon className="h-8 w-8 text-slate-350 mx-auto mb-1.5" />
+                                                    Belum ada bukti transfer diunggah.
+                                                </div>
+                                                <label className="block cursor-pointer">
+                                                    <div className={`text-center py-2 border rounded text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-700 flex items-center justify-center gap-1.5 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                        {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
+                                                        Upload Bukti Transfer
+                                                    </div>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handleFileChange}
+                                                        disabled={isUploading}
+                                                        className="hidden"
+                                                    />
+                                                </label>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

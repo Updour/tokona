@@ -284,6 +284,36 @@ class ReportService
                         'stock' => (int) $p->current_stock,
                         'price' => (float) $p->sell_price,
                         'base_cost' => (float) $p->base_cost,
+                        'unit' => $p->unit ?? 'Pcs',
+                    ];
+                })->values()->toArray();
+
+            // 5. Daftar Produk Dekat Kedaluwarsa (< 30 hari atau sudah lewat)
+            $expiringItems = Products::withCurrentStock()
+                ->whereNotNull('products.expired_at')
+                ->where('products.expired_at', '<=', now()->addDays(30)->toDateString())
+                ->orderBy('products.expired_at', 'asc')
+                ->get()
+                ->map(function ($p) {
+                    $expiredAt = Carbon::parse($p->expired_at);
+                    $daysLeft = (int) now()->startOfDay()->diffInDays($expiredAt, false);
+                    
+                    $status = 'warning';
+                    if ($daysLeft < 0) {
+                        $status = 'expired';
+                    } elseif ($daysLeft <= 7) {
+                        $status = 'critical';
+                    }
+
+                    return [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'sku' => $p->sku,
+                        'stock' => (int) $p->current_stock,
+                        'expired_at' => $p->expired_at->toDateString(),
+                        'days_left' => $daysLeft,
+                        'status' => $status,
+                        'unit' => $p->unit ?? 'Pcs',
                     ];
                 })->values()->toArray();
 
@@ -392,6 +422,7 @@ class ReportService
                     'retail_valuation' => (float) ($stockValuation->retail_value ?? 0),
                     'cost_valuation' => (float) ($stockValuation->cost_value ?? 0),
                     'low_stock_items' => $lowStockItems,
+                    'expiring_items' => $expiringItems,
                 ],
                 'salesFieldReport' => [
                     'total_visits' => $totalVisits,

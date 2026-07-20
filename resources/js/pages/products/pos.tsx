@@ -323,6 +323,7 @@ export default function Pos({ products, customers, promos, branches, transaction
                 open={pos.showDetailModal}
                 onOpenChange={pos.setShowDetailModal}
                 selectedDetailTransaction={pos.selectedDetailTransaction}
+                setSelectedDetailTransaction={pos.setSelectedDetailTransaction}
                 branches={branches}
                 isSuperAdmin={pos.isSuperAdmin}
                 handleReprint={pos.handleReprint}

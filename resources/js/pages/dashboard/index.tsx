@@ -7,6 +7,7 @@ import { DashboardSalesChart } from '@/features/dashboard/components/DashboardSa
 import { DashboardSalesLeaderboard } from '@/features/dashboard/components/DashboardSalesLeaderboard';
 import { DashboardStats } from '@/features/dashboard/components/DashboardStats';
 import { DashboardStockAlerts } from '@/features/dashboard/components/DashboardStockAlerts';
+import { DashboardExpiredAlerts } from '@/features/dashboard/components/DashboardExpiredAlerts';
 import { DashboardTopProducts } from '@/features/dashboard/components/DashboardTopProducts';
 import { DashboardRecentTransactions } from '@/features/dashboard/components/DashboardRecentTransactions';
 import MainLayout from '@/layouts/app/app-main-layout';
@@ -34,6 +35,7 @@ export default function Dashboard({ branches, filters, salesSummary, productPerf
                         )}
                         <DashboardPaymentMethods paymentMethods={salesSummary.payment_methods} totalSales={salesSummary.total_sales} />
                         <DashboardStockAlerts lowStockItems={stockReport.low_stock_items} />
+                        <DashboardExpiredAlerts expiringItems={stockReport.expiring_items} />
                     </div>
                 </div>
 

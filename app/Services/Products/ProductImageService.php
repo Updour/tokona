@@ -6,6 +6,8 @@ use App\Models\ProductImage;
 use App\Models\Products;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ProductImageService
 {
@@ -74,6 +76,56 @@ class ProductImageService
 
         if ($wasPrimary) {
             $product->images()->orderBy('sort_order')->first()?->update(['is_primary' => true]);
+        }
+    }
+
+    public function downloadFromUrl(string $productId, string $imageUrl): bool
+    {
+        $product = $this->findProduct($productId);
+        $existingCount = $product->images()->count();
+
+        try {
+            // Fetch remote image contents with standard user-agent
+            $response = Http::withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+            ])->timeout(15)->get($imageUrl);
+
+            if ($response->failed()) {
+                return false;
+            }
+
+            $contents = $response->body();
+            
+            // Get content-type to deduce extension
+            $contentType = $response->header('Content-Type');
+            $ext = 'jpg';
+            if (str_contains($contentType, 'png')) {
+                $ext = 'png';
+            } elseif (str_contains($contentType, 'webp')) {
+                $ext = 'webp';
+            } elseif (str_contains($contentType, 'gif')) {
+                $ext = 'gif';
+            }
+
+            $uuid = Str::uuid();
+            $path = "products/{$product->tenant_id}/{$uuid}.{$ext}";
+
+            // Store inside public disk
+            Storage::disk('public')->put($path, $contents);
+
+            ProductImage::create([
+                'tenant_id' => $product->tenant_id,
+                'product_id' => $product->id,
+                'url' => Storage::disk('public')->url($path),
+                'path' => $path,
+                'is_primary' => ($existingCount === 0),
+                'sort_order' => $existingCount,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('AI Image Import Error: ' . $e->getMessage());
+            return false;
         }
     }
 }

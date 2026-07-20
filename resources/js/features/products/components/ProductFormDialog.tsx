@@ -1,7 +1,9 @@
 import { useForm, usePage } from '@inertiajs/react';
-import { Package, DollarSign, Warehouse, Info, ChevronRight, Images, Wand2, X } from 'lucide-react';
+import { Package, DollarSign, Warehouse, Info, ChevronRight, Images, Wand2, X, Sparkles, Link } from 'lucide-react';
 import * as React from 'react';
 import { useEffect } from 'react';
+import axios from 'axios';
+import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,7 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 import { formatRupiah } from '@/lib/helpers/format';
 import { useProductStore } from '@/pages/products/stores/useProductStore';
-import type {ProductCategory, ProductType, ProductBranch, ProductTenant} from '@/pages/products/types';
+import type { ProductCategory, ProductType, ProductBranch, ProductTenant } from '@/pages/products/types';
 import { store as productsStore, update as productsUpdate } from '@/routes/products';
 import { ProductImageUploader } from './ProductImageUploader';
 import { compressImage } from '@/lib/helpers/image-compression';
@@ -81,12 +83,13 @@ export function ProductFormDialog() {
         types: ProductType[];
         branches: ProductBranch[];
         tenants: ProductTenant[] | null;
-        all_products: {id: string, name: string, base_cost: number}[];
+        all_products: { id: string, name: string, base_cost: number }[];
         is_super_admin: boolean;
         auth: { user: { branch_id: string; tenant_id: string; is_super_admin: boolean } };
+        suppliers?: any[];
     }>();
 
-    const { categories = [], types = [], branches = [], tenants, all_products = [], auth } = props;
+    const { categories = [], types = [], branches = [], tenants, all_products = [], auth, suppliers = [] } = props;
     const isSuperAdmin = props.is_super_admin ?? auth?.user?.is_super_admin ?? false;
     const isEdit = !!selectedProduct;
 
@@ -94,6 +97,10 @@ export function ProductFormDialog() {
     const [filteredBranches, setFilteredBranches] = React.useState<ProductBranch[]>(branches);
     const [filteredCategories, setFilteredCategories] = React.useState<ProductCategory[]>(categories);
     const [filteredTypes, setFilteredTypes] = React.useState<ProductType[]>(types);
+    const [filteredSuppliers, setFilteredSuppliers] = React.useState<any[]>(suppliers);
+
+    const [importUrl, setImportUrl] = React.useState('');
+    const [isImporting, setIsImporting] = React.useState(false);
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         tenant_id: '',
@@ -103,6 +110,7 @@ export function ProductFormDialog() {
         type_id: '',
         new_type_name: '',
         supplier_id: '',
+        new_supplier_name: '',
         name: '',
         sku: '',
         barcode: '',
@@ -113,33 +121,40 @@ export function ProductFormDialog() {
         track_stock: true,
         allow_negative_stock: false,
         is_bundle: false,
-        bundle_items: [] as {product_id: string, quantity: number}[],
+        bundle_items: [] as { product_id: string, quantity: number }[],
         source: '',
         is_active: true,
         initial_stock: '',
         images: [] as File[],
+        expired_at: '',
+        unit: 'Pcs',
+        imported_image_url: '',
     });
 
-    const generateSKU = (data: { category_id: string; name: string }) => {
+    const generateSKU = (data: { category_id: string; new_category_name?: string; name: string }) => {
         const skuParts = [];
 
         // 1. Singkatan Kategori (Opsional)
+        let categoryName = '';
         if (data.category_id) {
             const cat = categories.find(c => c.id === data.category_id);
+            if (cat) categoryName = cat.name;
+        } else if (data.new_category_name) {
+            categoryName = data.new_category_name;
+        }
 
-            if (cat && cat.name) {
-                // 1. Bersihkan karakter non-alphanumeric dan ubah ke huruf besar
-                const cleanName = cat.name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        if (categoryName) {
+            // 1. Bersihkan karakter non-alphanumeric dan ubah ke huruf besar
+            const cleanName = categoryName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
-                // 2. Hapus semua huruf vokal (A, E, I, O, U)
-                const consonantOnly = cleanName.replace(/[AEIOU]/g, '');
+            // 2. Hapus semua huruf vokal (A, E, I, O, U)
+            const consonantOnly = cleanName.replace(/[AEIOU]/g, '');
 
-                // 3. Jika setelah dihapus vokalnya karakternya kurang dari 3 (misal kategori pendek), gunakan nama asli
-                const baseString = consonantOnly.length >= 3 ? consonantOnly : cleanName;
+            // 3. Jika setelah dihapus vokalnya karakternya kurang dari 3 (misal kategori pendek), gunakan nama asli
+            const baseString = consonantOnly.length >= 3 ? consonantOnly : cleanName;
 
-                // 4. Ambil 3 huruf pertama
-                skuParts.push(baseString.substring(0, 3));
-            }
+            // 4. Ambil 3 huruf pertama
+            skuParts.push(baseString.substring(0, 3));
         }
 
         // 2. Singkatan Nama Produk
@@ -168,8 +183,95 @@ export function ProductFormDialog() {
         const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
         skuParts.push(randomNum);
 
-        setData('sku', skuParts.join('-'));
+        const sku = skuParts.join('-');
+        setData('sku', sku);
+        return sku;
     }
+
+    const generateBarcode = () => {
+        let result = '';
+        for (let i = 0; i < 12; i++) {
+            result += Math.floor(Math.random() * 10).toString();
+        }
+        setData('barcode', result);
+    }
+
+    const handleImportFromUrl = async () => {
+        if (!importUrl) {
+            toast.error('Masukkan URL produk terlebih dahulu.');
+            return;
+        }
+        setIsImporting(true);
+        try {
+            const response = await axios.post('/products/import-url', { url: importUrl });
+            if (response.data.success && response.data.data) {
+                const p = response.data.data;
+                
+                // 1. Generate 12-digit Barcode
+                let barcodeResult = '';
+                for (let i = 0; i < 12; i++) {
+                    barcodeResult += Math.floor(Math.random() * 10).toString();
+                }
+
+                // 2. Match Category and Type returned by AI with existing lists
+                let categoryIdToSet = '';
+                let newCategoryNameToSet = '';
+                if (p.category) {
+                    const matchedCat = categories.find(
+                        c => c.name.toLowerCase().trim() === p.category.toLowerCase().trim()
+                    );
+                    if (matchedCat) {
+                        categoryIdToSet = matchedCat.id;
+                    } else {
+                        newCategoryNameToSet = p.category;
+                    }
+                }
+
+                let typeIdToSet = '';
+                let newTypeNameToSet = '';
+                if (p.type) {
+                    const matchedType = types.find(
+                        t => t.name.toLowerCase().trim() === p.type.toLowerCase().trim()
+                    );
+                    if (matchedType) {
+                        typeIdToSet = matchedType.id;
+                    } else {
+                        newTypeNameToSet = p.type;
+                    }
+                }
+
+                // 3. Generate SKU using Tokona's exact local function based on matched category
+                const generatedSku = generateSKU({
+                    category_id: categoryIdToSet,
+                    new_category_name: newCategoryNameToSet,
+                    name: p.name || ''
+                });
+
+                setData((prev: any) => ({
+                    ...prev,
+                    name: p.name || prev.name,
+                    sell_price: p.sell_price ? p.sell_price.toString() : prev.sell_price,
+                    description: p.description || prev.description,
+                    unit: p.unit || prev.unit || 'Pcs',
+                    category_id: categoryIdToSet || prev.category_id,
+                    new_category_name: newCategoryNameToSet || prev.new_category_name,
+                    type_id: typeIdToSet || prev.type_id,
+                    new_type_name: newTypeNameToSet || prev.new_type_name,
+                    barcode: barcodeResult,
+                    sku: generatedSku,
+                    imported_image_url: p.image_url || prev.imported_image_url,
+                }));
+                toast.success('Data produk berhasil diimpor! Silakan periksa form.');
+                setImportUrl('');
+            } else {
+                toast.error(response.data.message || 'Gagal mengimpor produk.');
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Gagal menghubungi server untuk impor.');
+        } finally {
+            setIsImporting(false);
+        }
+    };
 
     // Filter data saat tenant berubah (super admin)
     useEffect(() => {
@@ -177,12 +279,14 @@ export function ProductFormDialog() {
             setFilteredBranches(branches.filter((b) => !b.tenant_id || b.tenant_id === data.tenant_id));
             setFilteredCategories(categories.filter((c) => !c.tenant_id || c.tenant_id === data.tenant_id));
             setFilteredTypes(types.filter((t) => !t.tenant_id || t.tenant_id === data.tenant_id));
+            setFilteredSuppliers(suppliers.filter((s) => !s.tenant_id || s.tenant_id === data.tenant_id));
         } else {
             setFilteredBranches(branches);
             setFilteredCategories(categories);
             setFilteredTypes(types);
+            setFilteredSuppliers(suppliers);
         }
-    }, [data.tenant_id, branches, categories, types, isSuperAdmin]);
+    }, [data.tenant_id, branches, categories, types, suppliers, isSuperAdmin]);
 
     useEffect(() => {
         if (selectedProduct) {
@@ -194,6 +298,7 @@ export function ProductFormDialog() {
                 type_id: selectedProduct.type_id ?? '',
                 new_type_name: '',
                 supplier_id: selectedProduct.supplier_id ?? '',
+                new_supplier_name: '',
                 name: selectedProduct.name ?? '',
                 sku: selectedProduct.sku ?? '',
                 barcode: selectedProduct.barcode ?? '',
@@ -209,6 +314,9 @@ export function ProductFormDialog() {
                 is_active: selectedProduct.is_active ?? true,
                 initial_stock: '',
                 images: [],
+                expired_at: selectedProduct.expired_at ?? '',
+                unit: selectedProduct.unit ?? 'Pcs',
+                imported_image_url: '',
             });
         } else {
             reset();
@@ -250,6 +358,30 @@ export function ProductFormDialog() {
         }
     }, [data.is_bundle, data.bundle_items, all_products]);
 
+    const defaultUnits = React.useMemo(() => [
+        { id: 'Pcs', name: 'Pcs' },
+        { id: 'Bungkus', name: 'Bungkus' },
+        { id: 'Pack', name: 'Pack' },
+        { id: 'Box', name: 'Box' },
+        { id: 'Slop', name: 'Slop' },
+        { id: 'Renceng', name: 'Renceng' },
+        { id: 'Dus', name: 'Dus' },
+        { id: 'Sachet', name: 'Sachet' },
+        { id: 'Kg', name: 'Kg' },
+        { id: 'Liter', name: 'Liter' },
+        { id: 'Botol', name: 'Botol' },
+    ], []);
+
+    const unitOptions = React.useMemo(() => {
+        const list = [...defaultUnits];
+        if (data.unit && !list.some(u => u.id === data.unit)) {
+            list.push({ id: data.unit, name: data.unit });
+        }
+        return list;
+    }, [data.unit, defaultUnits]);
+
+    const [showAiImporter, setShowAiImporter] = React.useState(true);
+
     return (
         <Dialog open={isFormOpen} onOpenChange={(open) => !open && closeForm()}>
             <DialogContent className="sm:max-w-[820px] p-0 gap-0 max-h-[92vh] flex flex-col overflow-hidden">
@@ -272,7 +404,66 @@ export function ProductFormDialog() {
 
                         {/* ── Seksi 1: Informasi Dasar ── */}
                         <div className="space-y-4">
-                            <SectionHeader icon={Info} title="Informasi Dasar" description="Identitas produk dan klasifikasinya" />
+                            <div className="flex items-center justify-between pb-2 border-b">
+                                <SectionHeader icon={Info} title="Informasi Dasar" description="Identitas produk dan klasifikasinya" />
+                                {!isEdit && (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setShowAiImporter(!showAiImporter)}
+                                        className="text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-200 dark:border-slate-700"
+                                    >
+                                        <Sparkles className="h-3.5 w-3.5 text-slate-500" />
+                                        <span>{showAiImporter ? 'Sembunyikan AI Impor' : 'Impor dari URL AI'}</span>
+                                    </Button>
+                                )}
+                            </div>
+
+                            {/* AI Importer Block */}
+                            {!isEdit && showAiImporter && (
+                                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2 dark:bg-slate-900/60 dark:border-slate-800">
+                                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-350">
+                                        <Sparkles className="h-3.5 w-3.5 text-slate-500" />
+                                        <span>Impor Produk Instan dari URL Toko</span>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                        Masukkan link produk dari Tokopedia atau toko online umum lainnya, sistem akan otomatis menarik Nama, Harga, Deskripsi, dan Gambar Produk secara cerdas menggunakan AI.
+                                    </p>
+                                    <div className="flex gap-2 pt-1.5">
+                                        <div className="relative flex-1">
+                                            <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                            <Input
+                                                type="url"
+                                                value={importUrl}
+                                                onChange={(e) => setImportUrl(e.target.value)}
+                                                placeholder="Tempel link Tokopedia / produk di sini..."
+                                                className="pl-9 h-9 text-xs"
+                                                disabled={isImporting}
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            onClick={handleImportFromUrl}
+                                            disabled={isImporting}
+                                            className="h-9 px-4 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 flex items-center gap-1.5"
+                                        >
+                                            {isImporting ? (
+                                                <>
+                                                    <span className="h-3 w-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                                                    <span>Memproses...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Sparkles className="h-3.5 w-3.5" />
+                                                    <span>Impor</span>
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Super admin: pilih tenant dulu */}
                             {isSuperAdmin && (
@@ -299,17 +490,33 @@ export function ProductFormDialog() {
                                 </Field>
                             )}
 
-                            <Field label="Nama Produk" required error={errors.name}>
-                                <Input
-                                    value={data.name.toUpperCase()}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    placeholder="e.g. Aqua Mineral Water 600ml"
-                                    required
-                                    minLength={5}
-                                />
-                            </Field>
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                                <div className="sm:col-span-3">
+                                    <Field label="Nama Produk" required error={errors.name}>
+                                        <Input
+                                            value={data.name.toUpperCase()}
+                                            onChange={(e) => setData('name', e.target.value)}
+                                            placeholder="e.g. Aqua Mineral Water 600ml"
+                                            required
+                                            minLength={5}
+                                        />
+                                    </Field>
+                                </div>
+                                <div className="sm:col-span-1">
+                                    <Field label="Satuan" error={errors.unit}>
+                                        <SearchableCreatableSelect
+                                            options={unitOptions}
+                                            value={data.unit}
+                                            newValue={data.unit}
+                                            onValueChange={(v) => { if (v) setData('unit', v); }}
+                                            onNewValueChange={(v) => { if (v) setData('unit', v); }}
+                                            placeholder="Pilih satuan..."
+                                        />
+                                    </Field>
+                                </div>
+                            </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Field label="SKU / Kode Produk" error={errors.sku}>
                                     <div className="flex gap-2">
                                         <Input
@@ -331,21 +538,33 @@ export function ProductFormDialog() {
                                     </div>
                                 </Field>
                                 <Field label="Barcode" error={errors.barcode}>
-                                    <Input
-                                        value={data.barcode}
-                                        onChange={(e) => setData('barcode', e.target.value)}
-                                        placeholder="Scan barcode di sini..."
-                                        className="font-mono"
-                                    />
+                                    <div className="flex gap-2">
+                                        <Input
+                                            value={data.barcode}
+                                            onChange={(e) => setData('barcode', e.target.value)}
+                                            placeholder="Scan barcode di sini..."
+                                            className="font-mono"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="shrink-0 text-muted-foreground hover:text-primary"
+                                            title="Generate Random Barcode"
+                                            onClick={generateBarcode}
+                                        >
+                                            <Wand2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </Field>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Field label="Kategori" error={errors.category_id || errors.new_category_name}>
                                     <SearchableCreatableSelect
                                         options={filteredCategories.map(c => ({
-                                            id: c.id, 
-                                            name: c.name, 
+                                            id: c.id,
+                                            name: c.name,
                                             tenantName: isSuperAdmin && c.tenant_id && tenants ? tenants.find(t => t.id === c.tenant_id)?.name : undefined
                                         }))}
                                         value={data.category_id}
@@ -362,8 +581,8 @@ export function ProductFormDialog() {
                                 <Field label="Tipe Produk" error={errors.type_id || errors.new_type_name}>
                                     <SearchableCreatableSelect
                                         options={filteredTypes.map(t => ({
-                                            id: t.id, 
-                                            name: t.name, 
+                                            id: t.id,
+                                            name: t.name,
                                             tenantName: isSuperAdmin && t.tenant_id && tenants ? tenants.find(te => te.id === t.tenant_id)?.name : undefined
                                         }))}
                                         value={data.type_id}
@@ -396,11 +615,18 @@ export function ProductFormDialog() {
                                     </Select>
                                 </Field>
 
-                                <Field label="Sumber / Supplier" error={errors.source}>
-                                    <Input
-                                        value={data.source}
-                                        onChange={(e) => setData('source', e.target.value)}
-                                        placeholder="e.g. PT Danone Indonesia"
+                                <Field label="Supplier" error={errors.supplier_id || errors.new_supplier_name}>
+                                    <SearchableCreatableSelect
+                                        options={filteredSuppliers.map(s => ({
+                                            id: s.id,
+                                            name: s.name,
+                                            tenantName: isSuperAdmin && s.tenant_id && tenants ? tenants.find(t => t.id === s.tenant_id)?.name : undefined
+                                        }))}
+                                        value={data.supplier_id}
+                                        newValue={data.new_supplier_name}
+                                        onValueChange={(v) => setData('supplier_id', v)}
+                                        onNewValueChange={(v) => setData('new_supplier_name', v)}
+                                        placeholder="Pilih supplier..."
                                     />
                                 </Field>
                             </div>
@@ -451,29 +677,80 @@ export function ProductFormDialog() {
                             <SectionHeader icon={Warehouse} title="Stok & Status" description="Atur pelacakan inventori dan ketersediaan produk" />
 
                             <div className="grid grid-cols-1 gap-3">
-                                {!isEdit && (
-                                    <div className="rounded-lg border border-dashed p-4 space-y-2 bg-muted/30">
-                                        <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">Stok Awal (Opsional)</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            Masukkan jumlah stok awal. Sistem akan otomatis membuat catatan <strong>Stock IN</strong> pertama.
-                                        </p>
-                                        <div className="flex items-center gap-3 mt-2">
-                                            <Input type="number" min="0" step="1" value={data.initial_stock} onChange={(e) => setData('initial_stock', e.target.value)} placeholder="0" className="max-w-[140px]" />
-                                            <span className="text-sm text-muted-foreground">unit</span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {!isEdit ? (
+                                        <div className="rounded-lg border border-dashed p-4 space-y-2 bg-muted/30">
+                                            <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">Stok Awal (Opsional)</p>
+                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                                Masukkan jumlah stok awal. Sistem akan otomatis membuat catatan <strong>Stock IN</strong> pertama.
+                                            </p>
+                                            <div className="flex items-center gap-3 mt-2">
+                                                <Input type="number" min="0" step="1" value={data.initial_stock} onChange={(e) => setData('initial_stock', e.target.value)} placeholder="0" className="max-w-[140px]" />
+                                                <span className="text-sm text-muted-foreground">unit</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    ) : null}
 
-                                <label className="flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer hover:bg-muted/40 transition-colors">
-                                    <Checkbox id="is_bundle" checked={data.is_bundle} onCheckedChange={(c) => setData('is_bundle', !!c)} className="mt-0.5" />
-                                    <div>
-                                        <p className="text-sm font-semibold text-indigo-600">Jadikan sebagai Produk Bundling / Paket</p>
-                                        <p className="text-xs text-muted-foreground mt-0.5">Produk ini terdiri dari beberapa barang lain (contoh: Parcel, Promo Bundling). Stok akan mengikuti komponen terkecil.</p>
+                                    <div className={`rounded-lg border p-4 space-y-2 bg-muted/10 ${isEdit ? 'sm:col-span-2' : ''}`}>
+                                        <label htmlFor="expired_at" className="block text-xs font-semibold uppercase text-muted-foreground tracking-wide">
+                                            Tanggal Kedaluwarsa (Opsional)
+                                        </label>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Isi jika produk memiliki masa kedaluwarsa (misal produk makanan atau obat).
+                                        </p>
+                                        <Input
+                                            type="date"
+                                            id="expired_at"
+                                            value={data.expired_at}
+                                            onChange={(e) => setData('expired_at', e.target.value)}
+                                            className="max-w-[220px] mt-2"
+                                        />
+                                        {errors.expired_at && <p className="text-xs text-destructive mt-1">{errors.expired_at}</p>}
                                     </div>
-                                </label>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                    <label className="flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer hover:bg-muted/40 transition-colors">
+                                        <Checkbox id="track_stock" checked={data.track_stock} onCheckedChange={(c) => setData('track_stock', !!c)} className="mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-semibold">Lacak Stok</p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">Pantau level inventori dan dapatkan peringatan stok menipis.</p>
+                                        </div>
+                                    </label>
+
+                                    <label className={`flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer transition-colors ${data.track_stock ? 'hover:bg-muted/40' : 'opacity-40 cursor-not-allowed'}`}>
+                                        <Checkbox id="allow_negative_stock" checked={data.allow_negative_stock} disabled={!data.track_stock} onCheckedChange={(c) => setData('allow_negative_stock', !!c)} className="mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-semibold flex items-center gap-2">
+                                                Izinkan Stok Negatif
+                                                {data.allow_negative_stock && <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">Aktif</Badge>}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">Izinkan penjualan meski stok sudah nol (e.g. pre-order, konsinyasi).</p>
+                                        </div>
+                                    </label>
+
+                                    <label className="flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer hover:bg-muted/40 transition-colors">
+                                        <Checkbox id="is_bundle" checked={data.is_bundle} onCheckedChange={(c) => setData('is_bundle', !!c)} className="mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-indigo-600">Jadikan sebagai Produk Bundling / Paket</p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">Produk ini terdiri dari beberapa barang lain (contoh: Parcel, Promo Bundling). Stok akan mengikuti komponen terkecil.</p>
+                                        </div>
+                                    </label>
+
+                                    <label className="flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer hover:bg-muted/40 transition-colors">
+                                        <Checkbox id="is_active" checked={data.is_active} onCheckedChange={(c) => setData('is_active', !!c)} className="mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-semibold flex items-center gap-2">
+                                                Produk Aktif / Tersedia untuk Dijual
+                                                <Badge variant={data.is_active ? 'default' : 'secondary'} className="text-xs">{data.is_active ? 'Aktif' : 'Nonaktif'}</Badge>
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">Produk nonaktif tidak akan muncul di layar kasir POS.</p>
+                                        </div>
+                                    </label>
+                                </div>
 
                                 {data.is_bundle && (
-                                    <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-4 space-y-4">
+                                    <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-4 space-y-4 mt-2">
                                         <div className="flex items-center justify-between">
                                             <p className="text-xs font-semibold uppercase text-indigo-700 tracking-wide">Komponen Paket</p>
                                             <Button type="button" size="sm" variant="outline" className="h-8 text-indigo-700 border-indigo-200 hover:bg-indigo-100" onClick={() => setData('bundle_items', [...data.bundle_items, { product_id: '', quantity: 1 }])}>
@@ -521,35 +798,7 @@ export function ProductFormDialog() {
                                     </div>
                                 )}
 
-                                <label className="flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer hover:bg-muted/40 transition-colors">
-                                    <Checkbox id="track_stock" checked={data.track_stock} onCheckedChange={(c) => setData('track_stock', !!c)} className="mt-0.5" />
-                                    <div>
-                                        <p className="text-sm font-semibold">Lacak Stok</p>
-                                        <p className="text-xs text-muted-foreground mt-0.5">Pantau level inventori dan dapatkan peringatan stok menipis.</p>
-                                    </div>
-                                </label>
 
-                                <label className={`flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer transition-colors ${data.track_stock ? 'hover:bg-muted/40' : 'opacity-40 cursor-not-allowed'}`}>
-                                    <Checkbox id="allow_negative_stock" checked={data.allow_negative_stock} disabled={!data.track_stock} onCheckedChange={(c) => setData('allow_negative_stock', !!c)} className="mt-0.5" />
-                                    <div>
-                                        <p className="text-sm font-semibold flex items-center gap-2">
-                                            Izinkan Stok Negatif
-                                            {data.allow_negative_stock && <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">Aktif</Badge>}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground mt-0.5">Izinkan penjualan meski stok sudah nol (e.g. pre-order, konsinyasi).</p>
-                                    </div>
-                                </label>
-
-                                <label className="flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer hover:bg-muted/40 transition-colors">
-                                    <Checkbox id="is_active" checked={data.is_active} onCheckedChange={(c) => setData('is_active', !!c)} className="mt-0.5" />
-                                    <div>
-                                        <p className="text-sm font-semibold flex items-center gap-2">
-                                            Produk Aktif / Tersedia untuk Dijual
-                                            <Badge variant={data.is_active ? 'default' : 'secondary'} className="text-xs">{data.is_active ? 'Aktif' : 'Nonaktif'}</Badge>
-                                        </p>
-                                        <p className="text-xs text-muted-foreground mt-0.5">Produk nonaktif tidak akan muncul di layar kasir POS.</p>
-                                    </div>
-                                </label>
                             </div>
                         </div>
 
@@ -588,16 +837,16 @@ export function ProductFormDialog() {
                                         onChange={async (e) => {
                                             if (e.target.files && e.target.files.length > 0) {
                                                 const originalFiles = Array.from(e.target.files);
-                                                
+
                                                 // Karena proses kompresi asinkron, kita proses sekaligus dengan Promise.all
                                                 const compressedFiles = await Promise.all(
                                                     originalFiles.map(file => compressImage(file))
                                                 );
-                                                
+
                                                 // Gabungkan dengan gambar yang sudah dipilih sebelumnya (maksimal 10 gambar)
                                                 const newImages = [...data.images, ...compressedFiles].slice(0, 10);
                                                 setData('images', newImages);
-                                                
+
                                                 // Reset nilai input agar bisa memilih file yang sama lagi jika dihapus
                                                 e.target.value = '';
                                             }
@@ -610,8 +859,8 @@ export function ProductFormDialog() {
                                                 <div key={idx} className="relative aspect-square rounded-md overflow-hidden border bg-muted group">
                                                     <img src={URL.createObjectURL(file)} alt="Preview" className="h-full w-full object-cover" />
                                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                        <button 
-                                                            type="button" 
+                                                        <button
+                                                            type="button"
                                                             onClick={() => {
                                                                 const newImages = [...data.images];
                                                                 newImages.splice(idx, 1);
@@ -627,6 +876,24 @@ export function ProductFormDialog() {
                                             ))}
                                         </div>
                                     )}
+                                    {data.imported_image_url && (
+                                        <div className="flex flex-col gap-2 pt-2">
+                                            <span className="text-[10px] text-muted-foreground uppercase font-bold">Gambar dari Impor URL:</span>
+                                            <div className="relative aspect-square w-24 rounded-md overflow-hidden border bg-muted group">
+                                                <img src={data.imported_image_url} referrerPolicy="no-referrer" alt="Imported preview" className="h-full w-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setData('imported_image_url', '')}
+                                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full p-1.5"
+                                                        title="Hapus gambar impor"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                     {errors.images && <p className="text-xs text-destructive">{errors.images}</p>}
                                 </div>
                             </>
@@ -635,9 +902,9 @@ export function ProductFormDialog() {
 
                     {/* Footer */}
                     <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted/20">
-                        <Button variant="outline" type="button" onClick={closeForm} disabled={processing}>Batal</Button>
-                        <Button type="submit" disabled={processing} className="min-w-[130px]">
-                            {processing ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Tambah Produk'}
+                        <Button variant="outline" type="button" onClick={closeForm} disabled={processing || isImporting}>Batal</Button>
+                        <Button type="submit" disabled={processing || isImporting} className="min-w-[130px]">
+                            {processing ? 'Menyimpan...' : isImporting ? 'Mengimpor...' : isEdit ? 'Simpan Perubahan' : 'Tambah Produk'}
                         </Button>
                     </DialogFooter>
                 </form>

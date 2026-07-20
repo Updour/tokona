@@ -118,4 +118,21 @@ class SuperAdminController extends Controller
 
         return back()->with('success', 'Paket langganan berhasil diperbarui.');
     }
+
+    /**
+     * Display the Telemetry Logs (Installations).
+     */
+    public function telemetry(): Response
+    {
+        if (! auth()->user()->isSuperAdmin()) {
+            abort(403, 'Akses khusus Pemilik Aplikasi Utama.');
+        }
+
+        $logs = \App\Models\TelemetryLog::orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return Inertia::render('superadmin/Telemetry', [
+            'logs' => $logs
+        ]);
+    }
 }

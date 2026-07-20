@@ -25,6 +25,7 @@ class Transaction extends Model
         'total',
         'cash_amount',
         'transfer_amount',
+        'transfer_proof',
         'paid_amount',
         'change_amount',
         'payment_method',

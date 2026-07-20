@@ -23,7 +23,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import type {ProductCategory, ProductType, ProductBranch, ProductTenant} from '@/pages/products/types';
+import type { ProductCategory, ProductType, ProductBranch, ProductTenant } from '@/pages/products/types';
 import { useProductStore } from '@/pages/products/stores/useProductStore';
 
 interface ProductFiltersProps {
@@ -64,6 +64,38 @@ export function ProductFilters({
     });
 
     const openImport = useProductStore((state) => state.openImport);
+
+    const [filteredBranches, setFilteredBranches] = useState<ProductBranch[]>(branches);
+    const [filteredCategories, setFilteredCategories] = useState<ProductCategory[]>(categories);
+    const [filteredTypes, setFilteredTypes] = useState<ProductType[]>(types);
+
+    // Filter dropdown options when tenant changes (Super Admin)
+    useEffect(() => {
+        if (isSuperAdmin && localFilters.tenant_id) {
+            const tenantId = localFilters.tenant_id;
+            setFilteredBranches(branches.filter((b) => !b.tenant_id || b.tenant_id === tenantId));
+            setFilteredCategories(categories.filter((c) => !c.tenant_id || c.tenant_id === tenantId));
+            setFilteredTypes(types.filter((t) => !t.tenant_id || t.tenant_id === tenantId));
+
+            // Reset selection if the selected branch/category/type does not belong to the selected tenant
+            const currentBranch = branches.find(b => b.id === localFilters.branch_id);
+            if (currentBranch && currentBranch.tenant_id && currentBranch.tenant_id !== tenantId) {
+                updateLocal('branch_id', '');
+            }
+            const currentCat = categories.find(c => c.id === localFilters.category_id);
+            if (currentCat && currentCat.tenant_id && currentCat.tenant_id !== tenantId) {
+                updateLocal('category_id', '');
+            }
+            const currentType = types.find(t => t.id === localFilters.type_id);
+            if (currentType && currentType.tenant_id && currentType.tenant_id !== tenantId) {
+                updateLocal('type_id', '');
+            }
+        } else {
+            setFilteredBranches(branches);
+            setFilteredCategories(categories);
+            setFilteredTypes(types);
+        }
+    }, [localFilters.tenant_id, branches, categories, types, isSuperAdmin]);
 
     // Hitung berapa filter aktif (selain search)
     const activeFilterCount = [
@@ -196,7 +228,7 @@ export function ProductFilters({
                                     <SelectTrigger className="h-8 text-sm w-full"><SelectValue placeholder="Semua cabang" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="__all__">Semua cabang</SelectItem>
-                                        {branches.map((b) => (
+                                        {filteredBranches.map((b) => (
                                             <SelectItem key={b.id} value={b.id}>
                                                 {b.name}{b.code && <span className="ml-1 text-muted-foreground font-mono text-xs">({b.code})</span>}
                                             </SelectItem>
@@ -214,7 +246,7 @@ export function ProductFilters({
                                     <SelectTrigger className="h-8 text-sm w-full"><SelectValue placeholder="Semua kategori" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="__all__">Semua kategori</SelectItem>
-                                        {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                        {filteredCategories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -228,7 +260,7 @@ export function ProductFilters({
                                     <SelectTrigger className="h-8 text-sm w-full"><SelectValue placeholder="Semua tipe" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="__all__">Semua tipe</SelectItem>
-                                        {types.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                                        {filteredTypes.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -324,7 +356,7 @@ export function ProductFilters({
 
                 {/* Import */}
                 <Button variant="outline" size="sm" onClick={() => openImport()} className="gap-1.5 border-indigo-200 text-indigo-700 hover:bg-indigo-50">
-                    <UploadCloud className="h-4 w-4" /> Import Excel
+                    <UploadCloud className="h-4 w-4" /> Import
                 </Button>
 
                 {/* Export */}

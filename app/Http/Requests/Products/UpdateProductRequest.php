@@ -17,39 +17,43 @@ class UpdateProductRequest extends FormRequest
         $productId = $this->route('product');
 
         return [
-            'branch_id'            => ['required', 'uuid', 'exists:branches,id'],
-            'category_id'          => ['nullable', 'uuid', 'exists:product_categories,id'],
-            'new_category_name'    => ['nullable', 'string', 'max:255'],
-            'type_id'              => ['nullable', 'uuid', 'exists:product_types,id'],
-            'new_type_name'        => ['nullable', 'string', 'max:255'],
-            'supplier_id'          => ['nullable', 'string', 'max:255'],
-            'name'                 => ['required', 'string', 'min:3', 'max:255'],
-            'sku'                  => ['nullable', 'string', 'max:100', Rule::unique('products', 'sku')->ignore($productId)],
-            'barcode'              => ['nullable', 'string', 'max:100', Rule::unique('products', 'barcode')->ignore($productId)],
-            'description'          => ['nullable', 'string'],
-            'base_cost'            => ['required', 'numeric', 'min:0'],
-            'sell_price'           => ['required', 'numeric', 'min:0'],
-            'min_sell_price'       => ['nullable', 'numeric', 'min:0', 'lte:sell_price'],
-            'track_stock'          => ['required', 'boolean'],
+            'branch_id' => ['required', 'uuid', 'exists:branches,id'],
+            'category_id' => ['nullable', 'uuid', 'exists:product_categories,id'],
+            'new_category_name' => ['nullable', 'string', 'max:255'],
+            'type_id' => ['nullable', 'uuid', 'exists:product_types,id'],
+            'new_type_name' => ['nullable', 'string', 'max:255'],
+            'supplier_id' => ['nullable', 'uuid', 'exists:suppliers,id'],
+            'new_supplier_name' => ['nullable', 'string', 'max:255'],
+            'name' => ['required', 'string', 'min:3', 'max:255'],
+            'sku' => ['nullable', 'string', 'max:100', Rule::unique('products', 'sku')->ignore($productId)],
+            'barcode' => ['nullable', 'string', 'max:100', Rule::unique('products', 'barcode')->ignore($productId)],
+            'description' => ['nullable', 'string'],
+            'base_cost' => ['required', 'numeric', 'min:0'],
+            'sell_price' => ['required', 'numeric', 'min:0'],
+            'min_sell_price' => ['nullable', 'numeric', 'min:0', 'lte:sell_price'],
+            'track_stock' => ['required', 'boolean'],
             'allow_negative_stock' => ['required', 'boolean'],
-            'is_bundle'            => ['required', 'boolean'],
-            'is_active'            => ['required', 'boolean'],
-            'source'               => ['nullable', 'string', 'max:100'],
+            'is_bundle' => ['required', 'boolean'],
+            'is_active' => ['required', 'boolean'],
+            'expired_at' => ['nullable', 'date'],
+            'unit' => ['nullable', 'string', 'max:50'],
+            'imported_image_url' => ['nullable', 'url'],
+            'source' => ['nullable', 'string', 'max:100'],
 
-            'bundle_items'            => ['nullable', 'array'],
-            'bundle_items.*.product_id'=> ['required_with:bundle_items', 'uuid', 'exists:products,id'],
-            'bundle_items.*.quantity'  => ['required_with:bundle_items', 'integer', 'min:1'],
+            'bundle_items' => ['nullable', 'array'],
+            'bundle_items.*.product_id' => ['required_with:bundle_items', 'uuid', 'exists:products,id'],
+            'bundle_items.*.quantity' => ['required_with:bundle_items', 'integer', 'min:1'],
         ];
     }
 
     public function attributes(): array
     {
         return [
-            'branch_id'      => 'Cabang',
-            'category_id'    => 'Kategori',
-            'type_id'        => 'Tipe Produk',
-            'base_cost'      => 'HPP',
-            'sell_price'     => 'Harga Jual',
+            'branch_id' => 'Cabang',
+            'category_id' => 'Kategori',
+            'type_id' => 'Tipe Produk',
+            'base_cost' => 'HPP',
+            'sell_price' => 'Harga Jual',
             'min_sell_price' => 'Harga Minimum Jual',
         ];
     }

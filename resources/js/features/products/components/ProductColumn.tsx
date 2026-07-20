@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useProductStore } from '@/pages/products/stores/useProductStore';
 import type { Product } from '@/pages/products/stores/useProductStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatRupiah, formatNumber } from '@/lib/helpers/format';
+import { formatRupiah, formatNumber, formatDate } from '@/lib/helpers/format';
 
 import { toast } from 'sonner';
 
@@ -348,7 +348,7 @@ export const columns: ColumnDef<Product>[] = [
             return (
                 <div className="flex flex-col gap-0.5">
                     <span className={`text-sm font-medium ${colorClass}`}>
-                        {formatNumber(stock)}{label}
+                        {formatNumber(stock)} {row.original.unit || 'Pcs'}{label}
                     </span>
                     {stock <= 5 && stock > 0 && (
                         <span className="text-xs text-amber-500">Segera restock</span>
@@ -375,6 +375,54 @@ export const columns: ColumnDef<Product>[] = [
                 </span>
             ) : (
                 <span className="text-muted-foreground text-xs">—</span>
+            );
+        },
+    },
+
+    // ── Kedaluwarsa ─────────────────────────────────────────────────────────
+    {
+        accessorKey: 'expired_at',
+        header: 'Kedaluwarsa',
+        cell: ({ row }) => {
+            const expiredAtStr = row.original.expired_at;
+            if (!expiredAtStr) {
+                return <span className="text-muted-foreground text-xs">—</span>;
+            }
+
+            const expiredAt = new Date(expiredAtStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            expiredAt.setHours(0, 0, 0, 0);
+
+            // Selisih hari
+            const diffTime = expiredAt.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            const formattedDate = formatDate(expiredAtStr);
+
+            let badgeVariant: 'default' | 'secondary' | 'outline' | 'destructive' = 'outline';
+            let label = `${formattedDate}`;
+            let badgeStyle = '';
+
+            if (diffDays < 0) {
+                badgeVariant = 'destructive';
+                label = `Expired (${Math.abs(diffDays)} hari lalu)`;
+            } else if (diffDays <= 7) {
+                badgeVariant = 'destructive';
+                label = `${formattedDate} (${diffDays} hari lagi)`;
+                badgeStyle = 'bg-red-500 hover:bg-red-600 text-white border-transparent';
+            } else if (diffDays <= 30) {
+                label = `${formattedDate} (${diffDays} hari lagi)`;
+                badgeStyle = 'bg-amber-500 hover:bg-amber-600 text-white border-transparent';
+            } else {
+                badgeVariant = 'secondary';
+                label = `${formattedDate}`;
+            }
+
+            return (
+                <Badge variant={badgeVariant} className={`text-xs font-normal ${badgeStyle}`}>
+                    {label}
+                </Badge>
             );
         },
     },

@@ -37,6 +37,7 @@ class ProductService
             'all_products' => Products::active()->where('is_bundle', false)->orderBy('name')->select('id', 'name', 'base_cost')->get(),
             'categories' => ProductCategory::forDropdown()->get(),
             'types' => ProductType::forDropdown()->get(),
+            'suppliers' => \App\Models\Supplier::active()->orderBy('name')->select('id', 'name', 'tenant_id')->get(),
             'branches' => $this->branchesForForm(),
             'tenants' => $this->tenantsForForm(),
             'is_super_admin' => auth()->user()->isSuperAdmin(),
@@ -73,7 +74,16 @@ class ProductService
             $data['type_id'] = $type->id;
         }
 
-        unset($data['images'], $data['bundle_items'], $data['new_category_name'], $data['new_type_name']);
+        if (!empty($data['new_supplier_name'])) {
+            $sup = \App\Models\Supplier::firstOrCreate([
+                'tenant_id' => $data['tenant_id'],
+                'name' => $data['new_supplier_name']
+            ]);
+            $data['supplier_id'] = $sup->id;
+        }
+
+        $importedImageUrl = $data['imported_image_url'] ?? null;
+        unset($data['images'], $data['bundle_items'], $data['new_category_name'], $data['new_type_name'], $data['new_supplier_name'], $data['imported_image_url']);
 
         $product = Products::create($data);
 
@@ -90,6 +100,10 @@ class ProductService
 
         if (! empty($images)) {
             $this->imageService->upload($product->id, $images);
+        }
+
+        if (! empty($importedImageUrl)) {
+            $this->imageService->downloadFromUrl($product->id, $importedImageUrl);
         }
 
         return $product;
@@ -114,8 +128,17 @@ class ProductService
             ]);
             $data['type_id'] = $type->id;
         }
+
+        if (!empty($data['new_supplier_name'])) {
+            $sup = \App\Models\Supplier::firstOrCreate([
+                'tenant_id' => $product->tenant_id,
+                'name' => $data['new_supplier_name']
+            ]);
+            $data['supplier_id'] = $sup->id;
+        }
         
-        unset($data['tenant_id'], $data['initial_stock'], $data['bundle_items'], $data['new_category_name'], $data['new_type_name']);
+        $importedImageUrl = $data['imported_image_url'] ?? null;
+        unset($data['tenant_id'], $data['initial_stock'], $data['bundle_items'], $data['new_category_name'], $data['new_type_name'], $data['new_supplier_name'], $data['imported_image_url']);
 
         $product->update($data);
 
@@ -129,6 +152,10 @@ class ProductService
             }
         } elseif (!$product->is_bundle) {
             $product->bundleItems()->delete();
+        }
+
+        if (! empty($importedImageUrl)) {
+            $this->imageService->downloadFromUrl($product->id, $importedImageUrl);
         }
 
         return $product->fresh();

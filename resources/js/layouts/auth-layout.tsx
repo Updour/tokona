@@ -1,4 +1,5 @@
 import AuthLayoutTemplate from '@/layouts/auth/auth-antigravity-layout';
+import SystemAlert from '@/components/SystemAlert';
 
 export default function AuthLayout({
     title = '',
@@ -10,8 +11,11 @@ export default function AuthLayout({
     children: React.ReactNode;
 }) {
     return (
-        <AuthLayoutTemplate title={title} description={description}>
-            {children}
-        </AuthLayoutTemplate>
+        <>
+            <SystemAlert />
+            <AuthLayoutTemplate title={title} description={description}>
+                {children}
+            </AuthLayoutTemplate>
+        </>
     );
 }

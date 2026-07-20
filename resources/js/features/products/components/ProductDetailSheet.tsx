@@ -1,5 +1,5 @@
 import { formatRupiah, formatNumber } from '@/lib/helpers/format';
-import { AlignLeft, Barcode, Building2, ImageOff, Layers, MapPin, Tags, PackageOpen } from 'lucide-react';
+import { AlignLeft, Barcode, Building2, ImageOff, Layers, MapPin, Tags, PackageOpen, QrCode } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -10,9 +10,13 @@ import {
     SheetTitle,
 } from '@/components/ui/sheet';
 import { useProductStore } from '@/pages/products/stores/useProductStore';
+import { router } from '@inertiajs/react';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 export function ProductDetailSheet() {
-    const { isDetailOpen, closeDetail, selectedProduct: product } = useProductStore();
+    const { isDetailOpen, closeDetail, selectedProduct: product, openForm } = useProductStore();
+    const [codeTab, setCodeTab] = useState<'barcode' | 'qrcode'>('barcode');
 
     if (!product) return null;
 
@@ -29,7 +33,7 @@ export function ProductDetailSheet() {
                         <span className="font-mono text-xs">{product.sku || '-'}</span>
                     </SheetDescription>
                 </SheetHeader>
-                
+
                 <div className="flex-1 overflow-y-auto">
                     <div className="px-6 py-4 space-y-6">
                         {/* Gambar Produk */}
@@ -52,26 +56,114 @@ export function ProductDetailSheet() {
                             )}
                         </div>
 
+                        {/* Barcode & QR Code Tabs */}
+                        <div className="space-y-3 bg-slate-50/80 dark:bg-slate-900/30 p-4 rounded-lg border">
+                            <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                                    {codeTab === 'barcode' ? <Barcode className="h-4 w-4 text-indigo-500" /> : <QrCode className="h-4 w-4 text-indigo-500" />}
+                                    Label & Kode Produk
+                                </h4>
+                                <div className="flex gap-1 bg-slate-200/60 dark:bg-slate-800 p-0.5 rounded text-[10px]">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCodeTab('barcode')}
+                                        className={`px-2 py-0.5 rounded transition-all font-semibold ${codeTab === 'barcode'
+                                                ? 'bg-white text-indigo-700 shadow-sm dark:bg-slate-700 dark:text-white'
+                                                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                                            }`}
+                                    >
+                                        Barcode
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCodeTab('qrcode')}
+                                        className={`px-2 py-0.5 rounded transition-all font-semibold ${codeTab === 'qrcode'
+                                                ? 'bg-white text-indigo-700 shadow-sm dark:bg-slate-700 dark:text-white'
+                                                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                                            }`}
+                                    >
+                                        QR Code
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Render Tab Content */}
+                            {product.barcode ? (
+                                <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-900/50 rounded-md border space-y-3">
+                                    {codeTab === 'barcode' ? (
+                                        <>
+                                            <img
+                                                src={`https://barcodeapi.org/api/128/${product.barcode}`}
+                                                alt={`Barcode ${product.barcode}`}
+                                                className="w-full h-20 object-fill dark:invert px-2"
+                                            />
+                                            <p className="font-mono text-[12px] font-bold tracking-widest text-slate-700 dark:text-slate-300 mt-2">{product.barcode}</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <img
+                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(product.barcode)}`}
+                                                alt={`QR Code ${product.barcode}`}
+                                                className="w-48 h-48 object-contain p-2 bg-white rounded shadow-sm border"
+                                            />
+                                            <p className="font-mono text-[12px] font-bold text-slate-700 dark:text-slate-300 mt-1">{product.barcode}</p>
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center p-5 bg-white dark:bg-slate-900/50 rounded-md border border-dashed text-slate-500 space-y-2">
+                                    <p className="text-xs text-center text-muted-foreground">Produk belum memiliki Kode Barcode.</p>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                let randomBarcode = '';
+                                                for (let i = 0; i < 12; i++) {
+                                                    randomBarcode += Math.floor(Math.random() * 10).toString();
+                                                }
+                                                router.put(`/products/${product.id}`, {
+                                                    branch_id: product.branch_id,
+                                                    category_id: product.category_id,
+                                                    type_id: product.type_id,
+                                                    supplier_id: product.supplier_id,
+                                                    name: product.name,
+                                                    sku: product.sku,
+                                                    barcode: randomBarcode,
+                                                    description: product.description,
+                                                    base_cost: product.base_cost,
+                                                    sell_price: product.sell_price,
+                                                    min_sell_price: product.min_sell_price,
+                                                    track_stock: product.track_stock,
+                                                    allow_negative_stock: product.allow_negative_stock,
+                                                    is_bundle: product.is_bundle,
+                                                    is_active: product.is_active,
+                                                    expired_at: product.expired_at,
+                                                }, {
+                                                    onSuccess: () => {
+                                                        toast.success('Barcode berhasil dibuat secara acak.');
+                                                    }
+                                                });
+                                            }}
+                                            className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100/50 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 px-2.5 py-1.5 rounded transition-colors"
+                                        >
+                                            Generate Barcode
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => openForm(product)}
+                                            className="text-[10px] font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded transition-colors"
+                                        >
+                                            Input Manual
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         <Separator />
 
                         {/* Informasi Dasar */}
                         <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div className="space-y-1">
-                                <span className="text-muted-foreground text-xs flex items-center gap-1.5"><Barcode className="h-3.5 w-3.5" /> Barcode</span>
-                                <div className="flex flex-col gap-1">
-                                    <p className="font-medium font-mono">{product.barcode || '-'}</p>
-                                    {product.barcode && (
-                                        <div className="mt-1 p-1 bg-white rounded border w-fit">
-                                            <img
-                                                src={`https://barcodeapi.org/api/128/${product.barcode}`}
-                                                alt={`Barcode ${product.barcode}`}
-                                                className="h-8 object-contain"
-                                                onError={(e) => (e.currentTarget.style.display = 'none')}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
                             <div className="space-y-1">
                                 <span className="text-muted-foreground text-xs flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" /> Kategori</span>
                                 <p className="font-medium">{product.category?.name || '-'}</p>
@@ -101,7 +193,7 @@ export function ProductDetailSheet() {
                             <div className="space-y-1">
                                 <span className="text-muted-foreground text-xs">Sisa Stok</span>
                                 <p className={`font-bold ${Number(product.current_stock) <= 5 ? 'text-destructive' : 'text-green-600'}`}>
-                                    {formatNumber(product.current_stock)}
+                                    {formatNumber(product.current_stock)} {product.unit || 'Pcs'}
                                 </p>
                             </div>
                             <div className="space-y-1">

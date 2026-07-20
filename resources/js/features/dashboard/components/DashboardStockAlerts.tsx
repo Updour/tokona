@@ -22,7 +22,7 @@ export function DashboardStockAlerts({ lowStockItems }: DashboardStockAlertsProp
                             <div key={idx} className="p-3 px-4 flex items-center justify-between">
                                 <div>
                                     <p className="text-xs font-bold text-slate-800 line-clamp-1">{item.name}</p>
-                                    <p className="text-[10px] text-slate-500 font-mono">Sisa: <span className="font-bold text-rose-600">{item.stock} pcs</span></p>
+                                    <p className="text-[10px] text-slate-500 font-mono">Sisa: <span className="font-bold text-rose-600">{item.stock} {item.unit || 'Pcs'}</span></p>
                                 </div>
                                 <button onClick={() => router.get('/products/restock')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2 py-1 rounded">
                                     Restock

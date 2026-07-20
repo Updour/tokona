@@ -13,6 +13,9 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use App\Models\Transaction;
+use Illuminate\Support\Facades\Storage;
+
 class PosController extends Controller
 {
     protected PosService $posService;
@@ -70,5 +73,33 @@ class PosController extends Controller
         $this->posService->savePosSettings($request->validated());
 
         return redirect()->back()->with('success', 'Pengaturan kasir berhasil disimpan ke database!');
+    }
+
+    /**
+     * Upload/Perbarui bukti transfer transaksi POS
+     */
+    public function uploadTransferProof(Request $request, string $id): RedirectResponse
+    {
+        $request->validate([
+            'image' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+        ]);
+
+        $transaction = Transaction::findOrFail($id);
+
+        if ($request->hasFile('image')) {
+            // Hapus berkas lama jika ada
+            if ($transaction->transfer_proof) {
+                Storage::disk('public')->delete($transaction->transfer_proof);
+            }
+
+            // Simpan berkas baru
+            $path = $request->file('image')->store('transactions/proofs', 'public');
+            
+            $transaction->update([
+                'transfer_proof' => $path
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Bukti transfer berhasil diperbarui.');
     }
 }

@@ -50,6 +50,8 @@ export interface Product {
     is_bundle: boolean;
     source: string | null;
     is_active: boolean;
+    expired_at: string | null;
+    unit: string | null;
     created_at: string;
     updated_at: string;
     deleted_at: string | null;

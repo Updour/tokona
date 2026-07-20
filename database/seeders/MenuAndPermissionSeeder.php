@@ -424,6 +424,7 @@ class MenuAndPermissionSeeder extends Seeder
                     ['title' => 'Log Aktivitas', 'href' => '/audit/activity-logs', 'permission_key' => 'audit.index', 'order' => 1],
                     ['title' => 'Log Sistem', 'href' => '/audit/system-logs', 'permission_key' => 'superadmin.access', 'order' => 2],
                     ['title' => 'Anomali Stok', 'href' => '/audit/stock-anomalies', 'permission_key' => 'audit.index', 'order' => 3],
+                    ['title' => 'Telemetry Logs', 'href' => '/superadmin/telemetry', 'permission_key' => 'superadmin.access', 'order' => 4],
                 ]
             ],
         ];

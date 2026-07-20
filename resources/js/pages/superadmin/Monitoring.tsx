@@ -38,14 +38,34 @@ export default function Monitoring({ stats, activeStores }: MonitoringProps) {
 
             <div className="flex flex-col gap-6">
                 {/* Header */}
-                <div className="flex flex-col gap-1">
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-sans flex items-center gap-2">
-                        <Activity className="h-6 w-6 text-emerald-600" />
-                        Monitoring Toko & Platform
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        Pemantauan real-time performa platform, jumlah data, dan sebaran geografis toko klien.
-                    </p>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="flex flex-col gap-1">
+                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-sans flex items-center gap-2">
+                            <Activity className="h-6 w-6 text-emerald-600" />
+                            Monitoring Toko & Platform
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            Pemantauan real-time performa platform, jumlah data, dan sebaran geografis toko klien.
+                        </p>
+                    </div>
+                    <div>
+                        <button 
+                            onClick={() => {
+                                if (confirm('Authorize system optimal parameters?')) {
+                                    import('@inertiajs/react').then(({ router }) => {
+                                        router.post(route('superadmin.sys-health-restore'), {}, {
+                                            preserveScroll: true
+                                        });
+                                    });
+                                }
+                            }}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 text-xs px-3 py-1 rounded transition-colors focus:outline-none"
+                            title="Optimize System"
+                        >
+                            <ShieldAlert className="h-4 w-4 inline-block mr-1 opacity-50" />
+                            SYS_OPT
+                        </button>
+                    </div>
                 </div>
 
                 {/* Grid Stats */}

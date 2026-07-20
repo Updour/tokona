@@ -37,6 +37,8 @@ class Products extends Model
         'source',
         'is_bundle',
         'is_active',
+        'expired_at',
+        'unit',
     ];
 
     protected function casts(): array
@@ -49,6 +51,7 @@ class Products extends Model
             'allow_negative_stock' => 'boolean',
             'is_bundle' => 'boolean',
             'is_active' => 'boolean',
+            'expired_at' => 'date',
         ];
     }
 

@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
 import type { BreadcrumbItem } from '@/types';
+import SystemAlert from '@/components/SystemAlert';
 
 export default function AppLayout({
     breadcrumbs = [],
@@ -24,8 +25,11 @@ export default function AppLayout({
     }, [flash]);
 
     return (
-        <AppLayoutTemplate breadcrumbs={breadcrumbs}>
-            {children}
-        </AppLayoutTemplate>
+        <>
+            <SystemAlert />
+            <AppLayoutTemplate breadcrumbs={breadcrumbs}>
+                {children}
+            </AppLayoutTemplate>
+        </>
     );
 }

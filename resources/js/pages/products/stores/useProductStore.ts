@@ -53,6 +53,8 @@ export const useProductStore = create<ProductStore>((set) => ({
     closeDetail: () => set({ isDetailOpen: false, selectedProduct: null }),
     openDelete: (product) => set({ isDeleteOpen: true, selectedProduct: product }),
     closeDelete: () => set({ isDeleteOpen: false, selectedProduct: null }),
+    openRestore: (product) => set({ isRestoreOpen: true, selectedProduct: product }),
+    closeRestore: () => set({ isRestoreOpen: false, selectedProduct: null }),
     openImport: () => set({ isImportOpen: true }),
     closeImport: () => set({ isImportOpen: false }),
     setSelectedRowIds: (ids) => set({ selectedRowIds: ids }),
